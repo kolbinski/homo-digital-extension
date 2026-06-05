@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useClients, type Client } from '../hooks/useClients'
+import { useCvGenerate } from '../hooks/useCvGenerate'
 
 interface Props {
   onLogout: () => void
@@ -8,13 +9,29 @@ interface Props {
 
 const CV_LANGUAGES = ['English', 'Polish', 'German', 'French', 'Spanish', 'Dutch', 'Ukrainian']
 
+function getPageText(): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) { resolve(''); return }
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id
+      if (tabId === undefined) { resolve(''); return }
+      chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { text?: string }) => {
+        if (chrome.runtime.lastError) { resolve(''); return }
+        resolve(response?.text ?? '')
+      })
+    })
+  })
+}
+
 export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Props) {
   const { fetchClients } = useClients()
+  const { generateCV } = useCvGenerate()
 
   const [selectedClient, setSelectedClient] = useState('')
   const [cvLanguage, setCvLanguage] = useState(defaultLanguage)
   const [openAfterDownload, setOpenAfterDownload] = useState(false)
-  const [status] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const [clients, setClients] = useState<Client[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(true)
@@ -41,7 +58,25 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
     return () => { cancelled = true }
   }, [])
 
-  const isGenerateDisabled = !selectedClient || isLoadingClients
+  async function handleGenerateCV() {
+    const client = clients.find((c) => c.id === selectedClient)
+    if (!client) return
+
+    setIsGenerating(true)
+    setStatus(null)
+
+    const offerText = await getPageText()
+    const result = await generateCV(client, offerText, cvLanguage, openAfterDownload)
+
+    setIsGenerating(false)
+    if (!result.success) {
+      setStatus({ type: 'error', message: result.error })
+    } else {
+      setStatus({ type: 'success', message: 'CV downloaded!' })
+    }
+  }
+
+  const isGenerateDisabled = !selectedClient || isLoadingClients || isGenerating
 
   function clientLabel(c: Client) {
     return `${c.first_name} ${c.last_name} (${c.email})`
@@ -113,10 +148,17 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
 
         <button
           type="button"
+          onClick={handleGenerateCV}
           disabled={isGenerateDisabled}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md text-sm transition-colors mt-1"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md text-sm transition-colors mt-1 flex items-center justify-center gap-2"
         >
-          Generate CV
+          {isGenerating && (
+            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {isGenerating ? 'Generating…' : 'Generate CV'}
         </button>
 
         {status && (

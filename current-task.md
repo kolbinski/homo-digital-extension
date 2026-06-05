@@ -39,16 +39,14 @@
 - [x] Respond to GET_PAGE_DATA message from side panel with { text, language }
 - [x] Side panel useEffect requests page data on mount; guards chrome.runtime.lastError
 
-### Phase 5: CV Generation Flow
-- [ ] Wire "Generate CV" button to request page text from content script
-- [ ] Implement POST /v1/cv/generate (client_id + offer_text + cv_language → PDF blob)
-- [ ] Show loading spinner on Generate CV button during generation
-- [ ] Handle API errors with user-visible error message in status area
-
-### Phase 6: PDF Download
-- [ ] Download PDF blob via chrome.downloads.download
-- [ ] If "Open PDF after download" is checked → auto-open via chrome.downloads (open: true)
-- [ ] Show success message in status area after download
+### Phase 5+6: CV Generation + PDF Download ✅
+- [x] Wire "Generate CV" button — fetches page text via GET_PAGE_DATA before calling API
+- [x] POST /v1/cv/generate (client_id + offer_text + cv_language → PDF blob) in useCvGenerate hook
+- [x] Loading spinner on Generate CV button; button disabled during generation
+- [x] Handle API errors (401, non-ok, network) with user-visible status message
+- [x] Download PDF blob via chrome.downloads.download with slugified filename
+- [x] If "Open PDF after download" checked → chrome.downloads.open(downloadId)
+- [x] "CV downloaded!" success message in status area
 
 ### Phase 7: Verification
 - [ ] Load unpacked in Chrome — verify no manifest errors
@@ -67,6 +65,7 @@
 - [x] Phase 2+3 static UI complete — LoginScreen + MainScreen + App.tsx state routing, build passes
 - [x] Phase 4 complete — content script, Vite multi-entry build, manifest updated, build passes
 - [x] Phase 2+3 logic complete — useAuth (login/logout/getToken), useClients (fetchClients), App.tsx 3-state auth, build passes
+- [x] Phase 5+6 complete — useCvGenerate (POST /v1/cv/generate → blob → downloads), MainScreen wired, build passes
 
 ---
 
@@ -94,5 +93,4 @@
 ---
 
 ## Next Action
-Phase 5: CV generation flow — wire Generate CV button to POST /v1/cv/generate (client_id + offer_text + cv_language), handle PDF blob response, download via chrome.downloads.download.
-Backend note: job-matcher-api must have CORS configured for the extension origin (chrome-extension://<id>) or use wildcard (*) in development.
+Phase 7: Full verification in Chrome — load unpacked, walk happy path (login → select client → open job page → generate → download PDF), walk error paths, run CoV checklist.
