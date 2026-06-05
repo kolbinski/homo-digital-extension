@@ -19,19 +19,19 @@
 - [x] Create src/content.ts placeholder
 - [x] npm run build — succeeded, no errors
 
-### Phase 2: Side Panel UI — Login Screen ✅ (static)
+### Phase 2: Side Panel UI — Login Screen ✅
 - [x] Build LoginScreen component (email input + password input + Login button + error div hidden by default)
-- [ ] Implement POST /v1/auth/agent/login API call
-- [ ] Store JWT in chrome.storage.local on successful login
-- [ ] Handle invalid credentials error display
+- [x] Implement POST /v1/auth/agent/login API call (useAuth hook)
+- [x] Store JWT in chrome.storage.local on successful login
+- [x] Handle invalid credentials error display + loading spinner
 
-### Phase 3: Side Panel UI — Main Screen ✅ (static)
+### Phase 3: Side Panel UI — Main Screen ✅
 - [x] Build MainScreen component (header + logout + client select + CV language select + checkbox + generate button + status area)
 - [x] Generate CV button disabled when no client selected
-- [ ] Implement GET /v1/clients to populate client dropdown (JWT-authenticated)
+- [x] Implement GET /v1/clients to populate client dropdown (useClients hook, JWT-authenticated)
 - [ ] Persist last selected client in chrome.storage.local
 - [ ] Persist "Open PDF after download" checkbox state in chrome.storage.local
-- [ ] Implement Logout (clear JWT from storage → return to login screen)
+- [x] Implement Logout (clear JWT from storage → return to login screen via App.tsx handleLogout)
 
 ### Phase 4: Content Script ✅
 - [x] Write content script (runs on every page, reads document.body.innerText)
@@ -66,6 +66,7 @@
 - [x] Phase 1 complete — Vite + React + TS scaffold, Tailwind v3, manifest.json, content.ts placeholder, build passes
 - [x] Phase 2+3 static UI complete — LoginScreen + MainScreen + App.tsx state routing, build passes
 - [x] Phase 4 complete — content script, Vite multi-entry build, manifest updated, build passes
+- [x] Phase 2+3 logic complete — useAuth (login/logout/getToken), useClients (fetchClients), App.tsx 3-state auth, build passes
 
 ---
 
@@ -93,5 +94,5 @@
 ---
 
 ## Next Action
-Phase 2+3 logic: wire up chrome.storage.local for JWT, call POST /v1/auth/agent/login, GET /v1/clients — replace placeholder data with real API responses.
-Then Phase 5: CV generation flow (POST /v1/cv/generate → PDF blob → chrome.downloads.download).
+Phase 5: CV generation flow — wire Generate CV button to POST /v1/cv/generate (client_id + offer_text + cv_language), handle PDF blob response, download via chrome.downloads.download.
+Backend note: job-matcher-api must have CORS configured for the extension origin (chrome-extension://<id>) or use wildcard (*) in development.

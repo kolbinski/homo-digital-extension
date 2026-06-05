@@ -1,10 +1,27 @@
 import { useEffect, useState } from 'react'
 import LoginScreen from './components/LoginScreen'
 import MainScreen from './components/MainScreen'
+import { useAuth } from './hooks/useAuth'
+
+type AuthState = 'checking' | 'logged_out' | 'logged_in'
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { getToken, logout } = useAuth()
+  const [authState, setAuthState] = useState<AuthState>('checking')
   const [detectedLanguage, setDetectedLanguage] = useState('English')
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      setAuthState('logged_out')
+      return
+    }
+    getToken()
+      .then((token) => { setAuthState(token ? 'logged_in' : 'logged_out') })
+      .catch((err) => {
+        console.error('[App] getToken error:', err)
+        setAuthState('logged_out')
+      })
+  }, [])
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.tabs) return
@@ -18,15 +35,26 @@ function App() {
     })
   }, [])
 
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch (err) {
+      console.error('[App] logout error:', err)
+    }
+    setAuthState('logged_out')
+  }
+
+  if (authState === 'checking') return null
+
   return (
     <div className="w-full">
-      {isLoggedIn ? (
+      {authState === 'logged_in' ? (
         <MainScreen
-          onLogout={() => setIsLoggedIn(false)}
+          onLogout={handleLogout}
           defaultLanguage={detectedLanguage}
         />
       ) : (
-        <LoginScreen onLogin={() => setIsLoggedIn(true)} />
+        <LoginScreen onLogin={() => setAuthState('logged_in')} />
       )}
     </div>
   )

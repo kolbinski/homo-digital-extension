@@ -1,28 +1,51 @@
 import { useEffect, useState } from 'react'
+import { useClients, type Client } from '../hooks/useClients'
 
 interface Props {
   onLogout: () => void
   defaultLanguage?: string
 }
 
-const PLACEHOLDER_CLIENTS = [
-  { id: '1', name: 'Client A' },
-  { id: '2', name: 'Client B' },
-]
-
 const CV_LANGUAGES = ['English', 'Polish', 'German', 'French', 'Spanish', 'Dutch', 'Ukrainian']
 
 export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Props) {
+  const { fetchClients } = useClients()
+
   const [selectedClient, setSelectedClient] = useState('')
   const [cvLanguage, setCvLanguage] = useState(defaultLanguage)
+  const [openAfterDownload, setOpenAfterDownload] = useState(false)
+  const [status] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const [clients, setClients] = useState<Client[]>([])
+  const [isLoadingClients, setIsLoadingClients] = useState(true)
+  const [clientsError, setClientsError] = useState<string | null>(null)
 
   useEffect(() => {
     setCvLanguage(defaultLanguage)
   }, [defaultLanguage])
-  const [openAfterDownload, setOpenAfterDownload] = useState(false)
-  const [status] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  const isGenerateDisabled = !selectedClient
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const result = await fetchClients()
+      if (cancelled) return
+      setIsLoadingClients(false)
+      if ('error' in result) {
+        setClientsError(result.error)
+        if (result.error === 'Session expired. Please log in again.') onLogout()
+      } else {
+        setClients(result.clients)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const isGenerateDisabled = !selectedClient || isLoadingClients
+
+  function clientLabel(c: Client) {
+    return `${c.first_name} ${c.last_name} (${c.email})`
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -44,17 +67,22 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
           <label htmlFor="client" className="text-sm font-medium text-gray-700">
             Client
           </label>
-          <select
-            id="client"
-            value={selectedClient}
-            onChange={(e) => setSelectedClient(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="">Select client</option>
-            {PLACEHOLDER_CLIENTS.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          {clientsError ? (
+            <p className="text-sm text-red-600">{clientsError}</p>
+          ) : (
+            <select
+              id="client"
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+              disabled={isLoadingClients}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">{isLoadingClients ? 'Loading clients…' : 'Select client'}</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{clientLabel(c)}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
