@@ -19,15 +19,15 @@
 - [x] Create src/content.ts placeholder
 - [x] npm run build — succeeded, no errors
 
-### Phase 2: Side Panel UI — Login Screen
-- [ ] Create side panel entry point (sidepanel.html + sidepanel.tsx)
-- [ ] Build LoginScreen component (email input + password input + Login button + error state)
+### Phase 2: Side Panel UI — Login Screen ✅ (static)
+- [x] Build LoginScreen component (email input + password input + Login button + error div hidden by default)
 - [ ] Implement POST /v1/auth/agent/login API call
 - [ ] Store JWT in chrome.storage.local on successful login
 - [ ] Handle invalid credentials error display
 
-### Phase 3: Side Panel UI — Main Screen
-- [ ] Build MainScreen component (header + logout + client select + CV language input + checkbox + generate button)
+### Phase 3: Side Panel UI — Main Screen ✅ (static)
+- [x] Build MainScreen component (header + logout + client select + CV language select + checkbox + generate button + status area)
+- [x] Generate CV button disabled when no client selected
 - [ ] Implement GET /v1/clients to populate client dropdown (JWT-authenticated)
 - [ ] Persist last selected client in chrome.storage.local
 - [ ] Persist "Open PDF after download" checkbox state in chrome.storage.local
@@ -64,6 +64,7 @@
 
 ## Progress
 - [x] Phase 1 complete — Vite + React + TS scaffold, Tailwind v3, manifest.json, content.ts placeholder, build passes
+- [x] Phase 2+3 static UI complete — LoginScreen + MainScreen + App.tsx state routing, build passes
 
 ---
 
@@ -91,4 +92,4 @@
 ---
 
 ## Next Action
-Phase 2: Build the side panel entry point and LoginScreen component (sidepanel.html + sidepanel.tsx + LoginScreen with email/password/error state).
+Phase 2+3 logic: wire up chrome.storage.local for JWT, call POST /v1/auth/agent/login, GET /v1/clients — replace placeholder data with real API responses.
