@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "description": "Career agent tool — generate tailored CVs from job offer pages",
   "permissions": ["sidePanel", "activeTab", "storage", "downloads"],
+  "host_permissions": [
+    "https://job-matcher-api-production.up.railway.app/*",
+    "http://localhost:3000/*"
+  ],
   "action": {
     "default_title": "Open Homo Digital"
   },
