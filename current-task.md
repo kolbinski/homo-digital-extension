@@ -1,6 +1,6 @@
 # Current Task
 
-## Status: 🔴 Not Started
+## Status: 🟡 In Progress
 
 **Task:** Implement SPEC.md V1 — homo-digital-extension
 **Objective:** Build the complete Chrome extension as specified in SPEC.md V1 — authentication, side panel UI, content script, CV generation flow, and PDF download.
@@ -11,12 +11,13 @@
 
 ## Plan
 
-### Phase 1: Extension Scaffold
-- [ ] Initialize Vite + React + TypeScript project
-- [ ] Install and configure Tailwind CSS
-- [ ] Configure Vite for Chrome extension multi-entry build (side panel + content script)
-- [ ] Write manifest.json (MV3 — sidePanel, storage, downloads, scripting, activeTab permissions)
-- [ ] Verify extension loads in chrome://extensions without errors
+### Phase 1: Extension Scaffold ✅
+- [x] Initialize Vite + React + TypeScript project (create-vite v9, react-ts template)
+- [x] Install and configure Tailwind CSS v3 (tailwind.config.js + postcss.config.js, content paths set, directives in index.css)
+- [ ] Configure Vite for Chrome extension multi-entry build (side panel + content script) — deferred to Phase 4
+- [x] Write manifest.json (MV3 — sidePanel, storage, activeTab, downloads permissions) in public/
+- [x] Create src/content.ts placeholder
+- [x] npm run build — succeeded, no errors
 
 ### Phase 2: Side Panel UI — Login Screen
 - [ ] Create side panel entry point (sidepanel.html + sidepanel.tsx)
@@ -62,7 +63,7 @@
 ---
 
 ## Progress
-_No progress yet — implementation not started._
+- [x] Phase 1 complete — Vite + React + TS scaffold, Tailwind v3, manifest.json, content.ts placeholder, build passes
 
 ---
 
@@ -90,4 +91,4 @@ _No progress yet — implementation not started._
 ---
 
 ## Next Action
-Start Phase 1: Initialize the Vite + React + TypeScript scaffold and configure the Vite multi-entry build for Chrome extension.
+Phase 2: Build the side panel entry point and LoginScreen component (sidepanel.html + sidepanel.tsx + LoginScreen with email/password/error state).
