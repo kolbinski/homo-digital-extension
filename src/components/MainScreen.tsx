@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Props {
   onLogout: () => void
-  detectedLanguage?: string
+  defaultLanguage?: string
 }
 
 const PLACEHOLDER_CLIENTS = [
@@ -12,9 +12,13 @@ const PLACEHOLDER_CLIENTS = [
 
 const CV_LANGUAGES = ['English', 'Polish', 'German', 'French', 'Spanish', 'Dutch', 'Ukrainian']
 
-export default function MainScreen({ onLogout, detectedLanguage = 'English' }: Props) {
+export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Props) {
   const [selectedClient, setSelectedClient] = useState('')
-  const [cvLanguage, setCvLanguage] = useState(detectedLanguage)
+  const [cvLanguage, setCvLanguage] = useState(defaultLanguage)
+
+  useEffect(() => {
+    setCvLanguage(defaultLanguage)
+  }, [defaultLanguage])
   const [openAfterDownload, setOpenAfterDownload] = useState(false)
   const [status] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 

@@ -14,7 +14,7 @@
 ### Phase 1: Extension Scaffold ✅
 - [x] Initialize Vite + React + TypeScript project (create-vite v9, react-ts template)
 - [x] Install and configure Tailwind CSS v3 (tailwind.config.js + postcss.config.js, content paths set, directives in index.css)
-- [ ] Configure Vite for Chrome extension multi-entry build (side panel + content script) — deferred to Phase 4
+- [x] Configure Vite for Chrome extension multi-entry build (side panel + content script)
 - [x] Write manifest.json (MV3 — sidePanel, storage, activeTab, downloads permissions) in public/
 - [x] Create src/content.ts placeholder
 - [x] npm run build — succeeded, no errors
@@ -33,11 +33,11 @@
 - [ ] Persist "Open PDF after download" checkbox state in chrome.storage.local
 - [ ] Implement Logout (clear JWT from storage → return to login screen)
 
-### Phase 4: Content Script
-- [ ] Write content script (runs on every page, reads document.body.innerText)
-- [ ] Implement language detection (document.documentElement.lang → heuristic fallback)
-- [ ] Send detected language + page text to side panel via chrome.runtime.sendMessage
-- [ ] Handle the case where content script hasn't loaded yet when side panel requests data
+### Phase 4: Content Script ✅
+- [x] Write content script (runs on every page, reads document.body.innerText)
+- [x] Implement language detection (document.documentElement.lang → meta fallback → English)
+- [x] Respond to GET_PAGE_DATA message from side panel with { text, language }
+- [x] Side panel useEffect requests page data on mount; guards chrome.runtime.lastError
 
 ### Phase 5: CV Generation Flow
 - [ ] Wire "Generate CV" button to request page text from content script
@@ -65,6 +65,7 @@
 ## Progress
 - [x] Phase 1 complete — Vite + React + TS scaffold, Tailwind v3, manifest.json, content.ts placeholder, build passes
 - [x] Phase 2+3 static UI complete — LoginScreen + MainScreen + App.tsx state routing, build passes
+- [x] Phase 4 complete — content script, Vite multi-entry build, manifest updated, build passes
 
 ---
 
@@ -93,3 +94,4 @@
 
 ## Next Action
 Phase 2+3 logic: wire up chrome.storage.local for JWT, call POST /v1/auth/agent/login, GET /v1/clients — replace placeholder data with real API responses.
+Then Phase 5: CV generation flow (POST /v1/cv/generate → PDF blob → chrome.downloads.download).
