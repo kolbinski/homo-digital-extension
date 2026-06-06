@@ -12,6 +12,7 @@ function App() {
   const [authState, setAuthState] = useState<AuthState>('checking')
   const [activeTabId, setActiveTabId] = useState<number | undefined>()
   const [activeTab, setActiveTab] = useState<Tab>('explore')
+  const [currentUrl, setCurrentUrl] = useState<string>('')
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -38,6 +39,7 @@ function App() {
         // Already injected or page not injectable — continue
       }
       setActiveTabId(tabId)
+      setCurrentUrl(tab.url?.split('?')[0] ?? '')
     })
   }, [])
 
@@ -47,12 +49,16 @@ function App() {
     function onActivated(activeInfo: { tabId: number }) {
       setActiveTabId(activeInfo.tabId)
       chrome.scripting.executeScript({ target: { tabId: activeInfo.tabId }, files: ['content.js'] }).catch(() => {})
+      chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (!chrome.runtime.lastError) setCurrentUrl(tab.url?.split('?')[0] ?? '')
+      })
     }
 
-    function onUpdated(tabId: number, changeInfo: { status?: string }, tab: { active?: boolean }) {
+    function onUpdated(tabId: number, changeInfo: { status?: string }, tab: { active?: boolean; url?: string }) {
       if (changeInfo.status === 'complete' && tab.active) {
         setActiveTabId(tabId)
         chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] }).catch(() => {})
+        setCurrentUrl(tab.url?.split('?')[0] ?? '')
       }
     }
 
@@ -95,7 +101,7 @@ function App() {
       <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} />}
+        {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} currentUrl={currentUrl} />}
         {activeTab === 'sync' && <SyncTab />}
       </div>
     </div>

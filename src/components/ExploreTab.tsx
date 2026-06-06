@@ -80,11 +80,13 @@ function getPageText(tabId: number): Promise<string> {
 interface Props {
   onLogout: () => void;
   activeTabId?: number;
+  currentUrl?: string;
 }
 
 interface ClientAccordionProps {
   client: Client;
   activeTabId?: number;
+  currentUrl?: string;
 }
 
 interface OfferCardProps {
@@ -387,7 +389,7 @@ function OfferCard({
   );
 }
 
-function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
+function ClientAccordion({ client, activeTabId, currentUrl }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -413,6 +415,20 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
       });
     }
   }
+
+  useEffect(() => {
+    if (!expandedOfferId || !currentUrl) return;
+    const expandedOffer =
+      applyOffers.find(o => o.user_offer_id === expandedOfferId) ??
+      levelUpOffers.find(o => o.user_offer_id === expandedOfferId);
+    if (expandedOffer?.offer_url) {
+      const offerBaseUrl = expandedOffer.offer_url.split('?')[0];
+      if (!currentUrl.startsWith(offerBaseUrl)) {
+        setExpandedOfferId(null);
+      }
+    }
+  }, [currentUrl]);
+
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -689,7 +705,7 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
   );
 }
 
-export default function ExploreTab({ onLogout, activeTabId }: Props) {
+export default function ExploreTab({ onLogout, activeTabId, currentUrl }: Props) {
   const { fetchClients } = useClients();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -755,6 +771,7 @@ export default function ExploreTab({ onLogout, activeTabId }: Props) {
             key={client.id}
             client={client}
             activeTabId={activeTabId}
+            currentUrl={currentUrl}
           />
         ))
       )}
