@@ -3,7 +3,7 @@
 > **Scope:** Long-term knowledge for the homo-digital-extension project — architecture decisions, Chrome API gotchas, patterns discovered during development, and technical learnings.
 > **NOT for:** in-flight task state (use `current-task.md`), self-improvement rules (use `lessons.md`), or facts derivable from `SPEC.md` / `CLAUDE.md` / git history.
 > **Organized by category, not chronology.** Each entry includes a date.
-> **Last reviewed:** 2026-06-05
+> **Last reviewed:** 2026-06-06
 
 ---
 
@@ -20,6 +20,9 @@
 | 2026-06-05 | Last selected client persisted in chrome.storage.local | Reduces friction — agents typically work with the same client repeatedly across sessions |
 | 2026-06-05 | "Open PDF after download" persisted in chrome.storage.local | User preference that survives extension reloads; checked state maps to { open: true } in chrome.downloads.download |
 | 2026-06-05 | Vite multi-entry build for side panel + content script | Side panel and content script are separate bundles with separate entry points; Vite handles the split cleanly |
+| 2026-06-06 | Polling over SSE for sync progress (GET /v1/sync/status every 5s) | SSE (EventSource) drops connections on Railway after ~20 min; polling survives network hiccups silently — catch swallows errors and the interval keeps running. GET /v1/sync/progress SSE endpoint no longer used. |
+| 2026-06-06 | No progress % in sync UI | Backend progress field unreliable during long syncs; replaced with static "Syncing… It may take a long time." — cleaner UX, no misleading numbers |
+| 2026-06-06 | SyncResult includes total_offers_scanned | Three-branch success message: no offers scanned / scanned but no matches / scanned with matches — each branch tells a meaningfully different story to the agent |
 | 2025-01-01 | Adopted 5-file scaffold as the standard deployment unit | Single-file monoliths grow unmanageable; separation of concerns enables independent versioning and focused context per session |
 | 2025-01-01 | lessons.md added as the 5th file | memory.md is passive knowledge; lessons.md is active prevention — different jobs, different files |
 
@@ -62,6 +65,7 @@
 | 2025-01-01 | Memory.md organized chronologically becomes unsearchable | Always organize by category, not by date — dates are metadata, not structure |
 | 2025-01-01 | Personas without specific credentials default to generic assistant behavior | Specificity (real schools, certs, years) is the forcing function for expert-level output |
 | 2026-05-23 | A public methodology repo accumulating private deployment notes is a data-leak risk | Keep the public repo's `memory.md`/`current-task.md` GENERIC. Real deployment records (client names, personal data, paths) live in the private per-project scaffolds, never here. |
+| 2026-06-06 | Railway closes idle SSE connections on long-running jobs (20+ min) | Root cause: Railway's HTTP proxy has an idle timeout shorter than the sync duration. No keepalive workaround was reliable — polling is the correct fix for operations of this length. |
 
 ---
 

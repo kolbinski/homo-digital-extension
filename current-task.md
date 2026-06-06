@@ -5,7 +5,7 @@
 **Task:** Implement SPEC.md V1 — homo-digital-extension
 **Objective:** Build the complete Chrome extension as specified in SPEC.md V1 — authentication, side panel UI, content script, CV generation flow, and PDF download.
 **Started:** 2026-06-05
-**Last Updated:** 2026-06-05
+**Last Updated:** 2026-06-06
 
 ---
 
@@ -66,6 +66,10 @@
 - [x] Phase 4 complete — content script, Vite multi-entry build, manifest updated, build passes
 - [x] Phase 2+3 logic complete — useAuth (login/logout/getToken), useClients (fetchClients), App.tsx 3-state auth, build passes
 - [x] Phase 5+6 complete — useCvGenerate (POST /v1/cv/generate → blob → downloads), MainScreen wired, build passes
+- [x] SyncTab iterations complete (2026-06-06):
+  - SSE → polling: GET /v1/sync/status every 5s, network errors swallowed silently, interval cleared on done/error/unmount
+  - Progress % removed; static "Syncing… It may take a long time." shown instead
+  - SyncResult extended with total_offers_scanned; three-branch success message implemented
 
 ---
 
@@ -94,3 +98,5 @@
 
 ## Next Action
 Phase 7: Full verification in Chrome — load unpacked, walk happy path (login → select client → open job page → generate → download PDF), walk error paths, run CoV checklist.
+
+Test SyncTab polling end-to-end: trigger a sync, confirm polling hits GET /v1/sync/status every 5s in Network tab, confirm done/error states resolve correctly, confirm interval is cleared on unmount (navigate away during sync — no dangling poll in background).
