@@ -18,9 +18,10 @@ export function useOfferMatches() {
     if (!pageUrl) return { matches: [] }
     const token = await getToken()
     if (!token) return { error: 'Not authenticated.' }
+    const cleanUrl = pageUrl.split('?')[0]
     try {
       const res = await fetch(
-        `${API_BASE_URL}/v1/offer-matches?url=${encodeURIComponent(pageUrl)}`,
+        `${API_BASE_URL}/v1/offer-matches?url=${encodeURIComponent(cleanUrl)}`,
         { headers: { Authorization: `Bearer ${token}` } },
       )
       if (res.status === 401) return { error: 'Session expired. Please log in again.' }
