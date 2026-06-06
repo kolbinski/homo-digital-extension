@@ -26,9 +26,16 @@ function App() {
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.tabs) return
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       const tabId = tabs[0]?.id
       if (tabId === undefined) return
+
+      try {
+        await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
+      } catch (e) {
+        // Already injected or page not injectable (chrome:// etc.) — continue anyway
+      }
+
       setActiveTabId(tabId)
       chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { language?: string }) => {
         if (chrome.runtime.lastError) return
