@@ -7,6 +7,7 @@ interface SyncClientResult {
   first_name: string
   last_name: string
   new_offers_count: number
+  stretch_offers_count: number
   email_report?: string
 }
 
@@ -28,7 +29,13 @@ function ClientReportAccordion({ client }: { client: SyncClientResult }) {
       >
         <span className="text-sm text-gray-800">
           {client.first_name} {client.last_name}
-          <span className="ml-2 text-xs text-gray-500">— {client.new_offers_count} new offers</span>
+          <span className="ml-2 text-xs text-gray-500">
+            {client.new_offers_count > 0 && client.stretch_offers_count > 0
+              ? `— ${client.new_offers_count} new, ${client.stretch_offers_count} level up`
+              : client.stretch_offers_count > 0
+                ? `— ${client.stretch_offers_count} level up offers`
+                : `— ${client.new_offers_count} new offers`}
+          </span>
         </span>
         <svg
           className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
@@ -173,7 +180,7 @@ export default function SyncTab() {
             {result.total_new_offers} new offers found
           </div>
           <div className="flex flex-col gap-2">
-            {result.clients.filter((c) => c.new_offers_count > 0).map((client) => (
+            {result.clients.filter((c) => c.new_offers_count > 0 || c.stretch_offers_count > 0).map((client) => (
               <ClientReportAccordion key={client.client_id} client={client} />
             ))}
           </div>
