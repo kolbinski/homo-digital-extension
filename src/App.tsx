@@ -10,6 +10,7 @@ function App() {
   const [authState, setAuthState] = useState<AuthState>('checking')
   const [detectedLanguage, setDetectedLanguage] = useState('English')
   const [activeTabId, setActiveTabId] = useState<number | undefined>()
+  const [currentUrl, setCurrentUrl] = useState('')
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -27,12 +28,15 @@ function App() {
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.tabs) return
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      const tabId = tabs[0]?.id
+      const tab = tabs[0]
+      const tabId = tab?.id
       if (tabId === undefined) return
+
+      if (tab.url) setCurrentUrl(tab.url)
 
       try {
         await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
-      } catch (e) {
+      } catch {
         // Already injected or page not injectable (chrome:// etc.) — continue anyway
       }
 
@@ -42,6 +46,34 @@ function App() {
         if (response?.language) setDetectedLanguage(response.language)
       })
     })
+  }, [])
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return
+
+    function onActivated(activeInfo: { tabId: number }) {
+      setActiveTabId(activeInfo.tabId)
+      chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (chrome.runtime.lastError) return
+        if (tab.url) setCurrentUrl(tab.url)
+      })
+      chrome.scripting.executeScript({ target: { tabId: activeInfo.tabId }, files: ['content.js'] }).catch(() => {})
+    }
+
+    function onUpdated(tabId: number, changeInfo: { status?: string }, tab: { active?: boolean; url?: string }) {
+      if (changeInfo.status === 'complete' && tab.active) {
+        if (tab.url) setCurrentUrl(tab.url)
+        setActiveTabId(tabId)
+        chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] }).catch(() => {})
+      }
+    }
+
+    chrome.tabs.onActivated.addListener(onActivated)
+    chrome.tabs.onUpdated.addListener(onUpdated)
+    return () => {
+      chrome.tabs.onActivated.removeListener(onActivated)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
+    }
   }, [])
 
   async function handleLogout() {
@@ -62,6 +94,7 @@ function App() {
           onLogout={handleLogout}
           defaultLanguage={detectedLanguage}
           activeTabId={activeTabId}
+          currentUrl={currentUrl}
         />
       ) : (
         <LoginScreen onLogin={() => setAuthState('logged_in')} />

@@ -1,6 +1,5 @@
 import { API_BASE_URL } from '../config'
 import { useAuth } from './useAuth'
-import type { Client } from './useClients'
 
 type GenerateResult = { success: true } | { success: false; error: string }
 
@@ -8,7 +7,7 @@ export function useCvGenerate() {
   const { getToken } = useAuth()
 
   async function generateCV(
-    client: Client,
+    clientId: string,
     offerText: string,
     cvLanguage: string,
     signal?: AbortSignal,
@@ -31,7 +30,7 @@ export function useCvGenerate() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          client_id: client.id,
+          client_id: clientId,
           offer_text: offerText,
           cv_language: cvLanguage,
         }),
