@@ -69,29 +69,14 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English', acti
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-        <span className="text-sm font-semibold text-gray-900 tracking-tight">
-          Homo Digital
-        </span>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
-        >
-          Logout
-        </button>
-      </header>
-
-      <main className="flex-1 px-4 py-5">
-        <MatchList
-          matches={matches}
-          isLoading={isLoadingMatches}
-          error={matchesError}
-          defaultLanguage={defaultLanguage}
-          onGenerateCV={handleGenerateCV}
-        />
-      </main>
+    <div className="px-4 py-5">
+      <MatchList
+        matches={matches}
+        isLoading={isLoadingMatches}
+        error={matchesError}
+        defaultLanguage={defaultLanguage}
+        onGenerateCV={handleGenerateCV}
+      />
     </div>
   )
 }

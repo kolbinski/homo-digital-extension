@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import LoginScreen from './components/LoginScreen'
 import MainScreen from './components/MainScreen'
+import TabBar, { type Tab } from './components/TabBar'
+import ExploreTab from './components/ExploreTab'
+import SyncTab from './components/SyncTab'
 import { useAuth } from './hooks/useAuth'
 
 type AuthState = 'checking' | 'logged_out' | 'logged_in'
@@ -11,6 +14,7 @@ function App() {
   const [detectedLanguage, setDetectedLanguage] = useState('English')
   const [activeTabId, setActiveTabId] = useState<number | undefined>()
   const [currentUrl, setCurrentUrl] = useState('')
+  const [activeTab, setActiveTab] = useState<Tab>('apply')
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -87,18 +91,37 @@ function App() {
 
   if (authState === 'checking') return null
 
+  if (authState !== 'logged_in') {
+    return <LoginScreen onLogin={() => setAuthState('logged_in')} />
+  }
+
   return (
-    <div className="w-full">
-      {authState === 'logged_in' ? (
-        <MainScreen
-          onLogout={handleLogout}
-          defaultLanguage={detectedLanguage}
-          activeTabId={activeTabId}
-          currentUrl={currentUrl}
-        />
-      ) : (
-        <LoginScreen onLogin={() => setAuthState('logged_in')} />
-      )}
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+        <span className="text-sm font-semibold text-gray-900 tracking-tight">Homo Digital</span>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          Logout
+        </button>
+      </header>
+
+      <TabBar activeTab={activeTab} onChange={setActiveTab} />
+
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === 'apply' && (
+          <MainScreen
+            onLogout={handleLogout}
+            defaultLanguage={detectedLanguage}
+            activeTabId={activeTabId}
+            currentUrl={currentUrl}
+          />
+        )}
+        {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} />}
+        {activeTab === 'sync' && <SyncTab />}
+      </div>
     </div>
   )
 }
