@@ -92,14 +92,15 @@ interface OfferCardProps {
   clientId: string;
   clientFirstName: string;
   clientLastName: string;
+  isOpen: boolean;
+  onToggle: () => void;
   activeTabId?: number;
   onRemove: (offerId: string) => void;
 }
 
-function OfferCard({ offer, clientId, clientFirstName, clientLastName, activeTabId, onRemove }: OfferCardProps) {
+function OfferCard({ offer, clientId, clientFirstName, clientLastName, isOpen, onToggle, activeTabId, onRemove }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
-  const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [cvLanguage, setCvLanguage] = useState('English');
   const [status, setStatus] = useState<{
@@ -195,7 +196,7 @@ function OfferCard({ offer, clientId, clientFirstName, clientLastName, activeTab
       {/* Header row — click to expand/collapse */}
       <button
         type="button"
-        onClick={() => setIsOpen(v => !v)}
+        onClick={onToggle}
         className="w-full px-3 py-2.5 text-left flex items-center gap-2 hover:bg-gray-50 transition-colors group"
       >
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -253,30 +254,6 @@ function OfferCard({ offer, clientId, clientFirstName, clientLastName, activeTab
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
-          {offer.offer_url && (
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof chrome === 'undefined') return;
-                if (activeTabId !== undefined) {
-                  chrome.tabs.update(activeTabId, { url: offer.offer_url! });
-                } else {
-                  chrome.tabs.query(
-                    { active: true, currentWindow: true },
-                    tabs => {
-                      if (tabs[0]?.id !== undefined)
-                        chrome.tabs.update(tabs[0].id, {
-                          url: offer.offer_url!,
-                        });
-                    },
-                  );
-                }
-              }}
-              className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-            >
-              Open offer page
-            </button>
-          )}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-700">
               CV Language
@@ -410,6 +387,21 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
   const [applyOpen, setApplyOpen] = useState(true);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
+
+  function handleCardToggle(offerId: string, offerUrl?: string) {
+    if (expandedOfferId === offerId) {
+      setExpandedOfferId(null);
+      return;
+    }
+    setExpandedOfferId(offerId);
+    if (offerUrl && typeof chrome !== 'undefined') {
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        if (tabs[0]?.id !== undefined)
+          chrome.tabs.update(tabs[0].id, { url: offerUrl });
+      });
+    }
+  }
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -590,6 +582,8 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           clientId={client.id}
                           clientFirstName={client.first_name}
                           clientLastName={client.last_name}
+                          isOpen={expandedOfferId === offer.user_offer_id}
+                          onToggle={() => handleCardToggle(offer.user_offer_id, offer.offer_url)}
                           activeTabId={activeTabId}
                           onRemove={id =>
                             setApplyOffers(prev =>
@@ -657,6 +651,8 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           clientId={client.id}
                           clientFirstName={client.first_name}
                           clientLastName={client.last_name}
+                          isOpen={expandedOfferId === offer.user_offer_id}
+                          onToggle={() => handleCardToggle(offer.user_offer_id, offer.offer_url)}
                           activeTabId={activeTabId}
                           onRemove={id =>
                             setLevelUpOffers(prev =>
