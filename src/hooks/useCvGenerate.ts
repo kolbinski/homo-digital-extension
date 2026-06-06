@@ -11,6 +11,7 @@ export function useCvGenerate() {
     client: Client,
     offerText: string,
     cvLanguage: string,
+    signal?: AbortSignal,
   ): Promise<GenerateResult> {
     if (typeof chrome === 'undefined') {
       return { success: false, error: 'Chrome extension context required.' }
@@ -34,12 +35,16 @@ export function useCvGenerate() {
           offer_text: offerText,
           cv_language: cvLanguage,
         }),
+        signal,
       })
       if (res.status === 401) return { success: false, error: 'Session expired. Please log in again.' }
       if (!res.ok) return { success: false, error: `CV generation failed (${res.status}). Please try again.` }
       const data = await res.json() as { html: string; filename: string }
       html = data.html
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return { success: false, error: '' }
+      }
       console.error('[useCvGenerate] network error:', err)
       return { success: false, error: 'Network error. Check your connection.' }
     }

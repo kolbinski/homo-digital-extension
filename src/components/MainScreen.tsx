@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useClients, type Client } from '../hooks/useClients'
 import { useCvGenerate } from '../hooks/useCvGenerate'
 
@@ -28,6 +28,8 @@ function getPageText(tabId: number): Promise<string> {
 export default function MainScreen({ onLogout, defaultLanguage = 'English', activeTabId }: Props) {
   const { fetchClients } = useClients()
   const { generateCV } = useCvGenerate()
+
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [selectedClient, setSelectedClient] = useState('')
   const [cvLanguage, setCvLanguage] = useState(defaultLanguage)
@@ -63,6 +65,9 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English', acti
     const client = clients.find((c) => c.id === selectedClient)
     if (!client) return
 
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     setIsGenerating(true)
     setStatus(null)
 
@@ -77,14 +82,20 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English', acti
       setStatus({ type: 'error', message: 'Could not read page content. Make sure you are on a job offer page.' })
       return
     }
-    const result = await generateCV(client, offerText, cvLanguage)
+    const result = await generateCV(client, offerText, cvLanguage, controller.signal)
 
     setIsGenerating(false)
     if (!result.success) {
-      setStatus({ type: 'error', message: result.error })
+      if (result.error) setStatus({ type: 'error', message: result.error })
     } else {
       setStatus({ type: 'success', message: 'CV ready — save as PDF in the print dialog' })
     }
+  }
+
+  function handleAbort() {
+    abortControllerRef.current?.abort()
+    setIsGenerating(false)
+    setStatus(null)
   }
 
   const isGenerateDisabled = !selectedClient || isLoadingClients || isGenerating
@@ -147,20 +158,37 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English', acti
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGenerateCV}
-          disabled={isGenerateDisabled}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md text-sm transition-colors mt-1 flex items-center justify-center gap-2"
-        >
-          {isGenerating && (
-            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          )}
-          {isGenerating ? 'Generating…' : 'Generate CV'}
-        </button>
+        {isGenerating ? (
+          <div className="flex gap-2 mt-1">
+            <button
+              type="button"
+              disabled
+              className="flex-1 bg-indigo-400 cursor-not-allowed text-white font-medium py-2 px-4 rounded-md text-sm flex items-center justify-center gap-2"
+            >
+              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Generating…
+            </button>
+            <button
+              type="button"
+              onClick={handleAbort}
+              className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors"
+            >
+              Abort
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleGenerateCV}
+            disabled={isGenerateDisabled}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md text-sm transition-colors mt-1 flex items-center justify-center gap-2"
+          >
+            Generate CV
+          </button>
+        )}
 
         {status && (
           <div
