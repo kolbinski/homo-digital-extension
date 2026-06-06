@@ -119,7 +119,7 @@ function App() {
             currentUrl={currentUrl}
           />
         )}
-        {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} />}
+        {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} />}
         {activeTab === 'sync' && <SyncTab />}
       </div>
     </div>

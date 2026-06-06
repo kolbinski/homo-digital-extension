@@ -3,6 +3,14 @@ import { API_BASE_URL } from '../config'
 import { useAuth } from '../hooks/useAuth'
 import { useClients, type Client } from '../hooks/useClients'
 
+interface OfferSalary {
+  min: number
+  max: number
+  currency: string
+  type: string
+  delta: number
+}
+
 interface UserOffer {
   user_offer_id: string
   offer_title: string
@@ -10,17 +18,25 @@ interface UserOffer {
   offer_url?: string
   claude_role_fit?: string
   claude_missing_skills?: string[]
+  salary?: OfferSalary[]
+}
+
+function formatNum(n: number): string {
+  const sign = n < 0 ? '-' : ''
+  return sign + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 }
 
 interface Props {
   onLogout: () => void
+  activeTabId?: number
 }
 
 interface ClientAccordionProps {
   client: Client
+  activeTabId?: number
 }
 
-function ClientAccordion({ client }: ClientAccordionProps) {
+function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
   const { getToken } = useAuth()
 
   const [isOpen, setIsOpen] = useState(false)
@@ -87,10 +103,14 @@ function ClientAccordion({ client }: ClientAccordionProps) {
   }
 
   function openOffer(url: string) {
-    if (typeof chrome !== 'undefined') {
-      chrome.tabs.create({ url, active: true })
+    if (typeof chrome === 'undefined') { window.open(url, '_blank'); return }
+    if (activeTabId !== undefined) {
+      chrome.tabs.update(activeTabId, { url })
     } else {
-      window.open(url, '_blank')
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id
+        if (tabId !== undefined) chrome.tabs.update(tabId, { url })
+      })
     }
   }
 
@@ -170,6 +190,15 @@ function ClientAccordion({ client }: ClientAccordionProps) {
                               </svg>
                             )}
                           </div>
+                          {offer.salary && offer.salary.length > 0 && (
+                            <div className="flex flex-col gap-0.5 mt-1">
+                              {offer.salary.map((s, i) => (
+                                <span key={i} className="text-xs text-gray-500">
+                                  💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} ({s.type}) {s.delta >= 0 ? '+' : ''}{formatNum(s.delta)} {s.currency}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </button>
                       ))
                     )}
@@ -217,6 +246,15 @@ function ClientAccordion({ client }: ClientAccordionProps) {
                           <span className="text-xs font-medium text-gray-900 leading-snug">
                             {offer.offer_title} @ {offer.offer_company}
                           </span>
+                          {offer.salary && offer.salary.length > 0 && (
+                            <div className="flex flex-col gap-0.5">
+                              {offer.salary.map((s, i) => (
+                                <span key={i} className="text-xs text-gray-500">
+                                  💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} ({s.type}) {s.delta >= 0 ? '+' : ''}{formatNum(s.delta)} {s.currency}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           {offer.claude_role_fit && (
                             <p className="text-xs text-gray-600 leading-relaxed">{offer.claude_role_fit}</p>
                           )}
@@ -243,7 +281,7 @@ function ClientAccordion({ client }: ClientAccordionProps) {
   )
 }
 
-export default function ExploreTab({ onLogout }: Props) {
+export default function ExploreTab({ onLogout, activeTabId }: Props) {
   const { fetchClients } = useClients()
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -287,7 +325,7 @@ export default function ExploreTab({ onLogout }: Props) {
         <p className="text-sm text-gray-500">No clients found.</p>
       ) : (
         clients.map((client) => (
-          <ClientAccordion key={client.id} client={client} />
+          <ClientAccordion key={client.id} client={client} activeTabId={activeTabId} />
         ))
       )}
     </div>
