@@ -56,51 +56,24 @@ function ClientReportAccordion({ client }: { client: SyncClientResult }) {
 export default function SyncTab() {
   const { getToken } = useAuth()
   const [syncState, setSyncState] = useState<SyncState>('idle')
-  const [jobId, setJobId] = useState<string | null>(null)
+  const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<SyncResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const esRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
-    if (!jobId) return
-    intervalRef.current = setInterval(async () => {
-      const token = await getToken()
-      if (!token) return
-      try {
-        const res = await fetch(`${API_BASE_URL}/v1/sync/status?job_id=${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) {
-          setError(`Status check failed (${res.status}).`)
-          setSyncState('error')
-          if (intervalRef.current) clearInterval(intervalRef.current)
-          return
-        }
-        const data = await res.json() as { status: string } & SyncResult
-        if (data.status === 'done') {
-          setResult(data)
-          setSyncState('done')
-          if (intervalRef.current) clearInterval(intervalRef.current)
-        } else if (data.status === 'failed') {
-          setError('Sync job failed on the server.')
-          setSyncState('error')
-          if (intervalRef.current) clearInterval(intervalRef.current)
-        }
-      } catch {
-        setError('Network error while checking sync status.')
-        setSyncState('error')
-        if (intervalRef.current) clearInterval(intervalRef.current)
-      }
-    }, 3000)
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [jobId])
+    return () => { esRef.current?.close() }
+  }, [])
 
   async function handleSync() {
     setSyncState('syncing')
+    setProgress(0)
     setError(null)
     setResult(null)
+
     const token = await getToken()
     if (!token) { setError('Not authenticated.'); setSyncState('error'); return }
+
     try {
       const res = await fetch(`${API_BASE_URL}/v1/sync/start`, {
         method: 'POST',
@@ -108,7 +81,32 @@ export default function SyncTab() {
       })
       if (!res.ok) { setError(`Sync start failed (${res.status}).`); setSyncState('error'); return }
       const data = await res.json() as { job_id: string }
-      setJobId(data.job_id)
+
+      const es = new EventSource(`${API_BASE_URL}/v1/sync/progress?job_id=${data.job_id}&token=${token}`)
+      esRef.current = es
+
+      es.onmessage = (e) => {
+        const msg = JSON.parse(e.data) as { progress?: number; status?: string } & Partial<SyncResult>
+        if (msg.progress !== undefined) setProgress(msg.progress)
+        if (msg.status === 'done') {
+          es.close()
+          esRef.current = null
+          setResult(msg as SyncResult)
+          setSyncState('done')
+        } else if (msg.status === 'failed') {
+          es.close()
+          esRef.current = null
+          setError('Sync job failed on the server.')
+          setSyncState('error')
+        }
+      }
+
+      es.onerror = () => {
+        es.close()
+        esRef.current = null
+        setError('Connection lost during sync.')
+        setSyncState('error')
+      }
     } catch {
       setError('Network error. Check your connection.')
       setSyncState('error')
@@ -133,7 +131,7 @@ export default function SyncTab() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          <p className="text-sm text-gray-600">Syncing… checking status</p>
+          <p className="text-sm text-gray-600">Syncing… {progress}%</p>
         </div>
       )}
 
@@ -144,7 +142,7 @@ export default function SyncTab() {
           </div>
           <button
             type="button"
-            onClick={() => { setSyncState('idle'); setJobId(null) }}
+            onClick={() => setSyncState('idle')}
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md text-sm transition-colors"
           >
             Try again
@@ -158,13 +156,13 @@ export default function SyncTab() {
             {result.total_new_offers} new offers found
           </div>
           <div className="flex flex-col gap-2">
-            {result.clients.map((client) => (
+            {result.clients.filter((c) => c.new_offers_count > 0).map((client) => (
               <ClientReportAccordion key={client.client_id} client={client} />
             ))}
           </div>
           <button
             type="button"
-            onClick={() => { setSyncState('idle'); setJobId(null); setResult(null) }}
+            onClick={() => { setSyncState('idle'); setResult(null) }}
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md text-sm transition-colors"
           >
             Sync again
