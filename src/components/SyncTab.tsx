@@ -187,7 +187,7 @@ export default function SyncTab() {
           onClick={handleSync}
           className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors"
         >
-          Sync job offers
+          Sync job offers & send report to client
         </button>
       )}
 
@@ -239,7 +239,12 @@ export default function SyncTab() {
           </div>
           <div className="flex flex-col gap-2">
             {result.clients
-              .filter(c => c.new_offers_count > 0 || c.stretch_offers_count > 0 || c.error)
+              .filter(
+                c =>
+                  c.new_offers_count > 0 ||
+                  c.stretch_offers_count > 0 ||
+                  c.error,
+              )
               .map(client => (
                 <ClientReportAccordion key={client.client_id} client={client} />
               ))}
