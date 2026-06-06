@@ -82,31 +82,48 @@ export default function SyncTab() {
       if (!res.ok) { setError(`Sync start failed (${res.status}).`); setSyncState('error'); return }
       const data = await res.json() as { job_id: string }
 
-      const es = new EventSource(`${API_BASE_URL}/v1/sync/progress?job_id=${data.job_id}&token=${token}`)
-      esRef.current = es
+      let reconnectAttempts = 0
+      const MAX_RECONNECTS = 5
 
-      es.onmessage = (e) => {
-        const msg = JSON.parse(e.data) as { progress?: number; status?: string } & Partial<SyncResult>
-        if (msg.progress !== undefined) setProgress(msg.progress)
-        if (msg.status === 'done') {
+      function connectSSE(jobId: string, sseToken: string) {
+        const es = new EventSource(`${API_BASE_URL}/v1/sync/progress?job_id=${jobId}&token=${sseToken}`)
+        esRef.current = es
+
+        es.onmessage = (e) => {
+          console.log('[SyncTab] SSE message:', e.data)
+          reconnectAttempts = 0
+          const msg = JSON.parse(e.data) as { progress?: number; status?: string } & Partial<SyncResult>
+          console.log('[SyncTab] progress:', msg.progress, 'status:', msg.status)
+          console.log('[SyncTab] clients:', JSON.stringify(msg.clients))
+          if (msg.progress !== undefined) setProgress(msg.progress)
+          if (msg.status === 'done') {
+            es.close()
+            esRef.current = null
+            setResult(msg as SyncResult)
+            setSyncState('done')
+          } else if (msg.status === 'failed' || msg.status === 'error') {
+            es.close()
+            esRef.current = null
+            setError('Sync failed. Try again.')
+            setSyncState('error')
+          }
+        }
+
+        es.onerror = (e) => {
+          console.error('[SyncTab] SSE error:', e)
           es.close()
           esRef.current = null
-          setResult(msg as SyncResult)
-          setSyncState('done')
-        } else if (msg.status === 'failed') {
-          es.close()
-          esRef.current = null
-          setError('Sync job failed on the server.')
-          setSyncState('error')
+          if (reconnectAttempts < MAX_RECONNECTS) {
+            reconnectAttempts++
+            setTimeout(() => connectSSE(jobId, sseToken), 2000)
+          } else {
+            setError('Connection lost during sync.')
+            setSyncState('error')
+          }
         }
       }
 
-      es.onerror = () => {
-        es.close()
-        esRef.current = null
-        setError('Connection lost during sync.')
-        setSyncState('error')
-      }
+      connectSSE(data.job_id, token)
     } catch {
       setError('Network error. Check your connection.')
       setSyncState('error')
