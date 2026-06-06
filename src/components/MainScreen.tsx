@@ -72,7 +72,7 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
     if (!result.success) {
       setStatus({ type: 'error', message: result.error })
     } else {
-      setStatus({ type: 'success', message: 'CV downloaded!' })
+      setStatus({ type: 'success', message: 'CV ready — save as PDF in the print dialog' })
     }
   }
 

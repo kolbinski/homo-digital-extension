@@ -4,20 +4,6 @@ import type { Client } from './useClients'
 
 type GenerateResult = { success: true } | { success: false; error: string }
 
-function extractSlug(text: string): string {
-  const firstLine = text.split('\n').find((l) => l.trim().length > 3) ?? text
-  return firstLine.trim().toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
-}
-
-function buildFilename(client: Client, offerText: string): string {
-  const namePart = `${client.first_name}_${client.last_name}`.replace(/[^a-zA-Z0-9_]/g, '_')
-  const slug = extractSlug(offerText)
-  return `CV-${namePart}-${slug}.pdf`
-}
-
 export function useCvGenerate() {
   const { getToken } = useAuth()
 
@@ -25,7 +11,7 @@ export function useCvGenerate() {
     client: Client,
     offerText: string,
     cvLanguage: string,
-    openAfterDownload: boolean,
+    _openAfterDownload: boolean = false,
   ): Promise<GenerateResult> {
     if (typeof chrome === 'undefined') {
       return { success: false, error: 'Chrome extension context required.' }
@@ -34,7 +20,7 @@ export function useCvGenerate() {
     const token = await getToken()
     if (!token) return { success: false, error: 'Not authenticated.' }
 
-    let blob: Blob
+    let html: string
     try {
       const res = await fetch(`${API_BASE_URL}/v1/cv/generate`, {
         method: 'POST',
@@ -50,32 +36,22 @@ export function useCvGenerate() {
       })
       if (res.status === 401) return { success: false, error: 'Session expired. Please log in again.' }
       if (!res.ok) return { success: false, error: `CV generation failed (${res.status}). Please try again.` }
-      blob = await res.blob()
+      const data = await res.json() as { html: string; filename: string }
+      html = data.html
     } catch (err) {
       console.error('[useCvGenerate] network error:', err)
       return { success: false, error: 'Network error. Check your connection.' }
     }
 
-    return new Promise((resolve) => {
-      const blobUrl = URL.createObjectURL(blob)
-      const filename = buildFilename(client, offerText)
-
-      chrome.downloads.download(
-        { url: blobUrl, filename, conflictAction: 'uniquify', saveAs: false },
-        (downloadId) => {
-          URL.revokeObjectURL(blobUrl)
-          if (chrome.runtime.lastError) {
-            console.error('[useCvGenerate] download error:', chrome.runtime.lastError.message)
-            resolve({ success: false, error: 'Download failed. Check Chrome download settings.' })
-            return
-          }
-          if (openAfterDownload) {
-            chrome.downloads.open(downloadId)
-          }
-          resolve({ success: true })
-        },
-      )
-    })
+    try {
+      const blob = new Blob([html], { type: 'text/html' })
+      const dataUrl = URL.createObjectURL(blob)
+      await chrome.tabs.create({ url: dataUrl, active: true })
+      return { success: true }
+    } catch (err) {
+      console.error('[useCvGenerate] Full error:', err, JSON.stringify(err))
+      return { success: false, error: 'Could not open CV. Check extension permissions.' }
+    }
   }
 
   return { generateCV }
