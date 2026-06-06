@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 
 interface SyncResult {
   total_new_offers: number;
+  total_clients: number;
 }
 
 type SyncState = 'idle' | 'syncing' | 'done' | 'error';
@@ -162,8 +163,8 @@ export default function SyncTab() {
         <>
           <div className="text-sm px-3 py-2.5 rounded-md border bg-green-50 text-green-700 border-green-200">
             {result.total_new_offers > 0
-              ? `Sync completed. Created ${result.total_new_offers} new client offers. Report emails were sent to your clients.`
-              : 'Sync completed. No new client offers.'}
+              ? `Sync completed. Created ${result.total_new_offers} new matches across ${result.total_clients} clients.`
+              : 'Sync completed. No new matches found.'}
           </div>
           <button
             type="button"
