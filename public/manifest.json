@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Homo Digital",
   "version": "1.0.0",
-  "description": "Career agent panel for managing client job matches, generating tailored CVs, and tracking applications across job boards",
+  "description": "Career agent panel for managing client job matches, generating tailored CVs, and tracking applications across job boards.",
   "permissions": [
     "sidePanel",
     "activeTab",
