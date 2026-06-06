@@ -562,37 +562,38 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
           ) : (
             <>
               {/* Apply now sub-section */}
-              <div className="border-b border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setApplyOpen(v => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                >
-                  <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Apply now ({applyOffers.length})
-                  </span>
-                  <svg
-                    className={`w-3.5 h-3.5 text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+              {applyOffers.length > 0 && (
+                <div className="border-b border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setApplyOpen(v => !v)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                {applyOpen && (
-                  <div>
-                    {applyOffers.length === 0 ? (
-                      <p className="px-3 py-2.5 text-xs text-gray-400">
-                        No offers to apply to
-                      </p>
-                    ) : (
-                      applyOffers.map(offer => (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Apply now
+                      </span>
+                      <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                        {applyOffers.length}
+                      </span>
+                    </div>
+                    <svg
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {applyOpen && (
+                    <div>
+                      {applyOffers.map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
@@ -613,46 +614,45 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                             )
                           }
                         />
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Level up sub-section */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setLevelUpOpen(v => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                      Level up & earn more ({levelUpOffers.length})
-                    </span>
-                  </div>
-                  <svg
-                    className={`w-3.5 h-3.5 text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+              {levelUpOffers.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setLevelUpOpen(v => !v)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                {levelUpOpen && (
-                  <div>
-                    {levelUpOffers.length === 0 ? (
-                      <p className="px-3 py-2.5 text-xs text-gray-400">
-                        No learning offers
-                      </p>
-                    ) : (
-                      levelUpOffers.map(offer => (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Level up & earn more
+                      </span>
+                      <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                        {levelUpOffers.length}
+                      </span>
+                    </div>
+                    <svg
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {levelUpOpen && (
+                    <div>
+                      {levelUpOffers.map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
@@ -673,11 +673,11 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                             )
                           }
                         />
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
