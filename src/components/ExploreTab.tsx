@@ -90,11 +90,13 @@ interface ClientAccordionProps {
 interface OfferCardProps {
   offer: UserOffer;
   clientId: string;
+  clientFirstName: string;
+  clientLastName: string;
   activeTabId?: number;
   onRemove: (offerId: string) => void;
 }
 
-function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
+function OfferCard({ offer, clientId, clientFirstName, clientLastName, activeTabId, onRemove }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const [isOpen, setIsOpen] = useState(false);
@@ -133,6 +135,9 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
       clientId,
       offerText,
       cvLanguage,
+      clientFirstName,
+      clientLastName,
+      offer.offer_company,
       controller.signal,
     );
     setIsGenerating(false);
@@ -141,7 +146,7 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
     } else {
       setStatus({
         type: 'success',
-        message: 'CV ready — save as PDF in the print dialog',
+        message: 'CV ready — filename copied to clipboard',
       });
     }
   }
@@ -582,6 +587,8 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           key={offer.user_offer_id}
                           offer={offer}
                           clientId={client.id}
+                          clientFirstName={client.first_name}
+                          clientLastName={client.last_name}
                           activeTabId={activeTabId}
                           onRemove={id =>
                             setApplyOffers(prev =>
@@ -647,6 +654,8 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           key={offer.user_offer_id}
                           offer={offer}
                           clientId={client.id}
+                          clientFirstName={client.first_name}
+                          clientLastName={client.last_name}
                           activeTabId={activeTabId}
                           onRemove={id =>
                             setLevelUpOffers(prev =>

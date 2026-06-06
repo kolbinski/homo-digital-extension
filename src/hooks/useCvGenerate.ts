@@ -1,3 +1,4 @@
+import slugify from 'slugify';
 import { API_BASE_URL } from '../config';
 import { useAuth } from './useAuth';
 
@@ -10,6 +11,9 @@ export function useCvGenerate() {
     clientId: string,
     offerText: string,
     cvLanguage: string,
+    clientFirstName: string,
+    clientLastName: string,
+    companyName: string,
     signal?: AbortSignal,
   ): Promise<GenerateResult> {
     if (typeof chrome === 'undefined') {
@@ -27,6 +31,7 @@ export function useCvGenerate() {
     );
 
     let html: string;
+    let apiFilename: string | undefined;
     try {
       const res = await fetch(`${API_BASE_URL}/v1/cv/generate`, {
         method: 'POST',
@@ -51,8 +56,9 @@ export function useCvGenerate() {
           success: false,
           error: `CV generation failed (${res.status}). Please try again.`,
         };
-      const data = (await res.json()) as { html: string; filename: string };
+      const data = (await res.json()) as { html: string; filename?: string };
       html = data.html;
+      apiFilename = data.filename;
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return { success: false, error: '' };
@@ -61,10 +67,15 @@ export function useCvGenerate() {
       return { success: false, error: 'Network error. Check your connection.' };
     }
 
+    const filename =
+      apiFilename ??
+      `cv-${slugify(clientFirstName, { lower: true, strict: true })}-${slugify(clientLastName, { lower: true, strict: true })}-${slugify(companyName, { lower: true, strict: true })}.pdf`;
+
     try {
       const blob = new Blob([html], { type: 'text/html' });
       const dataUrl = URL.createObjectURL(blob);
       await chrome.tabs.create({ url: dataUrl, active: true });
+      await navigator.clipboard.writeText(filename);
       return { success: true };
     } catch (err) {
       console.error('[useCvGenerate] Full error:', err, JSON.stringify(err));

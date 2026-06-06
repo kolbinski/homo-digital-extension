@@ -65,7 +65,7 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English', acti
     if (!offerText.trim()) {
       return { success: false, error: 'Could not read page content. Make sure you are on a job offer page.' }
     }
-    return generateCV(clientId, offerText, cvLanguage, signal)
+    return generateCV(clientId, offerText, cvLanguage, '', '', '', signal)
   }
 
   return (
