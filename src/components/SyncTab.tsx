@@ -27,16 +27,19 @@ function ClientReportAccordion({ client }: { client: SyncClientResult }) {
         onClick={() => setIsOpen((v) => !v)}
         className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors text-left"
       >
-        <span className="text-sm text-gray-800">
-          {client.first_name} {client.last_name}
-          <span className="ml-2 text-xs text-gray-500">
-            {client.new_offers_count > 0 && client.stretch_offers_count > 0
-              ? `— ${client.new_offers_count} new, ${client.stretch_offers_count} level up`
-              : client.stretch_offers_count > 0
-                ? `— ${client.stretch_offers_count} level up offers`
-                : `— ${client.new_offers_count} new offers`}
-          </span>
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-gray-800">{client.first_name} {client.last_name}</span>
+          {client.new_offers_count > 0 && (
+            <span className="text-xs font-medium bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+              {client.new_offers_count} new
+            </span>
+          )}
+          {client.stretch_offers_count > 0 && (
+            <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+              {client.stretch_offers_count} level up
+            </span>
+          )}
+        </div>
         <svg
           className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
