@@ -19,6 +19,8 @@ export function useCvGenerate() {
     const token = await getToken()
     if (!token) return { success: false, error: 'Not authenticated.' }
 
+    console.log('[useCvGenerate] offer_text length:', offerText?.length, 'preview:', offerText?.slice(0, 100))
+
     let html: string
     try {
       const res = await fetch(`${API_BASE_URL}/v1/cv/generate`, {

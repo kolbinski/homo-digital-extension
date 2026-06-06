@@ -12,11 +12,17 @@ const CV_LANGUAGES = ['English', 'Polish', 'German', 'French', 'Spanish', 'Dutch
 function getPageText(): Promise<string> {
   return new Promise((resolve) => {
     if (typeof chrome === 'undefined' || !chrome.tabs) { resolve(''); return }
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id
+      console.log('[getPageText] tabs found:', tabs.length, 'tabId:', tabId, 'url:', tabs[0]?.url)
       if (tabId === undefined) { resolve(''); return }
       chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { text?: string }) => {
-        if (chrome.runtime.lastError) { resolve(''); return }
+        if (chrome.runtime.lastError) {
+          console.error('[getPageText] sendMessage error:', chrome.runtime.lastError.message)
+          resolve('')
+          return
+        }
+        console.log('[getPageText] response text length:', response?.text?.length ?? 0)
         resolve(response?.text ?? '')
       })
     })
@@ -65,6 +71,11 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
     setStatus(null)
 
     const offerText = await getPageText()
+    if (!offerText.trim()) {
+      setIsGenerating(false)
+      setStatus({ type: 'error', message: 'Could not read page content. Make sure you are on a job offer page.' })
+      return
+    }
     const result = await generateCV(client, offerText, cvLanguage)
 
     setIsGenerating(false)
