@@ -138,6 +138,7 @@ function OfferCard({ offer, clientId, clientFirstName, clientLastName, activeTab
       clientFirstName,
       clientLastName,
       offer.offer_company,
+      offer.offer_title,
       controller.signal,
     );
     setIsGenerating(false);

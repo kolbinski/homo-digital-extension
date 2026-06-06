@@ -14,6 +14,7 @@ export function useCvGenerate() {
     clientFirstName: string,
     clientLastName: string,
     companyName: string,
+    jobTitle: string,
     signal?: AbortSignal,
   ): Promise<GenerateResult> {
     if (typeof chrome === 'undefined') {
@@ -43,6 +44,8 @@ export function useCvGenerate() {
           client_id: clientId,
           offer_text: offerText,
           cv_language: cvLanguage,
+          job_title: jobTitle,
+          company_name: companyName,
         }),
         signal,
       });
@@ -72,13 +75,18 @@ export function useCvGenerate() {
       `cv-${slugify(clientFirstName, { lower: true, strict: true })}-${slugify(clientLastName, { lower: true, strict: true })}-${slugify(companyName, { lower: true, strict: true })}.pdf`;
 
     try {
+      await navigator.clipboard.writeText(filename);
+    } catch (e) {
+      console.warn('[useCvGenerate] clipboard copy failed:', e);
+    }
+
+    try {
       const blob = new Blob([html], { type: 'text/html' });
       const dataUrl = URL.createObjectURL(blob);
       await chrome.tabs.create({ url: dataUrl, active: true });
-      await navigator.clipboard.writeText(filename);
       return { success: true };
     } catch (err) {
-      console.error('[useCvGenerate] Full error:', err, JSON.stringify(err));
+      console.error('[useCvGenerate] tab open error:', err, JSON.stringify(err));
       return {
         success: false,
         error: 'Could not open CV. Check extension permissions.',
