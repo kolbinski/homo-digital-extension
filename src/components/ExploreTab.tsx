@@ -678,6 +678,9 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                   )}
                 </div>
               )}
+              {applyOffers.length === 0 && levelUpOffers.length === 0 && (
+                <p className="px-3 py-3 text-gray-400 text-sm italic">No offers found</p>
+              )}
             </>
           )}
         </div>
