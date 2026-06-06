@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 interface SyncResult {
   total_new_offers: number;
   total_clients: number;
+  total_offers_scanned: number;
 }
 
 type SyncState = 'idle' | 'syncing' | 'done' | 'error';
@@ -144,9 +145,11 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
       {syncState === 'done' && result && (
         <>
           <div className="text-sm px-3 py-2.5 rounded-md border bg-green-50 text-green-700 border-green-200">
-            {result.total_new_offers > 0
-              ? `Sync completed. Created ${result.total_new_offers} new matches across ${result.total_clients} clients.`
-              : 'Sync completed. No new matches found.'}
+            {result.total_offers_scanned === 0
+              ? 'Sync completed. No new offers found.'
+              : result.total_new_offers === 0
+                ? `Sync completed. Scanned ${result.total_offers_scanned} new offers. No new matches found.`
+                : `Sync completed. Scanned ${result.total_offers_scanned} new offers. Created ${result.total_new_offers} new matches across ${result.total_clients} clients.`}
           </div>
           <button
             type="button"
