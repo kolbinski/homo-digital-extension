@@ -230,26 +230,26 @@ function OfferCard({ offer, clientId, clientFirstName, clientLastName, isOpen, o
       </button>
 
       {/* Always visible: role fit + salary */}
-      {(offer.claude_role_fit || (offer.salary && offer.salary.length > 0)) && (
-        <div className="px-3 pb-2 flex flex-col gap-1">
-          {offer.claude_role_fit && (
-            <p className="text-xs text-gray-600 leading-relaxed">
-              {offer.claude_role_fit}
-            </p>
-          )}
-          {offer.salary && offer.salary.length > 0 && (
-            <div className="flex flex-col gap-0.5">
-              {offer.salary.map((s, i) => (
-                <span key={i} className="text-xs text-gray-500">
-                  💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} (
-                  {s.type}) {s.delta >= 0 ? '+' : ''}
-                  {formatNum(s.delta)} {s.currency}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <div className="px-3 pb-2 flex flex-col gap-1">
+        {offer.claude_role_fit && (
+          <p className="text-xs text-gray-600 leading-relaxed">
+            {offer.claude_role_fit}
+          </p>
+        )}
+        {offer.salary && offer.salary.length > 0 ? (
+          <div className="flex flex-col gap-0.5">
+            {offer.salary.map((s, i) => (
+              <span key={i} className="text-xs text-gray-500">
+                💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} (
+                {s.type}) {s.delta >= 0 ? '+' : ''}
+                {formatNum(s.delta)} {s.currency}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-gray-400 text-sm italic">Salary not disclosed</span>
+        )}
+      </div>
 
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
