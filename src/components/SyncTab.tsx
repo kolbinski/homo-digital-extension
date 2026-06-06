@@ -17,6 +17,7 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
   const { getToken } = useAuth();
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [progress, setProgress] = useState(0);
+  const [reconnectStatus, setReconnectStatus] = useState<string | null>(null);
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
@@ -57,7 +58,7 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
       const data = (await res.json()) as { job_id: string };
 
       let reconnectAttempts = 0;
-      const MAX_RECONNECTS = 5;
+      const MAX_RECONNECTS = 20;
 
       function connectSSE(jobId: string, sseToken: string) {
         const es = new EventSource(
@@ -68,21 +69,18 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
         es.onmessage = e => {
           console.log('[SyncTab] SSE message:', e.data);
           reconnectAttempts = 0;
+          setReconnectStatus(null);
           const msg = JSON.parse(e.data) as {
             progress?: number;
             status?: string;
           } & Partial<SyncResult>;
-          console.log(
-            '[SyncTab] progress:',
-            msg.progress,
-            'status:',
-            msg.status,
-          );
+          console.log('[SyncTab] progress:', msg.progress, 'status:', msg.status);
           console.log('[SyncTab] SSE done payload:', JSON.stringify(msg));
           if (msg.progress !== undefined) setProgress(msg.progress);
           if (msg.status === 'done') {
             es.close();
             esRef.current = null;
+            setReconnectStatus(null);
             setResult(msg as SyncResult);
             setSyncState('done');
           } else if (msg.status === 'failed' || msg.status === 'error') {
@@ -99,9 +97,10 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
           esRef.current = null;
           if (reconnectAttempts < MAX_RECONNECTS) {
             reconnectAttempts++;
-            setTimeout(() => connectSSE(jobId, sseToken), 2000);
+            setReconnectStatus(`Reconnecting... (${reconnectAttempts}/${MAX_RECONNECTS})`);
+            setTimeout(() => connectSSE(jobId, sseToken), 3000);
           } else {
-            setError('Connection lost during sync.');
+            setError('Connection lost during sync. Check back later.');
             setSyncState('error');
           }
         };
@@ -148,7 +147,9 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
-          <p className="text-sm text-gray-600">Syncing… {progress}%</p>
+          <p className="text-sm text-gray-600">
+            {reconnectStatus ?? `Syncing… ${progress}%`}
+          </p>
         </div>
       )}
 
