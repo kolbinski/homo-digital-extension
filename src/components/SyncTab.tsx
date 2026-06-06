@@ -9,6 +9,7 @@ interface SyncClientResult {
   new_offers_count: number;
   stretch_offers_count: number;
   email_report?: string;
+  error?: string;
 }
 
 interface SyncResult {
@@ -31,15 +32,23 @@ function ClientReportAccordion({ client }: { client: SyncClientResult }) {
           <span className="text-sm text-gray-800">
             {client.first_name} {client.last_name}
           </span>
-          {client.new_offers_count > 0 && (
-            <span className="text-xs font-medium bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-              {client.new_offers_count}
+          {client.error ? (
+            <span className="text-xs font-medium bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+              Error
             </span>
-          )}
-          {client.stretch_offers_count > 0 && (
-            <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-              {client.stretch_offers_count}
-            </span>
+          ) : (
+            <>
+              {client.new_offers_count > 0 && (
+                <span className="text-xs font-medium bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                  {client.new_offers_count}
+                </span>
+              )}
+              {client.stretch_offers_count > 0 && (
+                <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                  {client.stretch_offers_count}
+                </span>
+              )}
+            </>
           )}
         </div>
         <svg
@@ -56,16 +65,17 @@ function ClientReportAccordion({ client }: { client: SyncClientResult }) {
           />
         </svg>
       </button>
-      {isOpen && client.email_report && (
-        <div className="border-t border-gray-200 px-3 py-3 max-h-[400px] overflow-y-auto">
-          <pre className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">
-            {client.email_report}
-          </pre>
-        </div>
-      )}
-      {isOpen && !client.email_report && (
+      {isOpen && (
         <div className="border-t border-gray-200 px-3 py-3">
-          <p className="text-xs text-gray-400">No report available.</p>
+          {client.error ? (
+            <p className="text-red-600 text-sm">{client.error}</p>
+          ) : client.email_report ? (
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed font-sans max-h-[400px] overflow-y-auto">
+              {client.email_report}
+            </pre>
+          ) : (
+            <p className="text-xs text-gray-400">No report available.</p>
+          )}
         </div>
       )}
     </div>
@@ -229,7 +239,7 @@ export default function SyncTab() {
           </div>
           <div className="flex flex-col gap-2">
             {result.clients
-              .filter(c => c.new_offers_count > 0 || c.stretch_offers_count > 0)
+              .filter(c => c.new_offers_count > 0 || c.stretch_offers_count > 0 || c.error)
               .map(client => (
                 <ClientReportAccordion key={client.client_id} client={client} />
               ))}
