@@ -60,7 +60,7 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
         </span>
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${scoreBadgeClass(match.score)}`}>
-            {match.score}/100
+            {match.score}%
           </span>
           <svg
             className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
