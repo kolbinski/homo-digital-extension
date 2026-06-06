@@ -36,6 +36,26 @@ function ClientAccordion({ client }: ClientAccordionProps) {
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([])
   const [applyOpen, setApplyOpen] = useState(true)
   const [levelUpOpen, setLevelUpOpen] = useState(false)
+  const [pendingCount, setPendingCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    async function loadCount() {
+      const token = await getToken()
+      if (!token) return
+      try {
+        const params = new URLSearchParams({ client_id: client.id, status: 'pending_apply', count_only: 'true' })
+        const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const data = await res.json() as { count?: number; total?: number }
+        setPendingCount(data.count ?? data.total ?? null)
+      } catch {
+        // badge is optional — silent fail
+      }
+    }
+    loadCount()
+  }, [client.id])
 
   async function fetchOffers(status: string, hasLearningGoals = false): Promise<UserOffer[]> {
     const token = await getToken()
@@ -48,7 +68,9 @@ function ClientAccordion({ client }: ClientAccordionProps) {
       })
       if (!res.ok) return []
       const data = await res.json() as { offers?: UserOffer[] } | UserOffer[]
-      return (Array.isArray(data) ? data : data.offers) ?? []
+      const offers = (Array.isArray(data) ? data : data.offers) ?? []
+      if (offers.length > 0) console.log('[ExploreTab] offer:', JSON.stringify(offers[0]))
+      return offers
     } catch {
       return []
     }
@@ -85,11 +107,18 @@ function ClientAccordion({ client }: ClientAccordionProps) {
         onClick={handleToggle}
         className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors text-left"
       >
-        <span className="text-sm font-medium text-gray-900">
-          {client.first_name} {client.last_name}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-900">
+            {client.first_name} {client.last_name}
+          </span>
+          {pendingCount !== null && (
+            <span className="text-xs font-medium bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
+              {pendingCount}
+            </span>
+          )}
+        </div>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
