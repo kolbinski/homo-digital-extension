@@ -98,7 +98,16 @@ interface OfferCardProps {
   onRemove: (offerId: string) => void;
 }
 
-function OfferCard({ offer, clientId, clientFirstName, clientLastName, isOpen, onToggle, activeTabId, onRemove }: OfferCardProps) {
+function OfferCard({
+  offer,
+  clientId,
+  clientFirstName,
+  clientLastName,
+  isOpen,
+  onToggle,
+  activeTabId,
+  onRemove,
+}: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -247,7 +256,9 @@ function OfferCard({ offer, clientId, clientFirstName, clientLastName, isOpen, o
             ))}
           </div>
         ) : (
-          <span className="text-gray-400 text-sm italic">Salary not disclosed</span>
+          <span className="text-gray-400 text-sm italic">
+            Salary not disclosed
+          </span>
         )}
       </div>
 
@@ -429,11 +440,17 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
           }),
         ]);
         if (applyRes.ok) {
-          const data = (await applyRes.json()) as { count?: number; total?: number };
+          const data = (await applyRes.json()) as {
+            count?: number;
+            total?: number;
+          };
           setPendingCount(data.count ?? data.total ?? null);
         }
         if (levelUpRes.ok) {
-          const data = (await levelUpRes.json()) as { count?: number; total?: number };
+          const data = (await levelUpRes.json()) as {
+            count?: number;
+            total?: number;
+          };
           const n = data.count ?? data.total ?? 0;
           if (n > 0) setLevelUpCount(n);
         }
@@ -491,7 +508,7 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
-          {pendingCount !== null && (
+          {pendingCount !== null && pendingCount > 0 && (
             <span className="text-xs font-medium bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
               {pendingCount}
             </span>
@@ -583,7 +600,12 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           clientFirstName={client.first_name}
                           clientLastName={client.last_name}
                           isOpen={expandedOfferId === offer.user_offer_id}
-                          onToggle={() => handleCardToggle(offer.user_offer_id, offer.offer_url)}
+                          onToggle={() =>
+                            handleCardToggle(
+                              offer.user_offer_id,
+                              offer.offer_url,
+                            )
+                          }
                           activeTabId={activeTabId}
                           onRemove={id =>
                             setApplyOffers(prev =>
@@ -608,20 +630,6 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Level up & earn more ({levelUpOffers.length})
                     </span>
-                    <button
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation();
-                        console.log(
-                          '[ExploreTab] send email for client',
-                          client.id,
-                        );
-                      }}
-                      className="text-base leading-none hover:opacity-70 transition-opacity"
-                      title="Send email report"
-                    >
-                      ✉️
-                    </button>
                   </div>
                   <svg
                     className={`w-3.5 h-3.5 text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
@@ -652,7 +660,12 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           clientFirstName={client.first_name}
                           clientLastName={client.last_name}
                           isOpen={expandedOfferId === offer.user_offer_id}
-                          onToggle={() => handleCardToggle(offer.user_offer_id, offer.offer_url)}
+                          onToggle={() =>
+                            handleCardToggle(
+                              offer.user_offer_id,
+                              offer.offer_url,
+                            )
+                          }
                           activeTabId={activeTabId}
                           onRemove={id =>
                             setLevelUpOffers(prev =>
