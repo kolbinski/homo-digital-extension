@@ -180,16 +180,9 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           disabled={!offer.offer_url}
                           className="w-full px-3 py-2.5 text-left hover:bg-indigo-50 transition-colors cursor-pointer disabled:cursor-default group"
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
-                              {offer.offer_title} @ {offer.offer_company}
-                            </span>
-                            {offer.offer_url && (
-                              <svg className="w-3 h-3 text-gray-400 group-hover:text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                            )}
-                          </div>
+                          <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
+                            {offer.offer_title} @ {offer.offer_company}
+                          </span>
                           {offer.salary && offer.salary.length > 0 && (
                             <div className="flex flex-col gap-0.5 mt-1">
                               {offer.salary.map((s, i) => (
@@ -242,8 +235,13 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                       <p className="px-3 py-2.5 text-xs text-gray-400">No learning offers</p>
                     ) : (
                       levelUpOffers.map((offer) => (
-                        <div key={offer.user_offer_id} className="px-3 py-2.5 flex flex-col gap-1.5">
-                          <span className="text-xs font-medium text-gray-900 leading-snug">
+                        <button
+                          key={offer.user_offer_id}
+                          type="button"
+                          onClick={() => offer.offer_url && openOffer(offer.offer_url)}
+                          className="w-full px-3 py-2.5 text-left flex flex-col gap-1.5 hover:bg-indigo-50 transition-colors cursor-pointer group"
+                        >
+                          <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
                             {offer.offer_title} @ {offer.offer_company}
                           </span>
                           {offer.salary && offer.salary.length > 0 && (
@@ -267,7 +265,7 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                               ))}
                             </div>
                           )}
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>
