@@ -1,138 +1,186 @@
-import { useEffect, useRef, useState } from 'react'
-import { API_BASE_URL } from '../config'
-import { useAuth } from '../hooks/useAuth'
-import { useClients, type Client } from '../hooks/useClients'
-import { useCvGenerate } from '../hooks/useCvGenerate'
+import { useEffect, useRef, useState } from 'react';
+import { API_BASE_URL } from '../config';
+import { useAuth } from '../hooks/useAuth';
+import { useClients, type Client } from '../hooks/useClients';
+import { useCvGenerate } from '../hooks/useCvGenerate';
 
-const CV_LANGUAGES = ['English', 'Polish', 'German', 'French', 'Spanish', 'Dutch', 'Ukrainian']
+const CV_LANGUAGES = [
+  'English',
+  'Polish',
+  'German',
+  'French',
+  'Spanish',
+  'Dutch',
+  'Ukrainian',
+];
 
 interface OfferSalary {
-  min: number
-  max: number
-  currency: string
-  type: string
-  delta: number
+  min: number;
+  max: number;
+  currency: string;
+  type: string;
+  delta: number;
 }
 
 interface UserOffer {
-  user_offer_id: string
-  offer_title: string
-  offer_company: string
-  offer_url?: string
-  claude_score?: number | null
-  claude_role_fit?: string
-  claude_missing_skills?: string[]
-  salary?: OfferSalary[]
-  source?: string
+  user_offer_id: string;
+  offer_title: string;
+  offer_company: string;
+  offer_url?: string;
+  claude_score?: number | null;
+  claude_role_fit?: string;
+  claude_missing_skills?: string[];
+  salary?: OfferSalary[];
+  source?: string;
 }
 
 function providerIcon(source?: string): string | null {
-  if (!source) return null
-  if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return null
-  return chrome.runtime.getURL(`icons/${source}.png`)
+  if (!source) return null;
+  if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return null;
+  return chrome.runtime.getURL(`icons/${source}.png`);
 }
 
 function formatNum(n: number): string {
-  const sign = n < 0 ? '-' : ''
-  return sign + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  const sign = n < 0 ? '-' : '';
+  return (
+    sign +
+    Math.abs(Math.round(n))
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  );
 }
 
 function offerScoreBadgeClass(score: number): string {
-  if (score >= 70) return 'bg-green-100 text-green-700 border border-green-200'
-  if (score >= 50) return 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-  return 'bg-gray-100 text-gray-500 border border-gray-200'
+  if (score >= 70) return 'bg-green-100 text-green-700 border border-green-200';
+  if (score >= 50)
+    return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
+  return 'bg-gray-100 text-gray-500 border border-gray-200';
 }
 
 function getPageText(tabId: number): Promise<string> {
-  return new Promise((resolve) => {
-    if (typeof chrome === 'undefined') { resolve(''); return }
-    chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { text?: string }) => {
-      if (chrome.runtime.lastError) { resolve(''); return }
-      resolve(response?.text ?? '')
-    })
-  })
+  return new Promise(resolve => {
+    if (typeof chrome === 'undefined') {
+      resolve('');
+      return;
+    }
+    chrome.tabs.sendMessage(
+      tabId,
+      { type: 'GET_PAGE_DATA' },
+      (response: { text?: string }) => {
+        if (chrome.runtime.lastError) {
+          resolve('');
+          return;
+        }
+        resolve(response?.text ?? '');
+      },
+    );
+  });
 }
 
 interface Props {
-  onLogout: () => void
-  activeTabId?: number
+  onLogout: () => void;
+  activeTabId?: number;
 }
 
 interface ClientAccordionProps {
-  client: Client
-  activeTabId?: number
+  client: Client;
+  activeTabId?: number;
 }
 
 interface OfferCardProps {
-  offer: UserOffer
-  clientId: string
-  activeTabId?: number
-  onRemove: (offerId: string) => void
+  offer: UserOffer;
+  clientId: string;
+  activeTabId?: number;
+  onRemove: (offerId: string) => void;
 }
 
 function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
-  const { getToken } = useAuth()
-  const { generateCV } = useCvGenerate()
-  const [isOpen, setIsOpen] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [cvLanguage, setCvLanguage] = useState('English')
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const [showWithdraw, setShowWithdraw] = useState(false)
-  const [withdrawReason, setWithdrawReason] = useState('')
-  const [isWithdrawing, setIsWithdrawing] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
+  const { getToken } = useAuth();
+  const { generateCV } = useCvGenerate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [cvLanguage, setCvLanguage] = useState('English');
+  const [status, setStatus] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const icon = providerIcon(offer.source)
+  const icon = providerIcon(offer.source);
 
   async function handleGenerate() {
     if (activeTabId === undefined) {
-      setStatus({ type: 'error', message: 'Could not read page content.' })
-      return
+      setStatus({ type: 'error', message: 'Could not read page content.' });
+      return;
     }
-    const offerText = await getPageText(activeTabId)
+    const offerText = await getPageText(activeTabId);
     if (!offerText.trim()) {
-      setStatus({ type: 'error', message: 'Could not read page content. Make sure you are on the job offer page.' })
-      return
+      setStatus({
+        type: 'error',
+        message:
+          'Could not read page content. Make sure you are on the job offer page.',
+      });
+      return;
     }
-    const controller = new AbortController()
-    abortRef.current = controller
-    setIsGenerating(true)
-    setStatus(null)
-    const result = await generateCV(clientId, offerText, cvLanguage, controller.signal)
-    setIsGenerating(false)
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setIsGenerating(true);
+    setStatus(null);
+    const result = await generateCV(
+      clientId,
+      offerText,
+      cvLanguage,
+      controller.signal,
+    );
+    setIsGenerating(false);
     if (!result.success) {
-      if (result.error) setStatus({ type: 'error', message: result.error })
+      if (result.error) setStatus({ type: 'error', message: result.error });
     } else {
-      setStatus({ type: 'success', message: 'CV ready — save as PDF in the print dialog' })
+      setStatus({
+        type: 'success',
+        message: 'CV ready — save as PDF in the print dialog',
+      });
     }
   }
 
   function handleAbort() {
-    abortRef.current?.abort()
-    setIsGenerating(false)
-    setStatus(null)
+    abortRef.current?.abort();
+    setIsGenerating(false);
+    setStatus(null);
   }
 
   async function handleWithdrawSave() {
-    if (!withdrawReason.trim()) return
-    const token = await getToken()
-    if (!token) return
-    setIsWithdrawing(true)
+    if (!withdrawReason.trim()) return;
+    const token = await getToken();
+    if (!token) return;
+    setIsWithdrawing(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/withdraw`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: withdrawReason }),
-      })
+      const res = await fetch(
+        `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/withdraw`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ reason: withdrawReason }),
+        },
+      );
       if (res.ok) {
-        onRemove(offer.user_offer_id)
+        onRemove(offer.user_offer_id);
       } else {
-        setStatus({ type: 'error', message: `Withdraw failed (${res.status}).` })
-        setIsWithdrawing(false)
+        setStatus({
+          type: 'error',
+          message: `Withdraw failed (${res.status}).`,
+        });
+        setIsWithdrawing(false);
       }
     } catch {
-      setStatus({ type: 'error', message: 'Network error during withdraw.' })
-      setIsWithdrawing(false)
+      setStatus({ type: 'error', message: 'Network error during withdraw.' });
+      setIsWithdrawing(false);
     }
   }
 
@@ -141,13 +189,17 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
       {/* Header row — click to expand/collapse */}
       <button
         type="button"
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => setIsOpen(v => !v)}
         className="w-full px-3 py-2.5 text-left flex items-center gap-2 hover:bg-gray-50 transition-colors group"
       >
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          {icon && <img src={icon} width={16} height={16} className="shrink-0" />}
+          {icon && (
+            <img src={icon} width={16} height={16} className="shrink-0" />
+          )}
           {offer.claude_score != null && (
-            <span className={`text-xs font-medium px-1.5 py-0.5 rounded border shrink-0 ${offerScoreBadgeClass(offer.claude_score)}`}>
+            <span
+              className={`text-xs font-medium px-1.5 py-0.5 rounded border shrink-0 ${offerScoreBadgeClass(offer.claude_score)}`}
+            >
               {offer.claude_score}%
             </span>
           )}
@@ -157,9 +209,16 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
         </div>
         <svg
           className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -167,13 +226,17 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
       {(offer.claude_role_fit || (offer.salary && offer.salary.length > 0)) && (
         <div className="px-3 pb-2 flex flex-col gap-1">
           {offer.claude_role_fit && (
-            <p className="text-xs text-gray-600 leading-relaxed">{offer.claude_role_fit}</p>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {offer.claude_role_fit}
+            </p>
           )}
           {offer.salary && offer.salary.length > 0 && (
             <div className="flex flex-col gap-0.5">
               {offer.salary.map((s, i) => (
                 <span key={i} className="text-xs text-gray-500">
-                  💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} ({s.type}) {s.delta >= 0 ? '+' : ''}{formatNum(s.delta)} {s.currency}
+                  💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} (
+                  {s.type}) {s.delta >= 0 ? '+' : ''}
+                  {formatNum(s.delta)} {s.currency}
                 </span>
               ))}
             </div>
@@ -184,16 +247,44 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
+          {offer.offer_url && (
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof chrome === 'undefined') return;
+                if (activeTabId !== undefined) {
+                  chrome.tabs.update(activeTabId, { url: offer.offer_url! });
+                } else {
+                  chrome.tabs.query(
+                    { active: true, currentWindow: true },
+                    tabs => {
+                      if (tabs[0]?.id !== undefined)
+                        chrome.tabs.update(tabs[0].id, {
+                          url: offer.offer_url!,
+                        });
+                    },
+                  );
+                }
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+            >
+              Open offer page
+            </button>
+          )}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-700">CV Language</label>
+            <label className="text-xs font-medium text-gray-700">
+              CV Language
+            </label>
             <select
               value={cvLanguage}
-              onChange={(e) => setCvLanguage(e.target.value)}
+              onChange={e => setCvLanguage(e.target.value)}
               disabled={isGenerating}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
             >
-              {CV_LANGUAGES.map((lang) => (
-                <option key={lang} value={lang}>{lang}</option>
+              {CV_LANGUAGES.map(lang => (
+                <option key={lang} value={lang}>
+                  {lang}
+                </option>
               ))}
             </select>
           </div>
@@ -205,9 +296,25 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
                 disabled
                 className="flex-1 bg-indigo-400 cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm flex items-center justify-center gap-2"
               >
-                <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <svg
+                  className="animate-spin h-3.5 w-3.5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
                 </svg>
                 Generating…
               </button>
@@ -230,11 +337,13 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
           )}
 
           {status && (
-            <div className={`text-xs px-2.5 py-2 rounded-md border ${
-              status.type === 'success'
-                ? 'bg-green-50 text-green-700 border-green-200'
-                : 'bg-red-50 text-red-700 border-red-200'
-            }`}>
+            <div
+              className={`text-xs px-2.5 py-2 rounded-md border ${
+                status.type === 'success'
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-red-50 text-red-700 border-red-200'
+              }`}
+            >
               {status.message}
             </div>
           )}
@@ -243,7 +352,7 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
             <button
               type="button"
               onClick={() => setShowWithdraw(true)}
-              className="w-full border border-red-300 text-red-600 hover:bg-red-50 font-medium py-2 px-3 rounded-md text-sm transition-colors"
+              className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
             >
               Withdraw
             </button>
@@ -251,7 +360,7 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
             <div className="flex flex-col gap-2">
               <textarea
                 value={withdrawReason}
-                onChange={(e) => setWithdrawReason(e.target.value)}
+                onChange={e => setWithdrawReason(e.target.value)}
                 placeholder="Withdraw reason (required)"
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none"
@@ -259,7 +368,10 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => { setShowWithdraw(false); setWithdrawReason('') }}
+                  onClick={() => {
+                    setShowWithdraw(false);
+                    setWithdrawReason('');
+                  }}
                   className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-md text-sm transition-colors"
                 >
                   Cancel
@@ -278,70 +390,95 @@ function OfferCard({ offer, clientId, activeTabId, onRemove }: OfferCardProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
-  const { getToken } = useAuth()
+  const { getToken } = useAuth();
 
-  const [isOpen, setIsOpen] = useState(false)
-  const [hasLoaded, setHasLoaded] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [applyOffers, setApplyOffers] = useState<UserOffer[]>([])
-  const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([])
-  const [applyOpen, setApplyOpen] = useState(true)
-  const [levelUpOpen, setLevelUpOpen] = useState(false)
-  const [pendingCount, setPendingCount] = useState<number | null>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
+  const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
+  const [applyOpen, setApplyOpen] = useState(true);
+  const [levelUpOpen, setLevelUpOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadCount() {
-      const token = await getToken()
-      if (!token) return
+      const token = await getToken();
+      if (!token) return;
       try {
-        const params = new URLSearchParams({ client_id: client.id, status: 'pending_apply', count_only: 'true' })
-        const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) return
-        const data = await res.json() as { count?: number; total?: number }
-        setPendingCount(data.count ?? data.total ?? null)
+        const applyParams = new URLSearchParams({
+          client_id: client.id,
+          status: 'pending_apply',
+          count_only: 'true',
+        });
+        const levelUpParams = new URLSearchParams({
+          client_id: client.id,
+          status: 'ai_rejected',
+          has_learning_goals: 'true',
+          count_only: 'true',
+        });
+        const [applyRes, levelUpRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/v1/user-offers?${applyParams}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE_URL}/v1/user-offers?${levelUpParams}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        if (applyRes.ok) {
+          const data = (await applyRes.json()) as { count?: number; total?: number };
+          setPendingCount(data.count ?? data.total ?? null);
+        }
+        if (levelUpRes.ok) {
+          const data = (await levelUpRes.json()) as { count?: number; total?: number };
+          const n = data.count ?? data.total ?? 0;
+          if (n > 0) setLevelUpCount(n);
+        }
       } catch {
-        // badge is optional — silent fail
+        // badges are optional — silent fail
       }
     }
-    loadCount()
-  }, [client.id])
+    loadCount();
+  }, [client.id]);
 
-  async function fetchOffers(status: string, hasLearningGoals = false): Promise<UserOffer[]> {
-    const token = await getToken()
-    if (!token) return []
-    const params = new URLSearchParams({ client_id: client.id, status })
-    if (hasLearningGoals) params.append('has_learning_goals', 'true')
+  async function fetchOffers(
+    status: string,
+    hasLearningGoals = false,
+  ): Promise<UserOffer[]> {
+    const token = await getToken();
+    if (!token) return [];
+    const params = new URLSearchParams({ client_id: client.id, status });
+    if (hasLearningGoals) params.append('has_learning_goals', 'true');
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) return []
-      const data = await res.json() as { offers?: UserOffer[] } | UserOffer[]
-      return (Array.isArray(data) ? data : data.offers) ?? []
+      });
+      if (!res.ok) return [];
+      const data = (await res.json()) as { offers?: UserOffer[] } | UserOffer[];
+      return (Array.isArray(data) ? data : data.offers) ?? [];
     } catch {
-      return []
+      return [];
     }
   }
 
   async function handleToggle() {
-    const opening = !isOpen
-    setIsOpen(opening)
+    const opening = !isOpen;
+    setIsOpen(opening);
     if (opening && !hasLoaded) {
-      setIsLoading(true)
+      setIsLoading(true);
       const [pending, levelUp] = await Promise.all([
         fetchOffers('pending_apply'),
         fetchOffers('ai_rejected', true),
-      ])
-      setApplyOffers(pending)
-      setLevelUpOffers(levelUp)
-      setIsLoading(false)
-      setHasLoaded(true)
+      ]);
+      setApplyOffers(pending);
+      setLevelUpOffers(levelUp);
+      setIsLoading(false);
+      setHasLoaded(true);
     }
   }
 
@@ -361,12 +498,24 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
               {pendingCount}
             </span>
           )}
+          {levelUpCount !== null && (
+            <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+              {levelUpCount}
+            </span>
+          )}
         </div>
         <svg
           className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -374,9 +523,25 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
         <div className="border-t border-gray-200">
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
-              <svg className="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="animate-spin h-4 w-4 text-indigo-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
             </div>
           ) : (
@@ -385,7 +550,7 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
               <div className="border-b border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setApplyOpen((v) => !v)}
+                  onClick={() => setApplyOpen(v => !v)}
                   className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                 >
                   <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -393,23 +558,36 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                   </span>
                   <svg
                     className={`w-3.5 h-3.5 text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
                 {applyOpen && (
                   <div>
                     {applyOffers.length === 0 ? (
-                      <p className="px-3 py-2.5 text-xs text-gray-400">No offers to apply to</p>
+                      <p className="px-3 py-2.5 text-xs text-gray-400">
+                        No offers to apply to
+                      </p>
                     ) : (
-                      applyOffers.map((offer) => (
+                      applyOffers.map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
                           clientId={client.id}
                           activeTabId={activeTabId}
-                          onRemove={(id) => setApplyOffers((prev) => prev.filter((o) => o.user_offer_id !== id))}
+                          onRemove={id =>
+                            setApplyOffers(prev =>
+                              prev.filter(o => o.user_offer_id !== id),
+                            )
+                          }
                         />
                       ))
                     )}
@@ -421,7 +599,7 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
               <div>
                 <button
                   type="button"
-                  onClick={() => setLevelUpOpen((v) => !v)}
+                  onClick={() => setLevelUpOpen(v => !v)}
                   className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                 >
                   <div className="flex items-center gap-2">
@@ -430,9 +608,12 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                     </span>
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        console.log('[ExploreTab] send email for client', client.id)
+                      onClick={e => {
+                        e.stopPropagation();
+                        console.log(
+                          '[ExploreTab] send email for client',
+                          client.id,
+                        );
                       }}
                       className="text-base leading-none hover:opacity-70 transition-opacity"
                       title="Send email report"
@@ -442,23 +623,36 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                   </div>
                   <svg
                     className={`w-3.5 h-3.5 text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
                 {levelUpOpen && (
                   <div>
                     {levelUpOffers.length === 0 ? (
-                      <p className="px-3 py-2.5 text-xs text-gray-400">No learning offers</p>
+                      <p className="px-3 py-2.5 text-xs text-gray-400">
+                        No learning offers
+                      </p>
                     ) : (
-                      levelUpOffers.map((offer) => (
+                      levelUpOffers.map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
                           clientId={client.id}
                           activeTabId={activeTabId}
-                          onRemove={(id) => setLevelUpOffers((prev) => prev.filter((o) => o.user_offer_id !== id))}
+                          onRemove={id =>
+                            setLevelUpOffers(prev =>
+                              prev.filter(o => o.user_offer_id !== id),
+                            )
+                          }
                         />
                       ))
                     )}
@@ -470,45 +664,63 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default function ExploreTab({ onLogout, activeTabId }: Props) {
-  const { fetchClients } = useClients()
-  const [clients, setClients] = useState<Client[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { fetchClients } = useClients();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     async function load() {
-      const result = await fetchClients()
-      if (cancelled) return
-      setIsLoading(false)
+      const result = await fetchClients();
+      if (cancelled) return;
+      setIsLoading(false);
       if ('error' in result) {
-        setError(result.error)
-        if (result.error.includes('Session expired')) onLogout()
+        setError(result.error);
+        if (result.error.includes('Session expired')) onLogout();
       } else {
-        setClients(result.clients)
+        setClients(result.clients);
       }
     }
-    load()
-    return () => { cancelled = true }
-  }, [])
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <svg className="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <svg
+          className="animate-spin h-5 w-5 text-indigo-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
         </svg>
       </div>
-    )
+    );
   }
 
   if (error) {
-    return <p className="px-4 py-5 text-sm text-red-600">{error}</p>
+    return <p className="px-4 py-5 text-sm text-red-600">{error}</p>;
   }
 
   return (
@@ -516,10 +728,14 @@ export default function ExploreTab({ onLogout, activeTabId }: Props) {
       {clients.length === 0 ? (
         <p className="text-sm text-gray-500">No clients found.</p>
       ) : (
-        clients.map((client) => (
-          <ClientAccordion key={client.id} client={client} activeTabId={activeTabId} />
+        clients.map(client => (
+          <ClientAccordion
+            key={client.id}
+            client={client}
+            activeTabId={activeTabId}
+          />
         ))
       )}
     </div>
-  )
+  );
 }
