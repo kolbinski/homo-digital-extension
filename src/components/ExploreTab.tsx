@@ -4,22 +4,16 @@ import { useAuth } from '../hooks/useAuth'
 import { useClients, type Client } from '../hooks/useClients'
 
 interface UserOffer {
-  id: string
-  title: string
-  company_name: string
-  url?: string
-  salary_b2b_max?: number
+  user_offer_id: string
+  offer_title: string
+  offer_company: string
+  offer_url?: string
   claude_role_fit?: string
-  missing_skills?: string[]
+  claude_missing_skills?: string[]
 }
 
 interface Props {
   onLogout: () => void
-}
-
-function formatSalary(value?: number): string | null {
-  if (!value) return null
-  return `${value.toLocaleString()} PLN`
 }
 
 interface ClientAccordionProps {
@@ -160,27 +154,22 @@ function ClientAccordion({ client }: ClientAccordionProps) {
                     ) : (
                       applyOffers.map((offer) => (
                         <button
-                          key={offer.id}
+                          key={offer.user_offer_id}
                           type="button"
-                          onClick={() => offer.url && openOffer(offer.url)}
-                          disabled={!offer.url}
-                          className="w-full px-3 py-2.5 text-left hover:bg-indigo-50 transition-colors disabled:cursor-default group"
+                          onClick={() => offer.offer_url && openOffer(offer.offer_url)}
+                          disabled={!offer.offer_url}
+                          className="w-full px-3 py-2.5 text-left hover:bg-indigo-50 transition-colors cursor-pointer disabled:cursor-default group"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
-                              {offer.title} @ {offer.company_name}
+                              {offer.offer_title} @ {offer.offer_company}
                             </span>
-                            {offer.url && (
+                            {offer.offer_url && (
                               <svg className="w-3 h-3 text-gray-400 group-hover:text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                               </svg>
                             )}
                           </div>
-                          {formatSalary(offer.salary_b2b_max) && (
-                            <span className="text-xs text-gray-500 mt-0.5 block">
-                              {formatSalary(offer.salary_b2b_max)} b2b max
-                            </span>
-                          )}
                         </button>
                       ))
                     )}
@@ -224,21 +213,16 @@ function ClientAccordion({ client }: ClientAccordionProps) {
                       <p className="px-3 py-2.5 text-xs text-gray-400">No learning offers</p>
                     ) : (
                       levelUpOffers.map((offer) => (
-                        <div key={offer.id} className="px-3 py-2.5 flex flex-col gap-1.5">
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-medium text-gray-900 leading-snug">
-                              {offer.title} @ {offer.company_name}
-                            </span>
-                          </div>
-                          {formatSalary(offer.salary_b2b_max) && (
-                            <span className="text-xs text-gray-500">{formatSalary(offer.salary_b2b_max)} b2b max</span>
-                          )}
+                        <div key={offer.user_offer_id} className="px-3 py-2.5 flex flex-col gap-1.5">
+                          <span className="text-xs font-medium text-gray-900 leading-snug">
+                            {offer.offer_title} @ {offer.offer_company}
+                          </span>
                           {offer.claude_role_fit && (
                             <p className="text-xs text-gray-600 leading-relaxed">{offer.claude_role_fit}</p>
                           )}
-                          {offer.missing_skills && offer.missing_skills.length > 0 && (
+                          {offer.claude_missing_skills && offer.claude_missing_skills.length > 0 && (
                             <div className="flex flex-wrap gap-1">
-                              {offer.missing_skills.map((skill) => (
+                              {offer.claude_missing_skills.map((skill) => (
                                 <span key={skill} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                                   {skill}
                                 </span>
