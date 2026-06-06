@@ -29,6 +29,7 @@ export function useOfferMatches() {
     const token = await getToken()
     if (!token) return { error: 'Not authenticated.' }
     const cleanUrl = pageUrl.split('?')[0]
+    console.log('[useOfferMatches] fetching for URL:', cleanUrl)
     try {
       const res = await fetch(
         `${API_BASE_URL}/v1/offer-matches?url=${encodeURIComponent(cleanUrl)}`,

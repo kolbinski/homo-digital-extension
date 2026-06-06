@@ -1,8 +1,7 @@
-export type Tab = 'apply' | 'explore' | 'sync'
+export type Tab = 'explore' | 'sync'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'apply', label: 'Apply' },
-  { id: 'explore', label: 'Explore' },
+  { id: 'explore', label: 'Explore & Apply' },
   { id: 'sync', label: 'Sync' },
 ]
 

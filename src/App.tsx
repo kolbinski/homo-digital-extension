@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import LoginScreen from './components/LoginScreen'
-import MainScreen from './components/MainScreen'
 import TabBar, { type Tab } from './components/TabBar'
 import ExploreTab from './components/ExploreTab'
 import SyncTab from './components/SyncTab'
@@ -11,10 +10,8 @@ type AuthState = 'checking' | 'logged_out' | 'logged_in'
 function App() {
   const { getToken, logout } = useAuth()
   const [authState, setAuthState] = useState<AuthState>('checking')
-  const [detectedLanguage, setDetectedLanguage] = useState('English')
   const [activeTabId, setActiveTabId] = useState<number | undefined>()
-  const [currentUrl, setCurrentUrl] = useState('')
-  const [activeTab, setActiveTab] = useState<Tab>('apply')
+  const [activeTab, setActiveTab] = useState<Tab>('explore')
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -35,20 +32,12 @@ function App() {
       const tab = tabs[0]
       const tabId = tab?.id
       if (tabId === undefined) return
-
-      if (tab.url) setCurrentUrl(tab.url)
-
       try {
         await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
       } catch {
-        // Already injected or page not injectable (chrome:// etc.) — continue anyway
+        // Already injected or page not injectable — continue
       }
-
       setActiveTabId(tabId)
-      chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { language?: string }) => {
-        if (chrome.runtime.lastError) return
-        if (response?.language) setDetectedLanguage(response.language)
-      })
     })
   }, [])
 
@@ -57,16 +46,11 @@ function App() {
 
     function onActivated(activeInfo: { tabId: number }) {
       setActiveTabId(activeInfo.tabId)
-      chrome.tabs.get(activeInfo.tabId, (tab) => {
-        if (chrome.runtime.lastError) return
-        if (tab.url) setCurrentUrl(tab.url)
-      })
       chrome.scripting.executeScript({ target: { tabId: activeInfo.tabId }, files: ['content.js'] }).catch(() => {})
     }
 
-    function onUpdated(tabId: number, changeInfo: { status?: string }, tab: { active?: boolean; url?: string }) {
+    function onUpdated(tabId: number, changeInfo: { status?: string }, tab: { active?: boolean }) {
       if (changeInfo.status === 'complete' && tab.active) {
-        if (tab.url) setCurrentUrl(tab.url)
         setActiveTabId(tabId)
         chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] }).catch(() => {})
       }
@@ -111,14 +95,6 @@ function App() {
       <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'apply' && (
-          <MainScreen
-            onLogout={handleLogout}
-            defaultLanguage={detectedLanguage}
-            activeTabId={activeTabId}
-            currentUrl={currentUrl}
-          />
-        )}
         {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} />}
         {activeTab === 'sync' && <SyncTab />}
       </div>
