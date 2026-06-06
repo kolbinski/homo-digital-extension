@@ -9,6 +9,7 @@ function App() {
   const { getToken, logout } = useAuth()
   const [authState, setAuthState] = useState<AuthState>('checking')
   const [detectedLanguage, setDetectedLanguage] = useState('English')
+  const [activeTabId, setActiveTabId] = useState<number | undefined>()
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -28,6 +29,7 @@ function App() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id
       if (tabId === undefined) return
+      setActiveTabId(tabId)
       chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { language?: string }) => {
         if (chrome.runtime.lastError) return
         if (response?.language) setDetectedLanguage(response.language)
@@ -52,6 +54,7 @@ function App() {
         <MainScreen
           onLogout={handleLogout}
           defaultLanguage={detectedLanguage}
+          activeTabId={activeTabId}
         />
       ) : (
         <LoginScreen onLogin={() => setAuthState('logged_in')} />

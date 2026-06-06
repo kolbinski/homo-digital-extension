@@ -5,31 +5,27 @@ import { useCvGenerate } from '../hooks/useCvGenerate'
 interface Props {
   onLogout: () => void
   defaultLanguage?: string
+  activeTabId?: number
 }
 
 const CV_LANGUAGES = ['English', 'Polish', 'German', 'French', 'Spanish', 'Dutch', 'Ukrainian']
 
-function getPageText(): Promise<string> {
+function getPageText(tabId: number): Promise<string> {
   return new Promise((resolve) => {
-    if (typeof chrome === 'undefined' || !chrome.tabs) { resolve(''); return }
-    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-      const tabId = tabs[0]?.id
-      console.log('[getPageText] tabs found:', tabs.length, 'tabId:', tabId, 'url:', tabs[0]?.url)
-      if (tabId === undefined) { resolve(''); return }
-      chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { text?: string }) => {
-        if (chrome.runtime.lastError) {
-          console.error('[getPageText] sendMessage error:', chrome.runtime.lastError.message)
-          resolve('')
-          return
-        }
-        console.log('[getPageText] response text length:', response?.text?.length ?? 0)
-        resolve(response?.text ?? '')
-      })
+    if (typeof chrome === 'undefined') { resolve(''); return }
+    chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_DATA' }, (response: { text?: string }) => {
+      if (chrome.runtime.lastError) {
+        console.error('[getPageText] sendMessage error:', chrome.runtime.lastError.message)
+        resolve('')
+        return
+      }
+      console.log('[getPageText] response text length:', response?.text?.length ?? 0)
+      resolve(response?.text ?? '')
     })
   })
 }
 
-export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Props) {
+export default function MainScreen({ onLogout, defaultLanguage = 'English', activeTabId }: Props) {
   const { fetchClients } = useClients()
   const { generateCV } = useCvGenerate()
 
@@ -70,7 +66,12 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
     setIsGenerating(true)
     setStatus(null)
 
-    const offerText = await getPageText()
+    if (activeTabId === undefined) {
+      setIsGenerating(false)
+      setStatus({ type: 'error', message: 'Could not read page content. Make sure you are on a job offer page.' })
+      return
+    }
+    const offerText = await getPageText(activeTabId)
     if (!offerText.trim()) {
       setIsGenerating(false)
       setStatus({ type: 'error', message: 'Could not read page content. Make sure you are on a job offer page.' })
