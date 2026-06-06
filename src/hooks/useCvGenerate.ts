@@ -11,7 +11,6 @@ export function useCvGenerate() {
     client: Client,
     offerText: string,
     cvLanguage: string,
-    _openAfterDownload: boolean = false,
   ): Promise<GenerateResult> {
     if (typeof chrome === 'undefined') {
       return { success: false, error: 'Chrome extension context required.' }

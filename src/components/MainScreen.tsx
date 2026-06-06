@@ -29,7 +29,6 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
 
   const [selectedClient, setSelectedClient] = useState('')
   const [cvLanguage, setCvLanguage] = useState(defaultLanguage)
-  const [openAfterDownload, setOpenAfterDownload] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -66,7 +65,7 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
     setStatus(null)
 
     const offerText = await getPageText()
-    const result = await generateCV(client, offerText, cvLanguage, openAfterDownload)
+    const result = await generateCV(client, offerText, cvLanguage)
 
     setIsGenerating(false)
     if (!result.success) {
@@ -135,16 +134,6 @@ export default function MainScreen({ onLogout, defaultLanguage = 'English' }: Pr
             ))}
           </select>
         </div>
-
-        <label className="flex items-center gap-2.5 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={openAfterDownload}
-            onChange={(e) => setOpenAfterDownload(e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-          />
-          <span className="text-sm text-gray-700">Open PDF after download</span>
-        </label>
 
         <button
           type="button"
