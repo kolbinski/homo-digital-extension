@@ -11,10 +11,21 @@ interface MatchItemProps {
   onGenerateCV: (clientId: string, cvLanguage: string, signal: AbortSignal) => Promise<GenerateCVResult>
 }
 
+function providerIcon(source?: string): string | null {
+  if (!source) return null
+  if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return null
+  return chrome.runtime.getURL(`icons/${source}.png`)
+}
+
 function scoreBadgeClass(score: number): string {
   if (score >= 80) return 'bg-green-100 text-green-700 border border-green-200'
   if (score >= 60) return 'bg-amber-100 text-amber-700 border border-amber-200'
   return 'bg-red-100 text-red-700 border border-red-200'
+}
+
+function formatNum(n: number): string {
+  const sign = n < 0 ? '-' : ''
+  return sign + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 }
 
 function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
@@ -55,13 +66,18 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
         onClick={() => setIsOpen((v) => !v)}
         className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
       >
-        <span className="text-sm font-medium text-gray-900">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+          {providerIcon(match.source) && (
+            <img src={providerIcon(match.source)!} width={16} height={16} className="shrink-0" />
+          )}
           {match.first_name} {match.last_name}
         </span>
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${scoreBadgeClass(match.score)}`}>
-            {match.score}%
-          </span>
+          {match.claude_score !== null && (
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${scoreBadgeClass(match.claude_score)}`}>
+              {match.claude_score}%
+            </span>
+          )}
           <svg
             className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
@@ -73,9 +89,20 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
 
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-3 border-t border-gray-100">
-          <p className="text-xs text-gray-600 leading-relaxed pt-2">
-            <span className="font-medium">Role fit:</span> {match.claude_role_fit}
-          </p>
+          {match.salary && match.salary.length > 0 && (
+            <div className="flex flex-col gap-0.5 pt-2">
+              {match.salary.map((s, i) => (
+                <span key={i} className="text-xs text-gray-500">
+                  💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} ({s.type}) {s.delta >= 0 ? '+' : ''}{formatNum(s.delta)} {s.currency}
+                </span>
+              ))}
+            </div>
+          )}
+          {match.claude_role_fit && (
+            <p className="text-xs text-gray-600 leading-relaxed pt-2">
+              <span className="font-medium">Role fit:</span> {match.claude_role_fit}
+            </p>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-700">CV Language</label>

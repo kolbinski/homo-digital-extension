@@ -1,12 +1,22 @@
 import { API_BASE_URL } from '../config'
 import { useAuth } from './useAuth'
 
+interface OfferSalary {
+  min: number
+  max: number
+  currency: string
+  type: string
+  delta: number
+}
+
 export interface OfferMatch {
   client_id: string
   first_name: string
   last_name: string
-  score: number
-  claude_role_fit: string
+  claude_score: number | null
+  claude_role_fit: string | null
+  salary?: OfferSalary[]
+  source?: string
 }
 
 type FetchMatchesResult = { matches: OfferMatch[] } | { error: string }
@@ -26,10 +36,9 @@ export function useOfferMatches() {
       )
       if (res.status === 401) return { error: 'Session expired. Please log in again.' }
       if (!res.ok) return { error: `Failed to load matches (${res.status}).` }
-      const data = await res.json() as { matches: Array<Omit<OfferMatch, 'score'> & { claude_score: number }> }
+      const data = await res.json() as { matches: OfferMatch[] }
       console.log('[useOfferMatches] raw matches:', JSON.stringify(data.matches))
-      const matches = (data.matches ?? []).map((m) => ({ ...m, score: m.claude_score }))
-      return { matches }
+      return { matches: data.matches ?? [] }
     } catch {
       return { error: 'Network error. Check your connection.' }
     }

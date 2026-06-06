@@ -19,6 +19,13 @@ interface UserOffer {
   claude_role_fit?: string
   claude_missing_skills?: string[]
   salary?: OfferSalary[]
+  source?: string
+}
+
+function providerIcon(source?: string): string | null {
+  if (!source) return null
+  if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return null
+  return chrome.runtime.getURL(`icons/${source}.png`)
 }
 
 function formatNum(n: number): string {
@@ -180,7 +187,10 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           disabled={!offer.offer_url}
                           className="w-full px-3 py-2.5 text-left hover:bg-indigo-50 transition-colors cursor-pointer disabled:cursor-default group"
                         >
-                          <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
+                          <span className="flex items-center gap-1.5 text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
+                            {providerIcon(offer.source) && (
+                              <img src={providerIcon(offer.source)!} width={16} height={16} className="shrink-0" />
+                            )}
                             {offer.offer_title} @ {offer.offer_company}
                           </span>
                           {offer.salary && offer.salary.length > 0 && (
@@ -241,7 +251,10 @@ function ClientAccordion({ client, activeTabId }: ClientAccordionProps) {
                           onClick={() => offer.offer_url && openOffer(offer.offer_url)}
                           className="w-full px-3 py-2.5 text-left flex flex-col gap-1.5 hover:bg-indigo-50 transition-colors cursor-pointer group"
                         >
-                          <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
+                          <span className="flex items-center gap-1.5 text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
+                            {providerIcon(offer.source) && (
+                              <img src={providerIcon(offer.source)!} width={16} height={16} className="shrink-0" />
+                            )}
                             {offer.offer_title} @ {offer.offer_company}
                           </span>
                           {offer.salary && offer.salary.length > 0 && (
