@@ -2,85 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 
-interface SyncClientResult {
-  client_id: string;
-  first_name: string;
-  last_name: string;
-  new_offers_count: number;
-  stretch_offers_count: number;
-  email_report?: string;
-  error?: string;
-}
-
 interface SyncResult {
   total_new_offers: number;
-  clients: SyncClientResult[];
 }
 
 type SyncState = 'idle' | 'syncing' | 'done' | 'error';
-
-function ClientReportAccordion({ client }: { client: SyncClientResult }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setIsOpen(v => !v)}
-        className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors text-left"
-      >
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-gray-800">
-            {client.first_name} {client.last_name}
-          </span>
-          {client.error ? (
-            <span className="text-xs font-medium bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
-              Error
-            </span>
-          ) : (
-            <>
-              {client.new_offers_count > 0 && (
-                <span className="text-xs font-medium bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                  {client.new_offers_count}
-                </span>
-              )}
-              {client.stretch_offers_count > 0 && (
-                <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                  {client.stretch_offers_count}
-                </span>
-              )}
-            </>
-          )}
-        </div>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-      {isOpen && (
-        <div className="border-t border-gray-200 px-3 py-3">
-          {client.error ? (
-            <p className="text-red-600 text-sm">{client.error}</p>
-          ) : client.email_report ? (
-            <pre className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed font-sans max-h-[400px] overflow-y-auto">
-              {client.email_report}
-            </pre>
-          ) : (
-            <p className="text-xs text-gray-400">No report available.</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function SyncTab() {
   const { getToken } = useAuth();
@@ -143,7 +69,7 @@ export default function SyncTab() {
             'status:',
             msg.status,
           );
-          console.log('[SyncTab] clients:', JSON.stringify(msg.clients));
+          console.log('[SyncTab] SSE done payload:', JSON.stringify(msg));
           if (msg.progress !== undefined) setProgress(msg.progress);
           if (msg.status === 'done') {
             es.close();
@@ -235,19 +161,9 @@ export default function SyncTab() {
       {syncState === 'done' && result && (
         <>
           <div className="text-sm px-3 py-2.5 rounded-md border bg-green-50 text-green-700 border-green-200">
-            {result.total_new_offers} new offers found
-          </div>
-          <div className="flex flex-col gap-2">
-            {result.clients
-              .filter(
-                c =>
-                  c.new_offers_count > 0 ||
-                  c.stretch_offers_count > 0 ||
-                  c.error,
-              )
-              .map(client => (
-                <ClientReportAccordion key={client.client_id} client={client} />
-              ))}
+            {result.total_new_offers > 0
+              ? `Sync completed. Created ${result.total_new_offers} new client offers. Report emails were sent to your clients.`
+              : 'Sync completed. No new client offers.'}
           </div>
           <button
             type="button"
