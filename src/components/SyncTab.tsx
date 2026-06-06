@@ -9,13 +9,21 @@ interface SyncResult {
 
 type SyncState = 'idle' | 'syncing' | 'done' | 'error';
 
-export default function SyncTab() {
+interface SyncTabProps {
+  onSyncingChange?: (isSyncing: boolean) => void;
+}
+
+export default function SyncTab({ onSyncingChange }: SyncTabProps) {
   const { getToken } = useAuth();
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    onSyncingChange?.(syncState === 'syncing');
+  }, [syncState]);
 
   useEffect(() => {
     return () => {

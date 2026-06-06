@@ -13,6 +13,7 @@ function App() {
   const [activeTabId, setActiveTabId] = useState<number | undefined>()
   const [activeTab, setActiveTab] = useState<Tab>('explore')
   const [currentUrl, setCurrentUrl] = useState<string>('')
+  const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -98,11 +99,11 @@ function App() {
         </button>
       </header>
 
-      <TabBar activeTab={activeTab} onChange={setActiveTab} />
+      <TabBar activeTab={activeTab} onChange={setActiveTab} isSyncing={isSyncing} />
 
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} currentUrl={currentUrl} />}
-        {activeTab === 'sync' && <SyncTab />}
+        {activeTab === 'sync' && <SyncTab onSyncingChange={setIsSyncing} />}
       </div>
     </div>
   )
