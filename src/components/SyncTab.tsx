@@ -16,11 +16,9 @@ interface SyncTabProps {
 export default function SyncTab({ onSyncingChange }: SyncTabProps) {
   const { getToken } = useAuth();
   const [syncState, setSyncState] = useState<SyncState>('idle');
-  const [progress, setProgress] = useState(0);
-  const [reconnectStatus, setReconnectStatus] = useState<string | null>(null);
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     onSyncingChange?.(syncState === 'syncing');
@@ -28,13 +26,12 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
 
   useEffect(() => {
     return () => {
-      esRef.current?.close();
+      if (pollRef.current !== null) clearInterval(pollRef.current);
     };
   }, []);
 
   async function handleSync() {
     setSyncState('syncing');
-    setProgress(0);
     setError(null);
     setResult(null);
 
@@ -56,57 +53,35 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
         return;
       }
       const data = (await res.json()) as { job_id: string };
+      const jobId = data.job_id;
 
-      let reconnectAttempts = 0;
-      const MAX_RECONNECTS = 20;
-
-      function connectSSE(jobId: string, sseToken: string) {
-        const es = new EventSource(
-          `${API_BASE_URL}/v1/sync/progress?job_id=${jobId}&token=${sseToken}`,
-        );
-        esRef.current = es;
-
-        es.onmessage = e => {
-          console.log('[SyncTab] SSE message:', e.data);
-          reconnectAttempts = 0;
-          setReconnectStatus(null);
-          const msg = JSON.parse(e.data) as {
-            progress?: number;
+      pollRef.current = setInterval(async () => {
+        try {
+          const statusRes = await fetch(
+            `${API_BASE_URL}/v1/sync/status?job_id=${jobId}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          const statusData = (await statusRes.json()) as {
             status?: string;
           } & Partial<SyncResult>;
-          console.log('[SyncTab] progress:', msg.progress, 'status:', msg.status);
-          console.log('[SyncTab] SSE done payload:', JSON.stringify(msg));
-          if (msg.progress !== undefined) setProgress(msg.progress);
-          if (msg.status === 'done') {
-            es.close();
-            esRef.current = null;
-            setReconnectStatus(null);
-            setResult(msg as SyncResult);
+
+          console.log('[SyncTab] poll:', statusData.status);
+
+          if (statusData.status === 'done') {
+            clearInterval(pollRef.current!);
+            pollRef.current = null;
+            setResult(statusData as SyncResult);
             setSyncState('done');
-          } else if (msg.status === 'failed' || msg.status === 'error') {
-            es.close();
-            esRef.current = null;
+          } else if (statusData.status === 'error' || statusData.status === 'failed') {
+            clearInterval(pollRef.current!);
+            pollRef.current = null;
             setError('Sync failed. Try again.');
             setSyncState('error');
           }
-        };
-
-        es.onerror = e => {
-          console.error('[SyncTab] SSE error:', e);
-          es.close();
-          esRef.current = null;
-          if (reconnectAttempts < MAX_RECONNECTS) {
-            reconnectAttempts++;
-            setReconnectStatus(`Reconnecting... (${reconnectAttempts}/${MAX_RECONNECTS})`);
-            setTimeout(() => connectSSE(jobId, sseToken), 3000);
-          } else {
-            setError('Connection lost during sync. Check back later.');
-            setSyncState('error');
-          }
-        };
-      }
-
-      connectSSE(data.job_id, token);
+        } catch (err) {
+          console.warn('[SyncTab] poll error, retrying:', err);
+        }
+      }, 5000);
     } catch {
       setError('Network error. Check your connection.');
       setSyncState('error');
@@ -147,9 +122,7 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
-          <p className="text-sm text-gray-600">
-            {reconnectStatus ?? `Syncing… ${progress}%`}
-          </p>
+          <p className="text-sm text-gray-600">Syncing… It may take a long time.</p>
         </div>
       )}
 
