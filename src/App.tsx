@@ -87,7 +87,7 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <span className="text-sm font-semibold text-gray-900 tracking-tight">Homo Digital</span>
         <button
@@ -101,7 +101,7 @@ function App() {
 
       <TabBar activeTab={activeTab} onChange={setActiveTab} isSyncing={isSyncing} />
 
-      <div className="flex-1 overflow-y-auto">
+      <div id="main-scroll" className="flex-1 overflow-y-auto">
         <div style={{ display: activeTab === 'explore' ? 'block' : 'none' }}>
           <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} currentUrl={currentUrl} />
         </div>

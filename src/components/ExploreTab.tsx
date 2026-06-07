@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowsClockwise, CurrencyCircleDollar } from '@phosphor-icons/react';
+import { ArrowsClockwise, ArrowUp, CurrencyCircleDollar } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
@@ -48,6 +48,14 @@ function offerScoreBadgeClass(score: number): string {
   if (score >= 50)
     return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
   return 'bg-gray-100 text-gray-500 border border-gray-200';
+}
+
+function filterBySource(offers: UserOffer[], sourceFilter: string): UserOffer[] {
+  if (sourceFilter === 'justjoin')
+    return offers.filter(o => o.offer_url?.includes('justjoin.it'));
+  if (sourceFilter === 'nofluffjobs')
+    return offers.filter(o => o.offer_url?.includes('nofluffjobs.com'));
+  return offers;
 }
 
 function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
@@ -112,6 +120,7 @@ interface ClientAccordionProps {
   currentUrl?: string;
   sortBy: string;
   statusFilter: string;
+  sourceFilter: string;
 }
 
 interface OfferCardProps {
@@ -451,6 +460,7 @@ function ClientAccordion({
   currentUrl,
   sortBy,
   statusFilter,
+  sourceFilter,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
@@ -811,7 +821,7 @@ function ClientAccordion({
                   </button>
                   {applyOpen && (
                     <div>
-                      {sortOffers(applyOffers, sortBy).map(offer => (
+                      {sortOffers(filterBySource(applyOffers, sourceFilter), sortBy).map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
@@ -870,7 +880,7 @@ function ClientAccordion({
                   </button>
                   {levelUpOpen && (
                     <div>
-                      {sortOffers(levelUpOffers, sortBy).map(offer => (
+                      {sortOffers(filterBySource(levelUpOffers, sourceFilter), sortBy).map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
@@ -918,6 +928,8 @@ export default function ExploreTab({
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('score');
   const [statusFilter, setStatusFilter] = useState('pending_apply');
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) return;
@@ -936,6 +948,25 @@ export default function ExploreTab({
     });
   }, []);
 
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_source_filter', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_source_filter)
+        setSourceFilter(result.hd_source_filter as string);
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = document.getElementById('main-scroll');
+    if (!el) return;
+    function handleScroll() {
+      setShowScrollTop(el!.scrollTop > 200);
+    }
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
+
   function handleSortChange(value: string) {
     setSortBy(value);
     if (typeof chrome !== 'undefined' && chrome.storage) {
@@ -947,6 +978,13 @@ export default function ExploreTab({
     setStatusFilter(value);
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.set({ hd_status_filter: value });
+    }
+  }
+
+  function handleSourceFilterChange(value: string) {
+    setSourceFilter(value);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ hd_source_filter: value });
     }
   }
 
@@ -1001,9 +1039,10 @@ export default function ExploreTab({
   }
 
   return (
+    <>
     <div className="px-4 py-5 flex flex-col gap-3">
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="text-xs text-gray-500">Sort by:</span>
           <select
             value={sortBy}
@@ -1014,7 +1053,19 @@ export default function ExploreTab({
             <option value="salary_delta">Salary delta</option>
           </select>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-500">Source:</span>
+          <select
+            value={sourceFilter}
+            onChange={e => handleSourceFilterChange(e.target.value)}
+            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="all">All</option>
+            <option value="justjoin">JustJoin</option>
+            <option value="nofluffjobs">NoFluffJobs</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5">
           <span className="text-xs text-gray-500">Status:</span>
           <select
             value={statusFilter}
@@ -1042,9 +1093,24 @@ export default function ExploreTab({
             currentUrl={currentUrl}
             sortBy={sortBy}
             statusFilter={statusFilter}
+            sourceFilter={sourceFilter}
           />
         ))
       )}
     </div>
+    {showScrollTop && (
+      <button
+        type="button"
+        onClick={() =>
+          document
+            .getElementById('main-scroll')
+            ?.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+        className="fixed bottom-4 right-4 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow z-50"
+      >
+        <ArrowUp size={18} className="text-gray-600" />
+      </button>
+    )}
+    </>
   );
 }
