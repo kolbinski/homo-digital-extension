@@ -50,13 +50,15 @@ function offerScoreBadgeClass(score: number): string {
   return 'bg-gray-100 text-gray-500 border border-gray-200';
 }
 
-function filterBySource(offers: UserOffer[], sourceFilter: string): UserOffer[] {
-  if (sourceFilter === 'justjoin')
-    return offers.filter(o => o.offer_url?.includes('justjoin.it'));
-  if (sourceFilter === 'nofluffjobs')
-    return offers.filter(o => o.offer_url?.includes('nofluffjobs.com'));
-  return offers;
-}
+const STATUS_LABELS: Record<string, string> = {
+  pending_apply: 'Pending apply',
+  applied: 'Applied',
+  agent_withdrawn: 'Agent withdrawn',
+  recruiter_rejected: 'Recruiter rejected',
+  offer_received: 'Offer received',
+  accepted: 'Accepted',
+  client_withdrawn: 'Client withdrawn',
+};
 
 function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
   if (sortBy === 'score') {
@@ -578,7 +580,7 @@ function ClientAccordion({
     return () => {
       cancelled = true;
     };
-  }, [statusFilter]);
+  }, [statusFilter, sourceFilter]);
 
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
@@ -587,46 +589,70 @@ function ClientAccordion({
       const token = await getToken();
       if (!token) return;
       try {
-        const applyParams = new URLSearchParams({
-          client_id: client.id,
-          status: 'pending_apply',
-          count_only: 'true',
-        });
-        const levelUpParams = new URLSearchParams({
-          client_id: client.id,
-          status: 'ai_rejected',
-          has_learning_goals: 'true',
-          count_only: 'true',
-        });
-        const [applyRes, levelUpRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/v1/user-offers?${applyParams}`, {
+        if (statusFilter === 'pending_apply') {
+          const applyParams = new URLSearchParams({
+            client_id: client.id,
+            status: 'pending_apply',
+            count_only: 'true',
+          });
+          const levelUpParams = new URLSearchParams({
+            client_id: client.id,
+            status: 'ai_rejected',
+            has_learning_goals: 'true',
+            count_only: 'true',
+          });
+          if (sourceFilter !== 'all') {
+            applyParams.append('source', sourceFilter);
+            levelUpParams.append('source', sourceFilter);
+          }
+          const [applyRes, levelUpRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/v1/user-offers?${applyParams}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            fetch(`${API_BASE_URL}/v1/user-offers?${levelUpParams}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+          if (applyRes.ok) {
+            const data = (await applyRes.json()) as {
+              count?: number;
+              total?: number;
+            };
+            setPendingCount(data.count ?? data.total ?? null);
+          }
+          if (levelUpRes.ok) {
+            const data = (await levelUpRes.json()) as {
+              count?: number;
+              total?: number;
+            };
+            const n = data.count ?? data.total ?? 0;
+            setLevelUpCount(n > 0 ? n : null);
+          }
+        } else {
+          setLevelUpCount(null);
+          const params = new URLSearchParams({
+            client_id: client.id,
+            status: statusFilter,
+            count_only: 'true',
+          });
+          if (sourceFilter !== 'all') params.append('source', sourceFilter);
+          const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
             headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${API_BASE_URL}/v1/user-offers?${levelUpParams}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-        if (applyRes.ok) {
-          const data = (await applyRes.json()) as {
-            count?: number;
-            total?: number;
-          };
-          setPendingCount(data.count ?? data.total ?? null);
-        }
-        if (levelUpRes.ok) {
-          const data = (await levelUpRes.json()) as {
-            count?: number;
-            total?: number;
-          };
-          const n = data.count ?? data.total ?? 0;
-          if (n > 0) setLevelUpCount(n);
+          });
+          if (res.ok) {
+            const data = (await res.json()) as {
+              count?: number;
+              total?: number;
+            };
+            setPendingCount(data.count ?? data.total ?? null);
+          }
         }
       } catch {
         // badges are optional — silent fail
       }
     }
     loadCount();
-  }, [client.id]);
+  }, [client.id, statusFilter, sourceFilter]);
 
   async function fetchOffers(
     status: string,
@@ -636,6 +662,7 @@ function ClientAccordion({
     if (!token) return [];
     const params = new URLSearchParams({ client_id: client.id, status });
     if (hasLearningGoals) params.append('has_learning_goals', 'true');
+    if (sourceFilter !== 'all') params.append('source', sourceFilter);
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -700,11 +727,17 @@ function ClientAccordion({
             {client.first_name} {client.last_name}
           </span>
           {pendingCount !== null && pendingCount > 0 && (
-            <span className="text-xs font-medium bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
+            <span
+              className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                statusFilter === 'pending_apply'
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
               {pendingCount}
             </span>
           )}
-          {levelUpCount !== null && (
+          {statusFilter === 'pending_apply' && levelUpCount !== null && (
             <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
               {levelUpCount}
             </span>
@@ -789,125 +822,192 @@ function ClientAccordion({
             </div>
           ) : (
             <>
-              {/* Apply now sub-section */}
-              {applyOffers.length > 0 && (
-                <div className="border-b border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => setApplyOpen(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                        Apply now
-                      </span>
-                      <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                        {applyOffers.length}
-                      </span>
-                    </div>
-                    <svg
-                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {applyOpen && (
-                    <div>
-                      {sortOffers(filterBySource(applyOffers, sourceFilter), sortBy).map(offer => (
-                        <OfferCard
-                          key={offer.user_offer_id}
-                          offer={offer}
-                          clientId={client.id}
-                          clientFirstName={client.first_name}
-                          clientLastName={client.last_name}
-                          isOpen={expandedOfferId === offer.user_offer_id}
-                          onToggle={() =>
-                            handleCardToggle(
-                              offer.user_offer_id,
-                              offer.offer_url,
-                            )
-                          }
-                          activeTabId={activeTabId}
-                          onRemove={id =>
-                            setApplyOffers(prev =>
-                              prev.filter(o => o.user_offer_id !== id),
-                            )
-                          }
-                        />
-                      ))}
+              {statusFilter === 'pending_apply' ? (
+                <>
+                  {/* Apply now sub-section */}
+                  {applyOffers.length > 0 && (
+                    <div className="border-b border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => setApplyOpen(v => !v)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                            Apply now
+                          </span>
+                          <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                            {applyOffers.length}
+                          </span>
+                        </div>
+                        <svg
+                          className={`w-3.5 h-3.5 text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {applyOpen && (
+                        <div>
+                          {sortOffers(applyOffers, sortBy).map(offer => (
+                            <OfferCard
+                              key={offer.user_offer_id}
+                              offer={offer}
+                              clientId={client.id}
+                              clientFirstName={client.first_name}
+                              clientLastName={client.last_name}
+                              isOpen={expandedOfferId === offer.user_offer_id}
+                              onToggle={() =>
+                                handleCardToggle(
+                                  offer.user_offer_id,
+                                  offer.offer_url,
+                                )
+                              }
+                              activeTabId={activeTabId}
+                              onRemove={id =>
+                                setApplyOffers(prev =>
+                                  prev.filter(o => o.user_offer_id !== id),
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Level up sub-section */}
-              {levelUpOffers.length > 0 && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setLevelUpOpen(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                        Level up & earn more
-                      </span>
-                      <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                        {levelUpOffers.length}
-                      </span>
-                    </div>
-                    <svg
-                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {levelUpOpen && (
+                  {/* Level up sub-section */}
+                  {levelUpOffers.length > 0 && (
                     <div>
-                      {sortOffers(filterBySource(levelUpOffers, sourceFilter), sortBy).map(offer => (
-                        <OfferCard
-                          key={offer.user_offer_id}
-                          offer={offer}
-                          clientId={client.id}
-                          clientFirstName={client.first_name}
-                          clientLastName={client.last_name}
-                          isOpen={expandedOfferId === offer.user_offer_id}
-                          onToggle={() =>
-                            handleCardToggle(
-                              offer.user_offer_id,
-                              offer.offer_url,
-                            )
-                          }
-                          activeTabId={activeTabId}
-                          onRemove={id =>
-                            setLevelUpOffers(prev =>
-                              prev.filter(o => o.user_offer_id !== id),
-                            )
-                          }
-                        />
-                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setLevelUpOpen(v => !v)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                            Level up & earn more
+                          </span>
+                          <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                            {levelUpOffers.length}
+                          </span>
+                        </div>
+                        <svg
+                          className={`w-3.5 h-3.5 text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {levelUpOpen && (
+                        <div>
+                          {sortOffers(levelUpOffers, sortBy).map(offer => (
+                            <OfferCard
+                              key={offer.user_offer_id}
+                              offer={offer}
+                              clientId={client.id}
+                              clientFirstName={client.first_name}
+                              clientLastName={client.last_name}
+                              isOpen={expandedOfferId === offer.user_offer_id}
+                              onToggle={() =>
+                                handleCardToggle(
+                                  offer.user_offer_id,
+                                  offer.offer_url,
+                                )
+                              }
+                              activeTabId={activeTabId}
+                              onRemove={id =>
+                                setLevelUpOffers(prev =>
+                                  prev.filter(o => o.user_offer_id !== id),
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
-              {applyOffers.length === 0 && levelUpOffers.length === 0 && (
-                <p className="px-3 py-3 text-gray-400">No offers found</p>
+                  {applyOffers.length === 0 && levelUpOffers.length === 0 && (
+                    <p className="px-3 py-3 text-gray-400">No offers found</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Single section for non-pending_apply statuses */}
+                  {applyOffers.length > 0 ? (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setApplyOpen(v => !v)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                            {STATUS_LABELS[statusFilter] ?? statusFilter}
+                          </span>
+                          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                            {applyOffers.length}
+                          </span>
+                        </div>
+                        <svg
+                          className={`w-3.5 h-3.5 text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      {applyOpen && (
+                        <div>
+                          {sortOffers(applyOffers, sortBy).map(offer => (
+                            <OfferCard
+                              key={offer.user_offer_id}
+                              offer={offer}
+                              clientId={client.id}
+                              clientFirstName={client.first_name}
+                              clientLastName={client.last_name}
+                              isOpen={expandedOfferId === offer.user_offer_id}
+                              onToggle={() =>
+                                handleCardToggle(
+                                  offer.user_offer_id,
+                                  offer.offer_url,
+                                )
+                              }
+                              activeTabId={activeTabId}
+                              onRemove={id =>
+                                setApplyOffers(prev =>
+                                  prev.filter(o => o.user_offer_id !== id),
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="px-3 py-3 text-gray-400">No offers found</p>
+                  )}
+                </>
               )}
             </>
           )}
