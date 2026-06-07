@@ -307,9 +307,12 @@ function OfferCard({
               const deltaStr =
                 s.delta >= 0 ? `+${formatNum(s.delta)}` : formatNum(s.delta);
               return (
-                <span key={i} className="text-xs text-gray-500 flex items-center gap-0.5">
-                  <CurrencyCircleDollar size={13} className="shrink-0" /> {s.currency} {s.type} {formatNum(s.min)} –{' '}
-                  {formatNum(s.max)}{' '}
+                <span
+                  key={i}
+                  className="text-xs text-gray-500 flex items-center gap-0.5"
+                >
+                  <CurrencyCircleDollar size={13} className="shrink-0" />{' '}
+                  {s.currency} {s.type} {formatNum(s.min)} – {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
                   {s.currency !== 'PLN' && s.delta_normalized != null && (
                     <span className={deltaColor}>
@@ -503,7 +506,7 @@ function ClientAccordion({
       setTimeout(() => {
         document
           .querySelector(`[data-user-offer-id="${match.user_offer_id}"]`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 50);
     }
   }, [currentUrl, applyOffers, levelUpOffers]);
@@ -515,7 +518,9 @@ function ClientAccordion({
     async function eagerLoad() {
       const [pending, levelUp] = await Promise.all([
         fetchOffers(statusFilter),
-        statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
+        statusFilter === 'pending_apply'
+          ? fetchOffers('ai_rejected', true)
+          : Promise.resolve([]),
       ]);
       if (cancelled) return;
       setApplyOffers(pending);
@@ -531,7 +536,7 @@ function ClientAccordion({
         setTimeout(() => {
           document
             .querySelector(`[data-user-offer-id="${match.user_offer_id}"]`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
       }
     }
@@ -549,7 +554,9 @@ function ClientAccordion({
       setIsLoading(true);
       const [pending, levelUp] = await Promise.all([
         fetchOffers(statusFilter),
-        statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
+        statusFilter === 'pending_apply'
+          ? fetchOffers('ai_rejected', true)
+          : Promise.resolve([]),
       ]);
       if (cancelled) return;
       setApplyOffers(pending);
@@ -558,7 +565,9 @@ function ClientAccordion({
       setHasLoaded(true);
     }
     refetchOffers();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [statusFilter]);
 
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
@@ -636,7 +645,9 @@ function ClientAccordion({
       setIsLoading(true);
       const [pending, levelUp] = await Promise.all([
         fetchOffers(statusFilter),
-        statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
+        statusFilter === 'pending_apply'
+          ? fetchOffers('ai_rejected', true)
+          : Promise.resolve([]),
       ]);
       setApplyOffers(pending);
       setLevelUpOffers(levelUp);
@@ -652,7 +663,9 @@ function ClientAccordion({
     setIsLoading(true);
     const [pending, levelUp] = await Promise.all([
       fetchOffers(statusFilter),
-      statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
+      statusFilter === 'pending_apply'
+        ? fetchOffers('ai_rejected', true)
+        : Promise.resolve([]),
     ]);
     setApplyOffers(pending);
     setLevelUpOffers(levelUp);
@@ -918,7 +931,8 @@ export default function ExploreTab({
     if (typeof chrome === 'undefined' || !chrome.storage) return;
     chrome.storage.local.get('hd_status_filter', result => {
       if (chrome.runtime.lastError) return;
-      if (result.hd_status_filter) setStatusFilter(result.hd_status_filter as string);
+      if (result.hd_status_filter)
+        setStatusFilter(result.hd_status_filter as string);
     });
   }, []);
 
