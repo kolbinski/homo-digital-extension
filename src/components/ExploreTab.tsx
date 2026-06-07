@@ -66,6 +66,10 @@ function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
   return offers;
 }
 
+function isJobBoard(url: string): boolean {
+  return url.includes('justjoin.it') || url.includes('nofluffjobs.com');
+}
+
 function getPageText(tabId: number): Promise<string> {
   return new Promise(resolve => {
     if (typeof chrome === 'undefined') {
@@ -484,10 +488,14 @@ function ClientAccordion({
     }
     setExpandedOfferId(offerId);
     if (offerUrl && typeof chrome !== 'undefined') {
-      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-        if (tabs[0]?.id !== undefined)
-          chrome.tabs.update(tabs[0].id, { url: offerUrl });
-      });
+      if (currentUrl && isJobBoard(currentUrl)) {
+        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+          if (tabs[0]?.id !== undefined)
+            chrome.tabs.update(tabs[0].id, { url: offerUrl });
+        });
+      } else {
+        chrome.tabs.create({ url: offerUrl });
+      }
     }
   }
 
