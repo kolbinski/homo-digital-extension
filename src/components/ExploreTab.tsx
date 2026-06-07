@@ -4,15 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
 import { useCvGenerate } from '../hooks/useCvGenerate';
 
-const CV_LANGUAGES = [
-  'English',
-  'Polish',
-  'German',
-  'French',
-  'Spanish',
-  'Dutch',
-  'Ukrainian',
-];
 
 interface OfferSalary {
   min: number;
@@ -113,7 +104,7 @@ function OfferCard({
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [cvLanguage, setCvLanguage] = useState('English');
+  const [cvLanguage, setCvLanguage] = useState('en');
   const [status, setStatus] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -277,11 +268,8 @@ function OfferCard({
               disabled={isGenerating}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
             >
-              {CV_LANGUAGES.map(lang => (
-                <option key={lang} value={lang}>
-                  {lang}
-                </option>
-              ))}
+              <option value="en">English</option>
+              <option value="pl">Polish</option>
             </select>
           </div>
 
