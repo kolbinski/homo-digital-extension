@@ -130,6 +130,7 @@ function OfferCard({
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const icon = providerIcon(offer.source);
@@ -216,8 +217,36 @@ function OfferCard({
     }
   }
 
+  async function handleApplied() {
+    const token = await getToken();
+    if (!token) return;
+    setIsApplying(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: 'applied' }),
+        },
+      );
+      if (res.ok) {
+        onRemove(offer.user_offer_id);
+      } else {
+        setStatus({ type: 'error', message: `Applied failed (${res.status}).` });
+        setIsApplying(false);
+      }
+    } catch {
+      setStatus({ type: 'error', message: 'Network error.' });
+      setIsApplying(false);
+    }
+  }
+
   return (
-    <div className="border-b border-gray-100 last:border-0">
+    <div className="border-b border-gray-100 last:border-0" data-user-offer-id={offer.user_offer_id}>
       {/* Header row — click to expand/collapse */}
       <button
         type="button"
@@ -371,13 +400,23 @@ function OfferCard({
           )}
 
           {!showWithdraw ? (
-            <button
-              type="button"
-              onClick={() => setShowWithdraw(true)}
-              className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-            >
-              Withdraw
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleApplied}
+                disabled={isApplying}
+                className="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+              >
+                {isApplying ? 'Saving…' : 'Applied'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowWithdraw(true)}
+                className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+              >
+                Withdraw
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col gap-2">
               <textarea
@@ -459,6 +498,22 @@ function ClientAccordion({
       }
     }
   }, [currentUrl]);
+
+  useEffect(() => {
+    if (!currentUrl || !hasLoaded) return;
+    const allOffers = [...applyOffers, ...levelUpOffers];
+    const match = allOffers.find(
+      o => o.offer_url && currentUrl.startsWith(o.offer_url.split('?')[0]),
+    );
+    if (match) {
+      setExpandedOfferId(match.user_offer_id);
+      setTimeout(() => {
+        document
+          .querySelector(`[data-user-offer-id="${match.user_offer_id}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+  }, [currentUrl, applyOffers, levelUpOffers]);
 
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
