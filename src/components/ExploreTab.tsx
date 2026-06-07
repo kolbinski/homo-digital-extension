@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowsClockwise, ArrowUp, CurrencyCircleDollar } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
@@ -475,7 +475,6 @@ function ClientAccordion({
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
   const [applyOpen, setApplyOpen] = useState(true);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
 
   function handleCardToggle(offerId: string, offerUrl?: string) {
@@ -584,77 +583,6 @@ function ClientAccordion({
     };
   }, [statusFilter, sourceFilter]);
 
-  const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    async function loadCount() {
-      const token = await getToken();
-      if (!token) return;
-      try {
-        if (statusFilter === 'pending_apply') {
-          const applyParams = new URLSearchParams({
-            client_id: client.id,
-            status: 'pending_apply',
-            count_only: 'true',
-          });
-          const levelUpParams = new URLSearchParams({
-            client_id: client.id,
-            status: 'ai_rejected',
-            has_learning_goals: 'true',
-            count_only: 'true',
-          });
-          if (sourceFilter !== 'all') {
-            applyParams.append('source', sourceFilter);
-            levelUpParams.append('source', sourceFilter);
-          }
-          const [applyRes, levelUpRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/v1/user-offers?${applyParams}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch(`${API_BASE_URL}/v1/user-offers?${levelUpParams}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-          ]);
-          if (applyRes.ok) {
-            const data = (await applyRes.json()) as {
-              count?: number;
-              total?: number;
-            };
-            setPendingCount(data.count ?? data.total ?? null);
-          }
-          if (levelUpRes.ok) {
-            const data = (await levelUpRes.json()) as {
-              count?: number;
-              total?: number;
-            };
-            const n = data.count ?? data.total ?? 0;
-            setLevelUpCount(n > 0 ? n : null);
-          }
-        } else {
-          setLevelUpCount(null);
-          const params = new URLSearchParams({
-            client_id: client.id,
-            status: statusFilter,
-            count_only: 'true',
-          });
-          if (sourceFilter !== 'all') params.append('source', sourceFilter);
-          const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const data = (await res.json()) as {
-              count?: number;
-              total?: number;
-            };
-            setPendingCount(data.count ?? data.total ?? null);
-          }
-        }
-      } catch {
-        // badges are optional — silent fail
-      }
-    }
-    loadCount();
-  }, [client.id, statusFilter, sourceFilter]);
 
   async function fetchOffers(
     status: string,
@@ -713,11 +641,13 @@ function ClientAccordion({
     setIsRefreshing(false);
   }
 
-  const filteredApplyOffers = applyOffers.filter(
-    o => (o.claude_score ?? 0) >= minScore,
+  const filteredApplyOffers = useMemo(
+    () => applyOffers.filter(o => (o.claude_score ?? 0) >= minScore),
+    [applyOffers, minScore],
   );
-  const filteredLevelUpOffers = levelUpOffers.filter(
-    o => (o.claude_score ?? 0) >= minScore,
+  const filteredLevelUpOffers = useMemo(
+    () => levelUpOffers.filter(o => (o.claude_score ?? 0) >= minScore),
+    [levelUpOffers, minScore],
   );
 
   return (
@@ -735,7 +665,7 @@ function ClientAccordion({
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
-          {pendingCount !== null && pendingCount > 0 && (
+          {filteredApplyOffers.length > 0 && (
             <span
               className={`text-xs font-medium px-1.5 py-0.5 rounded ${
                 statusFilter === 'pending_apply'
@@ -743,12 +673,12 @@ function ClientAccordion({
                   : 'bg-gray-100 text-gray-600'
               }`}
             >
-              {pendingCount}
+              {filteredApplyOffers.length}
             </span>
           )}
-          {statusFilter === 'pending_apply' && levelUpCount !== null && (
+          {statusFilter === 'pending_apply' && filteredLevelUpOffers.length > 0 && (
             <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-              {levelUpCount}
+              {filteredLevelUpOffers.length}
             </span>
           )}
         </div>
