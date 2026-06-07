@@ -48,6 +48,25 @@ function offerScoreBadgeClass(score: number): string {
   return 'bg-gray-100 text-gray-500 border border-gray-200';
 }
 
+function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
+  if (sortBy === 'score') {
+    return [...offers].sort(
+      (a, b) => (b.claude_score ?? -1) - (a.claude_score ?? -1),
+    );
+  }
+  if (sortBy === 'salary_delta') {
+    const withSalary = offers.filter(o => o.salary && o.salary.length > 0);
+    const noSalary = offers.filter(
+      o => !o.salary || o.salary.length === 0,
+    );
+    const maxDelta = (o: UserOffer) =>
+      Math.max(...(o.salary ?? []).map(s => s.delta));
+    withSalary.sort((a, b) => maxDelta(b) - maxDelta(a));
+    return [...withSalary, ...noSalary];
+  }
+  return offers;
+}
+
 function getPageText(tabId: number): Promise<string> {
   return new Promise(resolve => {
     if (typeof chrome === 'undefined') {
@@ -78,6 +97,7 @@ interface ClientAccordionProps {
   client: Client;
   activeTabId?: number;
   currentUrl?: string;
+  sortBy: string;
 }
 
 interface OfferCardProps {
@@ -382,7 +402,7 @@ function OfferCard({
   );
 }
 
-function ClientAccordion({ client, activeTabId, currentUrl }: ClientAccordionProps) {
+function ClientAccordion({ client, activeTabId, currentUrl, sortBy }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -638,7 +658,7 @@ function ClientAccordion({ client, activeTabId, currentUrl }: ClientAccordionPro
                   </button>
                   {applyOpen && (
                     <div>
-                      {applyOffers.map(offer => (
+                      {sortOffers(applyOffers, sortBy).map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
@@ -697,7 +717,7 @@ function ClientAccordion({ client, activeTabId, currentUrl }: ClientAccordionPro
                   </button>
                   {levelUpOpen && (
                     <div>
-                      {levelUpOffers.map(offer => (
+                      {sortOffers(levelUpOffers, sortBy).map(offer => (
                         <OfferCard
                           key={offer.user_offer_id}
                           offer={offer}
@@ -739,6 +759,22 @@ export default function ExploreTab({ onLogout, activeTabId, currentUrl }: Props)
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState('score');
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_sort_by', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_sort_by) setSortBy(result.hd_sort_by as string);
+    });
+  }, []);
+
+  function handleSortChange(value: string) {
+    setSortBy(value);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ hd_sort_by: value });
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -792,6 +828,17 @@ export default function ExploreTab({ onLogout, activeTabId, currentUrl }: Props)
 
   return (
     <div className="px-4 py-5 flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500">Sort by:</span>
+        <select
+          value={sortBy}
+          onChange={e => handleSortChange(e.target.value)}
+          className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          <option value="score">Score</option>
+          <option value="salary_delta">Salary delta</option>
+        </select>
+      </div>
       {clients.length === 0 ? (
         <p className="text-sm text-gray-500">No clients found.</p>
       ) : (
@@ -801,6 +848,7 @@ export default function ExploreTab({ onLogout, activeTabId, currentUrl }: Props)
             client={client}
             activeTabId={activeTabId}
             currentUrl={currentUrl}
+            sortBy={sortBy}
           />
         ))
       )}
