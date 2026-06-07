@@ -238,8 +238,9 @@ function OfferCard({
               {offer.claude_score}%
             </span>
           )}
-          <span className="text-xs font-medium text-gray-900 group-hover:text-indigo-700 leading-snug">
-            {offer.offer_title} @ {offer.offer_company}
+          <span className="text-xs leading-snug">
+            <span className="font-medium text-[#1a1a1a] group-hover:text-indigo-700">{offer.offer_title}</span>
+            <span className="text-gray-400"> @ {offer.offer_company}</span>
           </span>
         </div>
         <svg
