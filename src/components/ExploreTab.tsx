@@ -11,6 +11,7 @@ interface OfferSalary {
   currency: string;
   type: string;
   delta: number;
+  delta_normalized?: number;
 }
 
 interface UserOffer {
@@ -265,13 +266,19 @@ function OfferCard({
         )}
         {offer.salary && offer.salary.length > 0 ? (
           <div className="flex flex-col gap-0.5">
-            {offer.salary.map((s, i) => (
-              <span key={i} className="text-xs text-gray-500">
-                💰 {formatNum(s.min)} – {formatNum(s.max)} {s.currency} (
-                {s.type}) {s.delta >= 0 ? '+' : ''}
-                {formatNum(s.delta)} {s.currency}
-              </span>
-            ))}
+            {offer.salary.map((s, i) => {
+              const deltaColor = s.delta >= 0 ? 'text-orange-500' : 'text-red-500';
+              const deltaStr = s.delta >= 0 ? `+${formatNum(s.delta)}` : formatNum(s.delta);
+              return (
+                <span key={i} className="text-xs text-gray-500">
+                  💰 {s.currency} {s.type} {formatNum(s.min)} – {formatNum(s.max)}{' '}
+                  <span className={deltaColor}>{deltaStr}</span>
+                  {s.currency !== 'PLN' && s.delta_normalized != null && (
+                    <span className={deltaColor}> ({formatNum(s.delta_normalized)} PLN)</span>
+                  )}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <span className="text-gray-400 text-sm italic">
