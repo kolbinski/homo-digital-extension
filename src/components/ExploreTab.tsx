@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
 import { useCvGenerate } from '../hooks/useCvGenerate';
 
-
 interface OfferSalary {
   min: number;
   max: number;
@@ -57,9 +56,7 @@ function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
   }
   if (sortBy === 'salary_delta') {
     const withSalary = offers.filter(o => o.salary && o.salary.length > 0);
-    const noSalary = offers.filter(
-      o => !o.salary || o.salary.length === 0,
-    );
+    const noSalary = offers.filter(o => !o.salary || o.salary.length === 0);
     const maxDelta = (o: UserOffer) =>
       Math.max(...(o.salary ?? []).map(s => s.delta));
     withSalary.sort((a, b) => maxDelta(b) - maxDelta(a));
@@ -239,8 +236,10 @@ function OfferCard({
             </span>
           )}
           <span className="text-xs leading-snug">
-            <span className="font-medium text-[#1a1a1a] group-hover:text-indigo-700">{offer.offer_title}</span>
-            <span className="text-gray-400"> @ {offer.offer_company}</span>
+            <span className="font-medium text-[#1a1a1a] group-hover:text-indigo-700">
+              {offer.offer_title}
+            </span>
+            <span className="text-gray-600"> @ {offer.offer_company}</span>
           </span>
         </div>
         <svg
@@ -268,14 +267,20 @@ function OfferCard({
         {offer.salary && offer.salary.length > 0 ? (
           <div className="flex flex-col gap-0.5">
             {offer.salary.map((s, i) => {
-              const deltaColor = s.delta >= 0 ? 'text-orange-500' : 'text-red-500';
-              const deltaStr = s.delta >= 0 ? `+${formatNum(s.delta)}` : formatNum(s.delta);
+              const deltaColor =
+                s.delta >= 0 ? 'text-orange-500' : 'text-red-500';
+              const deltaStr =
+                s.delta >= 0 ? `+${formatNum(s.delta)}` : formatNum(s.delta);
               return (
                 <span key={i} className="text-xs text-gray-500">
-                  💰 {s.currency} {s.type} {formatNum(s.min)} – {formatNum(s.max)}{' '}
+                  💰 {s.currency} {s.type} {formatNum(s.min)} –{' '}
+                  {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
                   {s.currency !== 'PLN' && s.delta_normalized != null && (
-                    <span className={deltaColor}> ({formatNum(s.delta_normalized)} PLN)</span>
+                    <span className={deltaColor}>
+                      {' '}
+                      ({formatNum(s.delta_normalized)} PLN)
+                    </span>
                   )}
                 </span>
               );
@@ -410,7 +415,12 @@ function OfferCard({
   );
 }
 
-function ClientAccordion({ client, activeTabId, currentUrl, sortBy }: ClientAccordionProps) {
+function ClientAccordion({
+  client,
+  activeTabId,
+  currentUrl,
+  sortBy,
+}: ClientAccordionProps) {
   const { getToken } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -556,7 +566,9 @@ function ClientAccordion({ client, activeTabId, currentUrl, sortBy }: ClientAcco
         role="button"
         tabIndex={0}
         onClick={handleToggle}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleToggle(); }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') handleToggle();
+        }}
         className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
@@ -577,15 +589,34 @@ function ClientAccordion({ client, activeTabId, currentUrl, sortBy }: ClientAcco
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={e => { e.stopPropagation(); handleRefresh(); }}
+            onClick={e => {
+              e.stopPropagation();
+              handleRefresh();
+            }}
             disabled={isRefreshing}
             title="Refresh"
             className="text-gray-400 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
           >
             {isRefreshing ? (
-              <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="animate-spin h-3.5 w-3.5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
             ) : (
               <span className="text-sm">🔄</span>
@@ -762,7 +793,11 @@ function ClientAccordion({ client, activeTabId, currentUrl, sortBy }: ClientAcco
   );
 }
 
-export default function ExploreTab({ onLogout, activeTabId, currentUrl }: Props) {
+export default function ExploreTab({
+  onLogout,
+  activeTabId,
+  currentUrl,
+}: Props) {
   const { fetchClients } = useClients();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
