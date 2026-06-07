@@ -23,6 +23,7 @@ interface UserOffer {
   claude_missing_skills?: string[];
   salary?: OfferSalary[];
   source?: string;
+  cv_language?: string | null;
 }
 
 function providerIcon(source?: string): string | null {
@@ -122,7 +123,7 @@ function OfferCard({
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [cvLanguage, setCvLanguage] = useState('en');
+  const [cvLanguage, setCvLanguage] = useState(offer.cv_language === 'pl' ? 'pl' : 'en');
   const [status, setStatus] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -132,6 +133,10 @@ function OfferCard({
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (isOpen) setCvLanguage(offer.cv_language === 'pl' ? 'pl' : 'en');
+  }, [isOpen]);
 
   const icon = providerIcon(offer.source);
 
