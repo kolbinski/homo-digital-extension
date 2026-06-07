@@ -102,8 +102,12 @@ function App() {
       <TabBar activeTab={activeTab} onChange={setActiveTab} isSyncing={isSyncing} />
 
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'explore' && <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} currentUrl={currentUrl} />}
-        {activeTab === 'sync' && <SyncTab onSyncingChange={setIsSyncing} />}
+        <div style={{ display: activeTab === 'explore' ? 'block' : 'none' }}>
+          <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} currentUrl={currentUrl} />
+        </div>
+        <div style={{ display: activeTab === 'sync' ? 'block' : 'none' }}>
+          <SyncTab onSyncingChange={setIsSyncing} />
+        </div>
       </div>
     </div>
   )
