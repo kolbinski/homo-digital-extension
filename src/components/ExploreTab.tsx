@@ -500,7 +500,7 @@ function ClientAccordion({
   }, [currentUrl]);
 
   useEffect(() => {
-    if (!currentUrl || !hasLoaded) return;
+    if (!currentUrl) return;
     const allOffers = [...applyOffers, ...levelUpOffers];
     const match = allOffers.find(
       o => o.offer_url && currentUrl.startsWith(o.offer_url.split('?')[0]),
@@ -514,6 +514,37 @@ function ClientAccordion({
       }, 50);
     }
   }, [currentUrl, applyOffers, levelUpOffers]);
+
+  useEffect(() => {
+    if (!currentUrl || hasLoaded) return;
+    const url = currentUrl;
+    let cancelled = false;
+    async function eagerLoad() {
+      const [pending, levelUp] = await Promise.all([
+        fetchOffers('pending_apply'),
+        fetchOffers('ai_rejected', true),
+      ]);
+      if (cancelled) return;
+      setApplyOffers(pending);
+      setLevelUpOffers(levelUp);
+      setHasLoaded(true);
+      const allOffers = [...pending, ...levelUp];
+      const match = allOffers.find(
+        o => o.offer_url && url.startsWith(o.offer_url.split('?')[0]),
+      );
+      if (match) {
+        setIsOpen(true);
+        setExpandedOfferId(match.user_offer_id);
+        setTimeout(() => {
+          document
+            .querySelector(`[data-user-offer-id="${match.user_offer_id}"]`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+      }
+    }
+    eagerLoad();
+    return () => { cancelled = true; };
+  }, [currentUrl]);
 
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
