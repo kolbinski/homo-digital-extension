@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ArrowsClockwise, CurrencyCircleDollar } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
@@ -66,6 +67,15 @@ function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
   return offers;
 }
 
+const STATUS_OPTIONS = [
+  { value: 'applied', label: 'Applied' },
+  { value: 'agent_withdrawn', label: 'Agent withdrawn' },
+  { value: 'client_withdrawn', label: 'Client withdrawn' },
+  { value: 'offer_received', label: 'Offer received' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'recruiter_rejected', label: 'Recruiter rejected' },
+];
+
 function isJobBoard(url: string): boolean {
   return url.includes('justjoin.it') || url.includes('nofluffjobs.com');
 }
@@ -101,6 +111,7 @@ interface ClientAccordionProps {
   activeTabId?: number;
   currentUrl?: string;
   sortBy: string;
+  statusFilter: string;
 }
 
 interface OfferCardProps {
@@ -127,16 +138,16 @@ function OfferCard({
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [cvLanguage, setCvLanguage] = useState(offer.cv_language === 'pl' ? 'pl' : 'en');
+  const [cvLanguage, setCvLanguage] = useState(
+    offer.cv_language === 'pl' ? 'pl' : 'en',
+  );
   const [status, setStatus] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const [showWithdraw, setShowWithdraw] = useState(false);
-  const [withdrawReason, setWithdrawReason] = useState('');
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [isApplying, setIsApplying] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) setCvLanguage(offer.cv_language === 'pl' ? 'pl' : 'en');
@@ -194,42 +205,24 @@ function OfferCard({
     setStatus(null);
   }
 
-  async function handleWithdrawSave() {
-    if (!withdrawReason.trim()) return;
-    const token = await getToken();
-    if (!token) return;
-    setIsWithdrawing(true);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/withdraw`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ reason: withdrawReason }),
-        },
-      );
-      if (res.ok) {
-        onRemove(offer.user_offer_id);
-      } else {
-        setStatus({
-          type: 'error',
-          message: `Withdraw failed (${res.status}).`,
-        });
-        setIsWithdrawing(false);
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsDropdownOpen(false);
       }
-    } catch {
-      setStatus({ type: 'error', message: 'Network error during withdraw.' });
-      setIsWithdrawing(false);
     }
-  }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDropdownOpen]);
 
-  async function handleApplied() {
+  async function handleStatusChange(status: string) {
+    setIsDropdownOpen(false);
     const token = await getToken();
     if (!token) return;
-    setIsApplying(true);
     try {
       const res = await fetch(
         `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/status`,
@@ -239,23 +232,27 @@ function OfferCard({
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ status: 'applied' }),
+          body: JSON.stringify({ status }),
         },
       );
       if (res.ok) {
         onRemove(offer.user_offer_id);
       } else {
-        setStatus({ type: 'error', message: `Applied failed (${res.status}).` });
-        setIsApplying(false);
+        setStatus({
+          type: 'error',
+          message: `Status update failed (${res.status}).`,
+        });
       }
     } catch {
       setStatus({ type: 'error', message: 'Network error.' });
-      setIsApplying(false);
     }
   }
 
   return (
-    <div className="border-b border-gray-100 last:border-0" data-user-offer-id={offer.user_offer_id}>
+    <div
+      className="border-b border-gray-100 last:border-0"
+      data-user-offer-id={offer.user_offer_id}
+    >
       {/* Header row — click to expand/collapse */}
       <button
         type="button"
@@ -310,8 +307,8 @@ function OfferCard({
               const deltaStr =
                 s.delta >= 0 ? `+${formatNum(s.delta)}` : formatNum(s.delta);
               return (
-                <span key={i} className="text-xs text-gray-500">
-                  💰 {s.currency} {s.type} {formatNum(s.min)} –{' '}
+                <span key={i} className="text-xs text-gray-500 flex items-center gap-0.5">
+                  <CurrencyCircleDollar size={13} className="shrink-0" /> {s.currency} {s.type} {formatNum(s.min)} –{' '}
                   {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
                   {s.currency !== 'PLN' && s.delta_normalized != null && (
@@ -334,21 +331,6 @@ function OfferCard({
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-700">
-              CV Language
-            </label>
-            <select
-              value={cvLanguage}
-              onChange={e => setCvLanguage(e.target.value)}
-              disabled={isGenerating}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              <option value="en">English</option>
-              <option value="pl">Polish</option>
-            </select>
-          </div>
-
           {isGenerating ? (
             <div className="flex gap-2">
               <button
@@ -387,13 +369,23 @@ function OfferCard({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleGenerate}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-            >
-              Generate CV
-            </button>
+            <div className="flex gap-2 items-center">
+              <select
+                value={cvLanguage}
+                onChange={e => setCvLanguage(e.target.value)}
+                className="shrink-0 px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="en">English</option>
+                <option value="pl">Polish</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+              >
+                Generate CV
+              </button>
+            </div>
           )}
 
           {status && (
@@ -408,55 +400,42 @@ function OfferCard({
             </div>
           )}
 
-          {!showWithdraw ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleApplied}
-                disabled={isApplying}
-                className="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen(v => !v)}
+              className="w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+            >
+              <span>Change status</span>
+              <svg
+                className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
               >
-                {isApplying ? 'Saving…' : 'Applied'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowWithdraw(true)}
-                className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-              >
-                Withdraw
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <textarea
-                value={withdrawReason}
-                onChange={e => setWithdrawReason(e.target.value)}
-                placeholder="Withdraw reason (required)"
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowWithdraw(false);
-                    setWithdrawReason('');
-                  }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleWithdrawSave}
-                  disabled={!withdrawReason.trim() || isWithdrawing}
-                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                >
-                  {isWithdrawing ? 'Saving…' : 'Save'}
-                </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {isDropdownOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
+                {STATUS_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleStatusChange(opt.value)}
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -468,6 +447,7 @@ function ClientAccordion({
   activeTabId,
   currentUrl,
   sortBy,
+  statusFilter,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
@@ -534,8 +514,8 @@ function ClientAccordion({
     let cancelled = false;
     async function eagerLoad() {
       const [pending, levelUp] = await Promise.all([
-        fetchOffers('pending_apply'),
-        fetchOffers('ai_rejected', true),
+        fetchOffers(statusFilter),
+        statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
       ]);
       if (cancelled) return;
       setApplyOffers(pending);
@@ -556,8 +536,30 @@ function ClientAccordion({
       }
     }
     eagerLoad();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [currentUrl]);
+
+  useEffect(() => {
+    setHasLoaded(false);
+    if (!isOpen) return;
+    let cancelled = false;
+    async function refetchOffers() {
+      setIsLoading(true);
+      const [pending, levelUp] = await Promise.all([
+        fetchOffers(statusFilter),
+        statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
+      ]);
+      if (cancelled) return;
+      setApplyOffers(pending);
+      setLevelUpOffers(levelUp);
+      setIsLoading(false);
+      setHasLoaded(true);
+    }
+    refetchOffers();
+    return () => { cancelled = true; };
+  }, [statusFilter]);
 
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
 
@@ -633,8 +635,8 @@ function ClientAccordion({
     if (opening && !hasLoaded) {
       setIsLoading(true);
       const [pending, levelUp] = await Promise.all([
-        fetchOffers('pending_apply'),
-        fetchOffers('ai_rejected', true),
+        fetchOffers(statusFilter),
+        statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
       ]);
       setApplyOffers(pending);
       setLevelUpOffers(levelUp);
@@ -649,8 +651,8 @@ function ClientAccordion({
     setIsRefreshing(true);
     setIsLoading(true);
     const [pending, levelUp] = await Promise.all([
-      fetchOffers('pending_apply'),
-      fetchOffers('ai_rejected', true),
+      fetchOffers(statusFilter),
+      statusFilter === 'pending_apply' ? fetchOffers('ai_rejected', true) : Promise.resolve([]),
     ]);
     setApplyOffers(pending);
     setLevelUpOffers(levelUp);
@@ -718,7 +720,7 @@ function ClientAccordion({
                 />
               </svg>
             ) : (
-              <span className="text-sm">🔄</span>
+              <ArrowsClockwise size={14} />
             )}
           </button>
           <svg
@@ -902,6 +904,7 @@ export default function ExploreTab({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('score');
+  const [statusFilter, setStatusFilter] = useState('pending_apply');
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) return;
@@ -911,10 +914,25 @@ export default function ExploreTab({
     });
   }, []);
 
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_status_filter', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_status_filter) setStatusFilter(result.hd_status_filter as string);
+    });
+  }, []);
+
   function handleSortChange(value: string) {
     setSortBy(value);
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.set({ hd_sort_by: value });
+    }
+  }
+
+  function handleStatusFilterChange(value: string) {
+    setStatusFilter(value);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ hd_status_filter: value });
     }
   }
 
@@ -970,16 +988,34 @@ export default function ExploreTab({
 
   return (
     <div className="px-4 py-5 flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-500">Sort by:</span>
-        <select
-          value={sortBy}
-          onChange={e => handleSortChange(e.target.value)}
-          className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        >
-          <option value="score">Score</option>
-          <option value="salary_delta">Salary delta</option>
-        </select>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">Sort by:</span>
+          <select
+            value={sortBy}
+            onChange={e => handleSortChange(e.target.value)}
+            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="score">Score</option>
+            <option value="salary_delta">Salary delta</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">Status:</span>
+          <select
+            value={statusFilter}
+            onChange={e => handleStatusFilterChange(e.target.value)}
+            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="pending_apply">Pending apply</option>
+            <option value="applied">Applied</option>
+            <option value="agent_withdrawn">Agent withdrawn</option>
+            <option value="recruiter_rejected">Recruiter rejected</option>
+            <option value="offer_received">Offer received</option>
+            <option value="accepted">Accepted</option>
+            <option value="client_withdrawn">Client withdrawn</option>
+          </select>
+        </div>
       </div>
       {clients.length === 0 ? (
         <p className="text-sm text-gray-500">No clients found.</p>
@@ -991,6 +1027,7 @@ export default function ExploreTab({
             activeTabId={activeTabId}
             currentUrl={currentUrl}
             sortBy={sortBy}
+            statusFilter={statusFilter}
           />
         ))
       )}
