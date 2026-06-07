@@ -147,6 +147,11 @@ function OfferCard({
     setIsGenerating(false);
     if (!result.success) {
       if (result.error) setStatus({ type: 'error', message: result.error });
+    } else if (result.clipboardFailed) {
+      setStatus({
+        type: 'success',
+        message: `CV ready — copy manually: ${result.filename}`,
+      });
     } else {
       setStatus({
         type: 'success',

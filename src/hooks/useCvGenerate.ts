@@ -2,7 +2,27 @@ import slugify from 'slugify';
 import { API_BASE_URL } from '../config';
 import { useAuth } from './useAuth';
 
-type GenerateResult = { success: true } | { success: false; error: string };
+type GenerateResult =
+  | { success: true; clipboardFailed: false }
+  | { success: true; clipboardFailed: true; filename: string }
+  | { success: false; error: string };
+
+async function copyToClipboard(text: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Fallback for extension context where clipboard API requires focus
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  }
+}
 
 export function useCvGenerate() {
   const { getToken } = useAuth();
@@ -50,10 +70,7 @@ export function useCvGenerate() {
         signal,
       });
       if (res.status === 401)
-        return {
-          success: false,
-          error: 'Session expired. Please log in again.',
-        };
+        return { success: false, error: 'Session expired. Please log in again.' };
       if (!res.ok)
         return {
           success: false,
@@ -74,24 +91,27 @@ export function useCvGenerate() {
       apiFilename ??
       `cv-${slugify(clientFirstName, { lower: true, strict: true })}-${slugify(clientLastName, { lower: true, strict: true })}-${slugify(companyName, { lower: true, strict: true })}.pdf`;
 
+    let clipboardFailed = false;
     try {
-      await navigator.clipboard.writeText(filename);
+      await copyToClipboard(filename);
     } catch (e) {
       console.warn('[useCvGenerate] clipboard copy failed:', e);
+      clipboardFailed = true;
     }
 
     try {
       const blob = new Blob([html], { type: 'text/html' });
       const dataUrl = URL.createObjectURL(blob);
       await chrome.tabs.create({ url: dataUrl, active: true });
-      return { success: true };
     } catch (err) {
-      console.error('[useCvGenerate] tab open error:', err, JSON.stringify(err));
-      return {
-        success: false,
-        error: 'Could not open CV. Check extension permissions.',
-      };
+      console.error('[useCvGenerate] tab open error:', err);
+      return { success: false, error: 'Could not open CV. Check extension permissions.' };
     }
+
+    if (clipboardFailed) {
+      return { success: true, clipboardFailed: true, filename };
+    }
+    return { success: true, clipboardFailed: false };
   }
 
   return { generateCV };
