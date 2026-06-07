@@ -123,6 +123,7 @@ interface ClientAccordionProps {
   sortBy: string;
   statusFilter: string;
   sourceFilter: string;
+  minScore: number;
 }
 
 interface OfferCardProps {
@@ -463,6 +464,7 @@ function ClientAccordion({
   sortBy,
   statusFilter,
   sourceFilter,
+  minScore,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
@@ -711,6 +713,13 @@ function ClientAccordion({
     setIsRefreshing(false);
   }
 
+  const filteredApplyOffers = applyOffers.filter(
+    o => (o.claude_score ?? 0) >= minScore,
+  );
+  const filteredLevelUpOffers = levelUpOffers.filter(
+    o => (o.claude_score ?? 0) >= minScore,
+  );
+
   return (
     <div className="border border-gray-200 rounded-md overflow-hidden">
       <div
@@ -825,7 +834,7 @@ function ClientAccordion({
               {statusFilter === 'pending_apply' ? (
                 <>
                   {/* Apply now sub-section */}
-                  {applyOffers.length > 0 && (
+                  {filteredApplyOffers.length > 0 && (
                     <div className="border-b border-gray-100">
                       <button
                         type="button"
@@ -837,7 +846,7 @@ function ClientAccordion({
                             Apply now
                           </span>
                           <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                            {applyOffers.length}
+                            {filteredApplyOffers.length}
                           </span>
                         </div>
                         <svg
@@ -856,7 +865,7 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(applyOffers, sortBy).map(offer => (
+                          {sortOffers(filteredApplyOffers, sortBy).map(offer => (
                             <OfferCard
                               key={offer.user_offer_id}
                               offer={offer}
@@ -884,7 +893,7 @@ function ClientAccordion({
                   )}
 
                   {/* Level up sub-section */}
-                  {levelUpOffers.length > 0 && (
+                  {filteredLevelUpOffers.length > 0 && (
                     <div>
                       <button
                         type="button"
@@ -896,7 +905,7 @@ function ClientAccordion({
                             Level up & earn more
                           </span>
                           <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                            {levelUpOffers.length}
+                            {filteredLevelUpOffers.length}
                           </span>
                         </div>
                         <svg
@@ -915,7 +924,7 @@ function ClientAccordion({
                       </button>
                       {levelUpOpen && (
                         <div>
-                          {sortOffers(levelUpOffers, sortBy).map(offer => (
+                          {sortOffers(filteredLevelUpOffers, sortBy).map(offer => (
                             <OfferCard
                               key={offer.user_offer_id}
                               offer={offer}
@@ -941,14 +950,14 @@ function ClientAccordion({
                       )}
                     </div>
                   )}
-                  {applyOffers.length === 0 && levelUpOffers.length === 0 && (
+                  {filteredApplyOffers.length === 0 && filteredLevelUpOffers.length === 0 && (
                     <p className="px-3 py-3 text-gray-400">No offers found</p>
                   )}
                 </>
               ) : (
                 <>
                   {/* Single section for non-pending_apply statuses */}
-                  {applyOffers.length > 0 ? (
+                  {filteredApplyOffers.length > 0 ? (
                     <div>
                       <button
                         type="button"
@@ -960,7 +969,7 @@ function ClientAccordion({
                             {STATUS_LABELS[statusFilter] ?? statusFilter}
                           </span>
                           <span className="text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                            {applyOffers.length}
+                            {filteredApplyOffers.length}
                           </span>
                         </div>
                         <svg
@@ -979,7 +988,7 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(applyOffers, sortBy).map(offer => (
+                          {sortOffers(filteredApplyOffers, sortBy).map(offer => (
                             <OfferCard
                               key={offer.user_offer_id}
                               offer={offer}
@@ -1029,6 +1038,7 @@ export default function ExploreTab({
   const [sortBy, setSortBy] = useState('score');
   const [statusFilter, setStatusFilter] = useState('pending_apply');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [minScore, setMinScore] = useState(75);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -1054,6 +1064,15 @@ export default function ExploreTab({
       if (chrome.runtime.lastError) return;
       if (result.hd_source_filter)
         setSourceFilter(result.hd_source_filter as string);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_min_score', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_min_score !== undefined)
+        setMinScore(result.hd_min_score as number);
     });
   }, []);
 
@@ -1085,6 +1104,13 @@ export default function ExploreTab({
     setSourceFilter(value);
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.set({ hd_source_filter: value });
+    }
+  }
+
+  function handleMinScoreChange(value: number) {
+    setMinScore(value);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ hd_min_score: value });
     }
   }
 
@@ -1142,6 +1168,21 @@ export default function ExploreTab({
     <>
     <div className="px-4 py-5 flex flex-col gap-3">
       <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 shrink-0">Min score:</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={minScore}
+            onChange={e => handleMinScoreChange(Number(e.target.value))}
+            className="flex-1"
+          />
+          <span className="text-xs font-medium text-gray-700 w-7 text-right">
+            {minScore}
+          </span>
+        </div>
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-gray-500">Sort by:</span>
           <select
@@ -1194,6 +1235,7 @@ export default function ExploreTab({
             sortBy={sortBy}
             statusFilter={statusFilter}
             sourceFilter={sourceFilter}
+            minScore={minScore}
           />
         ))
       )}
