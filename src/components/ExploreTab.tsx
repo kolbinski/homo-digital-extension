@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowsClockwise, ArrowUp, CurrencyCircleDollar } from '@phosphor-icons/react';
+import {
+  ArrowsClockwise,
+  ArrowUp,
+  CurrencyCircleDollar,
+} from '@phosphor-icons/react';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
@@ -286,7 +290,7 @@ function OfferCard({
             <span className="font-medium text-[#1a1a1a] group-hover:text-indigo-700">
               {offer.offer_title}
             </span>
-            <span className="text-gray-600"> @ {offer.offer_company}</span>
+            <span className="text-gray-600"> @&nbsp;{offer.offer_company}</span>
           </span>
         </div>
         <svg
@@ -583,7 +587,6 @@ function ClientAccordion({
     };
   }, [statusFilter, sourceFilter]);
 
-
   async function fetchOffers(
     status: string,
     hasLearningGoals = false,
@@ -676,11 +679,12 @@ function ClientAccordion({
               {filteredApplyOffers.length}
             </span>
           )}
-          {statusFilter === 'pending_apply' && filteredLevelUpOffers.length > 0 && (
-            <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-              {filteredLevelUpOffers.length}
-            </span>
-          )}
+          {statusFilter === 'pending_apply' &&
+            filteredLevelUpOffers.length > 0 && (
+              <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                {filteredLevelUpOffers.length}
+              </span>
+            )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
@@ -795,28 +799,30 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(filteredApplyOffers, sortBy).map(offer => (
-                            <OfferCard
-                              key={offer.user_offer_id}
-                              offer={offer}
-                              clientId={client.id}
-                              clientFirstName={client.first_name}
-                              clientLastName={client.last_name}
-                              isOpen={expandedOfferId === offer.user_offer_id}
-                              onToggle={() =>
-                                handleCardToggle(
-                                  offer.user_offer_id,
-                                  offer.offer_url,
-                                )
-                              }
-                              activeTabId={activeTabId}
-                              onRemove={id =>
-                                setApplyOffers(prev =>
-                                  prev.filter(o => o.user_offer_id !== id),
-                                )
-                              }
-                            />
-                          ))}
+                          {sortOffers(filteredApplyOffers, sortBy).map(
+                            offer => (
+                              <OfferCard
+                                key={offer.user_offer_id}
+                                offer={offer}
+                                clientId={client.id}
+                                clientFirstName={client.first_name}
+                                clientLastName={client.last_name}
+                                isOpen={expandedOfferId === offer.user_offer_id}
+                                onToggle={() =>
+                                  handleCardToggle(
+                                    offer.user_offer_id,
+                                    offer.offer_url,
+                                  )
+                                }
+                                activeTabId={activeTabId}
+                                onRemove={id =>
+                                  setApplyOffers(prev =>
+                                    prev.filter(o => o.user_offer_id !== id),
+                                  )
+                                }
+                              />
+                            ),
+                          )}
                         </div>
                       )}
                     </div>
@@ -854,35 +860,38 @@ function ClientAccordion({
                       </button>
                       {levelUpOpen && (
                         <div>
-                          {sortOffers(filteredLevelUpOffers, sortBy).map(offer => (
-                            <OfferCard
-                              key={offer.user_offer_id}
-                              offer={offer}
-                              clientId={client.id}
-                              clientFirstName={client.first_name}
-                              clientLastName={client.last_name}
-                              isOpen={expandedOfferId === offer.user_offer_id}
-                              onToggle={() =>
-                                handleCardToggle(
-                                  offer.user_offer_id,
-                                  offer.offer_url,
-                                )
-                              }
-                              activeTabId={activeTabId}
-                              onRemove={id =>
-                                setLevelUpOffers(prev =>
-                                  prev.filter(o => o.user_offer_id !== id),
-                                )
-                              }
-                            />
-                          ))}
+                          {sortOffers(filteredLevelUpOffers, sortBy).map(
+                            offer => (
+                              <OfferCard
+                                key={offer.user_offer_id}
+                                offer={offer}
+                                clientId={client.id}
+                                clientFirstName={client.first_name}
+                                clientLastName={client.last_name}
+                                isOpen={expandedOfferId === offer.user_offer_id}
+                                onToggle={() =>
+                                  handleCardToggle(
+                                    offer.user_offer_id,
+                                    offer.offer_url,
+                                  )
+                                }
+                                activeTabId={activeTabId}
+                                onRemove={id =>
+                                  setLevelUpOffers(prev =>
+                                    prev.filter(o => o.user_offer_id !== id),
+                                  )
+                                }
+                              />
+                            ),
+                          )}
                         </div>
                       )}
                     </div>
                   )}
-                  {filteredApplyOffers.length === 0 && filteredLevelUpOffers.length === 0 && (
-                    <p className="px-3 py-3 text-gray-400">No offers found</p>
-                  )}
+                  {filteredApplyOffers.length === 0 &&
+                    filteredLevelUpOffers.length === 0 && (
+                      <p className="px-3 py-3 text-gray-400">No offers found</p>
+                    )}
                 </>
               ) : (
                 <>
@@ -918,28 +927,30 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(filteredApplyOffers, sortBy).map(offer => (
-                            <OfferCard
-                              key={offer.user_offer_id}
-                              offer={offer}
-                              clientId={client.id}
-                              clientFirstName={client.first_name}
-                              clientLastName={client.last_name}
-                              isOpen={expandedOfferId === offer.user_offer_id}
-                              onToggle={() =>
-                                handleCardToggle(
-                                  offer.user_offer_id,
-                                  offer.offer_url,
-                                )
-                              }
-                              activeTabId={activeTabId}
-                              onRemove={id =>
-                                setApplyOffers(prev =>
-                                  prev.filter(o => o.user_offer_id !== id),
-                                )
-                              }
-                            />
-                          ))}
+                          {sortOffers(filteredApplyOffers, sortBy).map(
+                            offer => (
+                              <OfferCard
+                                key={offer.user_offer_id}
+                                offer={offer}
+                                clientId={client.id}
+                                clientFirstName={client.first_name}
+                                clientLastName={client.last_name}
+                                isOpen={expandedOfferId === offer.user_offer_id}
+                                onToggle={() =>
+                                  handleCardToggle(
+                                    offer.user_offer_id,
+                                    offer.offer_url,
+                                  )
+                                }
+                                activeTabId={activeTabId}
+                                onRemove={id =>
+                                  setApplyOffers(prev =>
+                                    prev.filter(o => o.user_offer_id !== id),
+                                  )
+                                }
+                              />
+                            ),
+                          )}
                         </div>
                       )}
                     </div>
@@ -1096,93 +1107,93 @@ export default function ExploreTab({
 
   return (
     <>
-    <div className="px-4 py-5 flex flex-col gap-3">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 shrink-0">Min score:</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={minScore}
-            onChange={e => handleMinScoreChange(Number(e.target.value))}
-            className="flex-1"
-          />
-          <span className="text-xs font-medium text-gray-700 w-7 text-right">
-            {minScore}
-          </span>
+      <div className="px-4 py-5 flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 shrink-0">Min score:</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={minScore}
+              onChange={e => handleMinScoreChange(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-xs font-medium text-gray-700 w-7 text-right">
+              {minScore}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={e => handleSortChange(e.target.value)}
+              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="score">Score</option>
+              <option value="salary_delta">Salary delta</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Source:</span>
+            <select
+              value={sourceFilter}
+              onChange={e => handleSourceFilterChange(e.target.value)}
+              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="all">All</option>
+              <option value="justjoin">JustJoin</option>
+              <option value="nofluffjobs">NoFluffJobs</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={e => handleStatusFilterChange(e.target.value)}
+              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="pending_apply">Pending apply</option>
+              <option value="applied">Applied</option>
+              <option value="agent_withdrawn">Agent withdrawn</option>
+              <option value="recruiter_rejected">Recruiter rejected</option>
+              <option value="offer_received">Offer received</option>
+              <option value="accepted">Accepted</option>
+              <option value="client_withdrawn">Client withdrawn</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-500">Sort by:</span>
-          <select
-            value={sortBy}
-            onChange={e => handleSortChange(e.target.value)}
-            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="score">Score</option>
-            <option value="salary_delta">Salary delta</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-500">Source:</span>
-          <select
-            value={sourceFilter}
-            onChange={e => handleSourceFilterChange(e.target.value)}
-            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All</option>
-            <option value="justjoin">JustJoin</option>
-            <option value="nofluffjobs">NoFluffJobs</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-500">Status:</span>
-          <select
-            value={statusFilter}
-            onChange={e => handleStatusFilterChange(e.target.value)}
-            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="pending_apply">Pending apply</option>
-            <option value="applied">Applied</option>
-            <option value="agent_withdrawn">Agent withdrawn</option>
-            <option value="recruiter_rejected">Recruiter rejected</option>
-            <option value="offer_received">Offer received</option>
-            <option value="accepted">Accepted</option>
-            <option value="client_withdrawn">Client withdrawn</option>
-          </select>
-        </div>
+        {clients.length === 0 ? (
+          <p className="text-sm text-gray-500">No clients found.</p>
+        ) : (
+          clients.map(client => (
+            <ClientAccordion
+              key={client.id}
+              client={client}
+              activeTabId={activeTabId}
+              currentUrl={currentUrl}
+              sortBy={sortBy}
+              statusFilter={statusFilter}
+              sourceFilter={sourceFilter}
+              minScore={minScore}
+            />
+          ))
+        )}
       </div>
-      {clients.length === 0 ? (
-        <p className="text-sm text-gray-500">No clients found.</p>
-      ) : (
-        clients.map(client => (
-          <ClientAccordion
-            key={client.id}
-            client={client}
-            activeTabId={activeTabId}
-            currentUrl={currentUrl}
-            sortBy={sortBy}
-            statusFilter={statusFilter}
-            sourceFilter={sourceFilter}
-            minScore={minScore}
-          />
-        ))
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() =>
+            document
+              .getElementById('main-scroll')
+              ?.scrollTo({ top: 0, behavior: 'smooth' })
+          }
+          className="fixed bottom-4 right-4 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow z-50"
+        >
+          <ArrowUp size={18} className="text-gray-600" />
+        </button>
       )}
-    </div>
-    {showScrollTop && (
-      <button
-        type="button"
-        onClick={() =>
-          document
-            .getElementById('main-scroll')
-            ?.scrollTo({ top: 0, behavior: 'smooth' })
-        }
-        className="fixed bottom-4 right-4 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow z-50"
-      >
-        <ArrowUp size={18} className="text-gray-600" />
-      </button>
-    )}
     </>
   );
 }

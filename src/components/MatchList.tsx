@@ -100,7 +100,6 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
               width={16}
               height={16}
               className="shrink-0"
-              title={match.source}
             />
           )}
           {match.first_name} {match.last_name}
