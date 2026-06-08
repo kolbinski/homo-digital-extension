@@ -19,6 +19,8 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [notifyResult, setNotifyResult] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -86,6 +88,28 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
     } catch {
       setError('Network error. Check your connection.');
       setSyncState('error');
+    }
+  }
+
+  async function handleNotifyClients() {
+    setIsNotifying(true);
+    setNotifyResult(null);
+    try {
+      const token = await getToken();
+      if (!token) {
+        setNotifyResult('Not authenticated.');
+        return;
+      }
+      const res = await fetch(`${API_BASE_URL}/v1/notifications/send`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await res.json()) as { message?: string };
+      setNotifyResult(data.message ?? 'Notifications sent.');
+    } catch {
+      setNotifyResult('Failed to send notifications.');
+    } finally {
+      setIsNotifying(false);
     }
   }
 
@@ -161,6 +185,21 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
           >
             Sync again
           </button>
+        </>
+      )}
+      {syncState !== 'syncing' && (
+        <>
+          <button
+            type="button"
+            onClick={handleNotifyClients}
+            disabled={isNotifying}
+            className="w-full px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isNotifying ? 'Sending notifications...' : 'Notify clients about new applications'}
+          </button>
+          {notifyResult && (
+            <p className="text-sm text-gray-500 mt-2 text-center">{notifyResult}</p>
+          )}
         </>
       )}
     </div>
