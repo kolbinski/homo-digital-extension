@@ -1125,14 +1125,19 @@ export default function ExploreTab({
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Sort by:</span>
+            <span className="text-xs text-gray-500">Status:</span>
             <select
-              value={sortBy}
-              onChange={e => handleSortChange(e.target.value)}
+              value={statusFilter}
+              onChange={e => handleStatusFilterChange(e.target.value)}
               className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
-              <option value="score">Score</option>
-              <option value="salary_delta">Salary delta</option>
+              <option value="pending_apply">Pending apply</option>
+              <option value="applied">Applied</option>
+              <option value="agent_withdrawn">Agent withdrawn</option>
+              <option value="client_withdrawn">Client withdrawn</option>
+              <option value="recruiter_rejected">Recruiter rejected</option>
+              <option value="offer_received">Offer received</option>
+              <option value="accepted">Accepted</option>
             </select>
           </div>
           <div className="flex items-center gap-1.5">
@@ -1148,19 +1153,14 @@ export default function ExploreTab({
             </select>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Status:</span>
+            <span className="text-xs text-gray-500">Sort by:</span>
             <select
-              value={statusFilter}
-              onChange={e => handleStatusFilterChange(e.target.value)}
+              value={sortBy}
+              onChange={e => handleSortChange(e.target.value)}
               className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
-              <option value="pending_apply">Pending apply</option>
-              <option value="applied">Applied</option>
-              <option value="agent_withdrawn">Agent withdrawn</option>
-              <option value="recruiter_rejected">Recruiter rejected</option>
-              <option value="offer_received">Offer received</option>
-              <option value="accepted">Accepted</option>
-              <option value="client_withdrawn">Client withdrawn</option>
+              <option value="score">Score</option>
+              <option value="salary_delta">Salary delta</option>
             </select>
           </div>
         </div>
