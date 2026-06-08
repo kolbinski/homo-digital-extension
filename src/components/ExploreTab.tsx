@@ -162,6 +162,7 @@ function OfferCard({
     message: string;
   } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [statusLoading, setStatusLoading] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -235,11 +236,12 @@ function OfferCard({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
 
-  async function handleStatusChange(status: string) {
+  async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
-    const token = await getToken();
-    if (!token) return;
+    setStatusLoading(offer.user_offer_id);
     try {
+      const token = await getToken();
+      if (!token) return;
       const res = await fetch(
         `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/status`,
         {
@@ -248,7 +250,7 @@ function OfferCard({
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ status }),
+          body: JSON.stringify({ status: newStatus }),
         },
       );
       if (res.ok) {
@@ -261,6 +263,8 @@ function OfferCard({
       }
     } catch {
       setStatus({ type: 'error', message: 'Network error.' });
+    } finally {
+      setStatusLoading(null);
     }
   }
 
@@ -388,23 +392,25 @@ function OfferCard({
               </button>
             </div>
           ) : (
-            <div className="flex gap-2 items-center">
-              <select
-                value={cvLanguage}
-                onChange={e => setCvLanguage(e.target.value)}
-                className="shrink-0 px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="en">English</option>
-                <option value="pl">Polish</option>
-              </select>
-              <button
-                type="button"
-                onClick={handleGenerate}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-              >
-                Generate CV
-              </button>
-            </div>
+            statusLoading !== offer.user_offer_id && (
+              <div className="flex gap-2 items-center">
+                <select
+                  value={cvLanguage}
+                  onChange={e => setCvLanguage(e.target.value)}
+                  className="shrink-0 px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="en">English</option>
+                  <option value="pl">Polish</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                >
+                  Generate CV
+                </button>
+              </div>
+            )
           )}
 
           {status && (
@@ -423,22 +429,46 @@ function OfferCard({
             <button
               type="button"
               onClick={() => setIsDropdownOpen(v => !v)}
-              className="w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+              disabled={statusLoading === offer.user_offer_id}
+              className={`w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors ${statusLoading === offer.user_offer_id ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              <span>Change status</span>
-              <svg
-                className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <span>{statusLoading === offer.user_offer_id ? 'Changing status...' : 'Change status'}</span>
+              {statusLoading === offer.user_offer_id ? (
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              )}
             </button>
             {isDropdownOpen && (
               <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
