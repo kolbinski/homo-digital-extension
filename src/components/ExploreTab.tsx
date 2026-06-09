@@ -492,6 +492,18 @@ function OfferCard({
   );
 }
 
+async function openOfferUrl(url: string) {
+  const domain = url.includes('justjoin') ? 'justjoin.it' : 'nofluffjobs.com';
+  const tabs = await chrome.tabs.query({});
+  const existingTab = tabs.find(tab => tab.url?.includes(domain));
+  if (existingTab?.id !== undefined) {
+    await chrome.tabs.update(existingTab.id, { url, active: true });
+    await chrome.windows.update(existingTab.windowId!, { focused: true });
+  } else {
+    await chrome.tabs.create({ url });
+  }
+}
+
 function ClientAccordion({
   client,
   activeTabId,
@@ -513,7 +525,7 @@ function ClientAccordion({
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  function handleCardToggle(offerId: string, offerUrl?: string) {
+  async function handleCardToggle(offerId: string, offerUrl?: string) {
     if (expandedOfferId === offerId) {
       setExpandedOfferId(null);
       return;
@@ -526,7 +538,7 @@ function ClientAccordion({
             chrome.tabs.update(tabs[0].id, { url: offerUrl });
         });
       } else {
-        chrome.tabs.create({ url: offerUrl });
+        await openOfferUrl(offerUrl);
       }
     }
   }
