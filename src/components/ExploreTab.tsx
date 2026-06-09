@@ -639,10 +639,9 @@ function ClientAccordion({
 
   useEffect(() => {
     setHasLoaded(false);
-    if (!isOpen) return;
     let cancelled = false;
     async function refetchOffers() {
-      setIsLoading(true);
+      if (isOpen) setIsLoading(true);
       const [pending, levelUp] = await Promise.all([
         fetchOffers(statusFilter),
         statusFilter === 'pending_apply'
@@ -652,7 +651,7 @@ function ClientAccordion({
       if (cancelled) return;
       setApplyOffers(pending);
       setLevelUpOffers(levelUp);
-      setIsLoading(false);
+      if (isOpen) setIsLoading(false);
       setHasLoaded(true);
     }
     refetchOffers();
