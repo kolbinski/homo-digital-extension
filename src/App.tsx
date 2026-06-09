@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Bug } from '@phosphor-icons/react'
 import LoginScreen from './components/LoginScreen'
 import TabBar, { type Tab } from './components/TabBar'
 import ExploreTab from './components/ExploreTab'
 import SyncTab from './components/SyncTab'
+import FeedbackPopup from './components/FeedbackPopup'
 import { useAuth } from './hooks/useAuth'
 import { API_BASE_URL } from './config'
 
@@ -15,6 +17,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('explore')
   const [currentUrl, setCurrentUrl] = useState<string>('')
   const [isSyncing, setIsSyncing] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [settings, setSettings] = useState<{ show_sync_tab_in_extension: boolean }>({
     show_sync_tab_in_extension: false,
   })
@@ -113,14 +116,25 @@ function App() {
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <span className="text-sm font-semibold text-gray-900 tracking-tight">Homo Digital</span>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(v => !v)}
+            className="text-gray-400 hover:text-gray-700 transition-colors"
+            aria-label="Feedback & Support"
+          >
+            <Bug size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
       </header>
+      {feedbackOpen && <FeedbackPopup onClose={() => setFeedbackOpen(false)} />}
 
       <TabBar
         activeTab={activeTab}
