@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
+function formatKey(key: string): string {
+  if (/^\d+$/.test(key)) return key;
+  return key
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 type JsonValue =
   | string
   | number
@@ -28,8 +36,8 @@ function ProfileNode({
         className="flex items-baseline gap-1 py-px"
         style={{ paddingLeft: indent }}
       >
-        <span className="text-xs text-gray-500 shrink-0">{label}:</span>
-        <span className="text-xs text-gray-800 break-all">
+        <span className="text-sm text-gray-500 shrink-0">{formatKey(label)}:</span>
+        <span className="text-sm text-gray-800 break-all">
           {value === null ? 'null' : String(value)}
         </span>
       </div>
@@ -38,7 +46,9 @@ function ProfileNode({
 
   const isArray = Array.isArray(value);
   const entries = isArray
-    ? (value as JsonValue[]).map((v, i) => [String(i), v] as [string, JsonValue])
+    ? (value as JsonValue[]).map(
+        (v, i) => [String(i), v] as [string, JsonValue],
+      )
     : Object.entries(value as Record<string, JsonValue>);
   const count = entries.length;
 
@@ -50,15 +60,20 @@ function ProfileNode({
         className="flex items-center gap-1 py-px w-full text-left hover:bg-gray-50 rounded"
         style={{ paddingLeft: indent }}
       >
-        <span className="text-gray-400 text-xs w-3 shrink-0">
+        <span className="text-gray-400 text-sm w-3 shrink-0">
           {open ? '▾' : '▸'}
         </span>
-        <span className="text-xs text-gray-500">{label}</span>
-        <span className="text-xs text-gray-400">({count})</span>
+        <span className="text-sm text-gray-500">{formatKey(label)}</span>
+        <span className="text-sm text-gray-400">({count})</span>
       </button>
       {open &&
         entries.map(([k, v]) => (
-          <ProfileNode key={k} label={k} value={v as JsonValue} depth={depth + 1} />
+          <ProfileNode
+            key={k}
+            label={k}
+            value={v as JsonValue}
+            depth={depth + 1}
+          />
         ))}
     </div>
   );
