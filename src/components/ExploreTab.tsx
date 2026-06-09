@@ -90,10 +90,6 @@ const STATUS_OPTIONS = [
   { value: 'recruiter_rejected', label: 'Recruiter rejected' },
 ];
 
-function isJobBoard(url: string): boolean {
-  return url.includes('justjoin.it') || url.includes('nofluffjobs.com');
-}
-
 function getPageText(tabId: number): Promise<string> {
   return new Promise(resolve => {
     if (typeof chrome === 'undefined') {
@@ -493,15 +489,28 @@ function OfferCard({
 }
 
 async function openOfferUrl(url: string) {
-  const domain = url.includes('justjoin') ? 'justjoin.it' : 'nofluffjobs.com';
+  const JOB_BOARD_DOMAINS = ['https://justjoin.it', 'https://nofluffjobs.com'];
   const tabs = await chrome.tabs.query({});
-  const existingTab = tabs.find(tab => tab.url?.includes(domain));
-  if (existingTab?.id !== undefined) {
-    await chrome.tabs.update(existingTab.id, { url, active: true });
-    await chrome.windows.update(existingTab.windowId!, { focused: true });
-  } else {
-    await chrome.tabs.create({ url });
+
+  const activeTab = tabs.find(tab => tab.active && tab.windowId !== undefined);
+  if (
+    activeTab?.url &&
+    JOB_BOARD_DOMAINS.some(d => activeTab.url!.startsWith(d))
+  ) {
+    await chrome.tabs.update(activeTab.id!, { url });
+    return;
   }
+
+  const jobBoardTab = tabs.find(tab =>
+    JOB_BOARD_DOMAINS.some(domain => tab.url?.startsWith(domain)),
+  );
+  if (jobBoardTab?.id !== undefined) {
+    await chrome.tabs.update(jobBoardTab.id, { url, active: true });
+    await chrome.windows.update(jobBoardTab.windowId!, { focused: true });
+    return;
+  }
+
+  await chrome.tabs.create({ url });
 }
 
 function ClientAccordion({
@@ -532,14 +541,7 @@ function ClientAccordion({
     }
     setExpandedOfferId(offerId);
     if (offerUrl && typeof chrome !== 'undefined') {
-      if (currentUrl && isJobBoard(currentUrl)) {
-        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-          if (tabs[0]?.id !== undefined)
-            chrome.tabs.update(tabs[0].id, { url: offerUrl });
-        });
-      } else {
-        await openOfferUrl(offerUrl);
-      }
+      await openOfferUrl(offerUrl);
     }
   }
 
