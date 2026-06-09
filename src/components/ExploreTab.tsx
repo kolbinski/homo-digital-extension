@@ -319,6 +319,26 @@ function OfferCard({
             {offer.claude_role_fit}
           </p>
         )}
+        {offer.claude_missing_skills &&
+          offer.claude_missing_skills.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              <span className="text-xs text-gray-500">Missing:</span>
+              {offer.claude_missing_skills.map(skill => (
+                <span
+                  key={skill}
+                  className="text-xs px-1.5 py-px rounded"
+                  style={{
+                    background: '#fef2f2',
+                    border: '0.5px solid #fecaca',
+                    borderRadius: '3px',
+                    color: '#dc2626',
+                  }}
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
         {offer.salary && offer.salary.length > 0 ? (
           <div className="flex flex-col gap-0.5">
             {offer.salary.map((s, i) => {
@@ -432,7 +452,11 @@ function OfferCard({
               disabled={statusLoading === offer.user_offer_id}
               className={`w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors ${statusLoading === offer.user_offer_id ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              <span>{statusLoading === offer.user_offer_id ? 'Changing status...' : 'Change status'}</span>
+              <span>
+                {statusLoading === offer.user_offer_id
+                  ? 'Changing status...'
+                  : 'Change status'}
+              </span>
               {statusLoading === offer.user_offer_id ? (
                 <svg
                   className="animate-spin h-4 w-4 text-white"
