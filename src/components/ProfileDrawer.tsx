@@ -49,7 +49,7 @@ function ProfileNode({
     ? (value as JsonValue[]).map(
         (v, i) => [String(i), v] as [string, JsonValue],
       )
-    : Object.entries(value as Record<string, JsonValue>);
+    : Object.entries(value as Record<string, JsonValue>).sort(([a], [b]) => a.localeCompare(b));
   const count = entries.length;
 
   return (
@@ -117,7 +117,7 @@ export default function ProfileDrawer({ clientName, profile, onClose }: Props) {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        {Object.entries(profile).map(([k, v]) => (
+        {Object.entries(profile).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => (
           <ProfileNode key={k} label={k} value={v as JsonValue} depth={0} />
         ))}
       </div>
