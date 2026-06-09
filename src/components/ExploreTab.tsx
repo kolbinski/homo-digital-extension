@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  AddressBook,
   ArrowsClockwise,
   ArrowUp,
   CurrencyCircleDollar,
 } from '@phosphor-icons/react';
+import ProfileDrawer from './ProfileDrawer';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
@@ -573,6 +575,7 @@ function ClientAccordion({
 
   const [isOpen, setIsOpen] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
@@ -804,6 +807,19 @@ function ClientAccordion({
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {client.profile && (
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation();
+                setProfileOpen(v => !v);
+              }}
+              title="View profile"
+              className="text-gray-400 hover:text-gray-600 p-0.5 leading-none"
+            >
+              <AddressBook size={14} />
+            </button>
+          )}
           <button
             type="button"
             onClick={e => {
@@ -1103,6 +1119,13 @@ function ClientAccordion({
             </>
           )}
         </div>
+      )}
+      {profileOpen && client.profile && (
+        <ProfileDrawer
+          clientName={`${client.first_name} ${client.last_name}`}
+          profile={client.profile}
+          onClose={() => setProfileOpen(false)}
+        />
       )}
     </div>
   );
