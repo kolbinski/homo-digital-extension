@@ -300,19 +300,6 @@ function OfferCard({
             <span className="text-gray-600"> @&nbsp;{offer.offer_company}</span>
           </span>
         </div>
-        <svg
-          className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
       </button>
 
       {/* Always visible: role fit + salary */}

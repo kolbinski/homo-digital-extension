@@ -4,6 +4,7 @@ import TabBar, { type Tab } from './components/TabBar'
 import ExploreTab from './components/ExploreTab'
 import SyncTab from './components/SyncTab'
 import { useAuth } from './hooks/useAuth'
+import { API_BASE_URL } from './config'
 
 type AuthState = 'checking' | 'logged_out' | 'logged_in'
 
@@ -14,6 +15,9 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('explore')
   const [currentUrl, setCurrentUrl] = useState<string>('')
   const [isSyncing, setIsSyncing] = useState(false)
+  const [settings, setSettings] = useState<{ show_sync_tab_in_extension: boolean }>({
+    show_sync_tab_in_extension: false,
+  })
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -71,6 +75,25 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (authState !== 'logged_in') return
+    getToken().then(token => {
+      if (!token) return
+      fetch(`${API_BASE_URL}/v1/settings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.json())
+        .then(data => setSettings(data))
+        .catch(() => {})
+    })
+  }, [authState])
+
+  useEffect(() => {
+    if (!settings.show_sync_tab_in_extension && activeTab === 'sync') {
+      setActiveTab('explore')
+    }
+  }, [settings.show_sync_tab_in_extension])
+
   async function handleLogout() {
     try {
       await logout()
@@ -99,15 +122,22 @@ function App() {
         </button>
       </header>
 
-      <TabBar activeTab={activeTab} onChange={setActiveTab} isSyncing={isSyncing} />
+      <TabBar
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        isSyncing={isSyncing}
+        showSync={settings.show_sync_tab_in_extension}
+      />
 
       <div id="main-scroll" className="flex-1 overflow-y-auto">
         <div style={{ display: activeTab === 'explore' ? 'block' : 'none' }}>
           <ExploreTab onLogout={handleLogout} activeTabId={activeTabId} currentUrl={currentUrl} />
         </div>
-        <div style={{ display: activeTab === 'sync' ? 'block' : 'none' }}>
-          <SyncTab onSyncingChange={setIsSyncing} />
-        </div>
+        {settings.show_sync_tab_in_extension && (
+          <div style={{ display: activeTab === 'sync' ? 'block' : 'none' }}>
+            <SyncTab onSyncingChange={setIsSyncing} />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -9,12 +9,14 @@ interface Props {
   activeTab: Tab
   onChange: (tab: Tab) => void
   isSyncing?: boolean
+  showSync?: boolean
 }
 
-export default function TabBar({ activeTab, onChange, isSyncing }: Props) {
+export default function TabBar({ activeTab, onChange, isSyncing, showSync = true }: Props) {
+  const visibleTabs = TABS.filter(tab => tab.id !== 'sync' || showSync)
   return (
     <div className="flex border-b border-gray-200 bg-white shrink-0">
-      {TABS.map((tab) => {
+      {visibleTabs.map((tab) => {
         const disabled = isSyncing && tab.id !== 'sync'
         return (
           <button
