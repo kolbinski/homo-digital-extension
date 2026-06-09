@@ -139,6 +139,8 @@ interface OfferCardProps {
   onToggle: () => void;
   activeTabId?: number;
   onRemove: (offerId: string) => void;
+  onRollback: (offer: UserOffer) => void;
+  onError: (message: string) => void;
 }
 
 function OfferCard({
@@ -150,6 +152,8 @@ function OfferCard({
   onToggle,
   activeTabId,
   onRemove,
+  onRollback,
+  onError,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
@@ -238,10 +242,14 @@ function OfferCard({
 
   async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
+    onRemove(offer.user_offer_id);
     setStatusLoading(offer.user_offer_id);
     try {
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        onRollback(offer);
+        return;
+      }
       const res = await fetch(
         `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/status`,
         {
@@ -253,16 +261,13 @@ function OfferCard({
           body: JSON.stringify({ status: newStatus }),
         },
       );
-      if (res.ok) {
-        onRemove(offer.user_offer_id);
-      } else {
-        setStatus({
-          type: 'error',
-          message: `Status update failed (${res.status}).`,
-        });
+      if (!res.ok) {
+        onRollback(offer);
+        onError('Failed to update status. Please try again.');
       }
     } catch {
-      setStatus({ type: 'error', message: 'Network error.' });
+      onRollback(offer);
+      onError('Failed to update status. Please try again.');
     } finally {
       setStatusLoading(null);
     }
@@ -449,50 +454,22 @@ function OfferCard({
             <button
               type="button"
               onClick={() => setIsDropdownOpen(v => !v)}
-              disabled={statusLoading === offer.user_offer_id}
-              className={`w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors ${statusLoading === offer.user_offer_id ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className="w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
             >
-              <span>
-                {statusLoading === offer.user_offer_id
-                  ? 'Changing status...'
-                  : 'Change status'}
-              </span>
-              {statusLoading === offer.user_offer_id ? (
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              )}
+              <span>Change status</span>
+              <svg
+                className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </button>
             {isDropdownOpen && (
               <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
@@ -534,6 +511,7 @@ function ClientAccordion({
   const [applyOpen, setApplyOpen] = useState(true);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   function handleCardToggle(offerId: string, offerUrl?: string) {
     if (expandedOfferId === offerId) {
@@ -794,6 +772,18 @@ function ClientAccordion({
 
       {isOpen && (
         <div className="border-t border-gray-200">
+          {statusError && (
+            <div className="mx-3 mt-2 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
+              <span>{statusError}</span>
+              <button
+                type="button"
+                onClick={() => setStatusError(null)}
+                className="shrink-0 text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
               <svg
@@ -874,6 +864,10 @@ function ClientAccordion({
                                     prev.filter(o => o.user_offer_id !== id),
                                   )
                                 }
+                                onRollback={o =>
+                                  setApplyOffers(prev => [...prev, o])
+                                }
+                                onError={setStatusError}
                               />
                             ),
                           )}
@@ -935,6 +929,10 @@ function ClientAccordion({
                                     prev.filter(o => o.user_offer_id !== id),
                                   )
                                 }
+                                onRollback={o =>
+                                  setLevelUpOffers(prev => [...prev, o])
+                                }
+                                onError={setStatusError}
                               />
                             ),
                           )}
@@ -1002,6 +1000,10 @@ function ClientAccordion({
                                     prev.filter(o => o.user_offer_id !== id),
                                   )
                                 }
+                                onRollback={o =>
+                                  setApplyOffers(prev => [...prev, o])
+                                }
+                                onError={setStatusError}
                               />
                             ),
                           )}
