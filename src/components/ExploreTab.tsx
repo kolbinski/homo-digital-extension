@@ -394,8 +394,9 @@ function OfferCard({
             })}
           </div>
         ) : (
-          <span className="text-gray-400 text-sm italic">
-            Salary not disclosed
+          <span className="text-gray-500 text-xs flex items-center gap-0.5">
+            <CurrencyCircleDollar size={13} className="shrink-0" /> Salary not
+            disclosed
           </span>
         )}
       </div>
@@ -1247,7 +1248,10 @@ export default function ExploreTab({
 
   return (
     <>
-      <div className="px-4 py-5 flex flex-col gap-3" style={{ paddingBottom: 500 }}>
+      <div
+        className="px-4 py-5 flex flex-col gap-3"
+        style={{ paddingBottom: 500 }}
+      >
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 shrink-0">Min score:</span>
