@@ -29,6 +29,8 @@ interface UserOffer {
   salary?: OfferSalary[];
   source?: string;
   cv_language?: string | null;
+  city?: string;
+  work_model?: string;
 }
 
 function providerIcon(source?: string): string | null {
@@ -315,6 +317,45 @@ function OfferCard({
 
       {/* Always visible: role fit + salary */}
       <div className="px-3 pb-2 flex flex-col gap-1">
+        {(offer.city || offer.work_model) && (
+          <div
+            style={{
+              display: 'flex',
+              gap: '4px',
+              flexWrap: 'wrap',
+              marginBottom: '2px',
+            }}
+          >
+            {offer.city && (
+              <span
+                style={{
+                  background: '#f3f4f6',
+                  border: '0.5px solid #e5e7eb',
+                  borderRadius: '3px',
+                  padding: '1px 6px',
+                  fontSize: '11px',
+                  color: '#6b7280',
+                }}
+              >
+                {offer.city}
+              </span>
+            )}
+            {offer.work_model && (
+              <span
+                style={{
+                  background: '#f3f4f6',
+                  border: '0.5px solid #e5e7eb',
+                  borderRadius: '3px',
+                  padding: '1px 6px',
+                  fontSize: '11px',
+                  color: '#6b7280',
+                }}
+              >
+                {offer.work_model}
+              </span>
+            )}
+          </div>
+        )}
         {offer.claude_role_fit && (
           <p className="text-xs text-gray-600 leading-relaxed">
             {offer.claude_role_fit}
