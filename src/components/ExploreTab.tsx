@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowsClockwise,
   ArrowUp,
@@ -165,8 +166,10 @@ function OfferCard({
   } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const abortRef = useRef<AbortController | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) setCvLanguage(offer.cv_language === 'pl' ? 'pl' : 'en');
@@ -227,12 +230,9 @@ function OfferCard({
   useEffect(() => {
     if (!isDropdownOpen) return;
     function handleClickOutside(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
+      const inTrigger = dropdownRef.current?.contains(e.target as Node);
+      const inPortal = portalRef.current?.contains(e.target as Node);
+      if (!inTrigger && !inPortal) setIsDropdownOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -474,10 +474,22 @@ function OfferCard({
             </div>
           )}
 
-          <div className="relative" ref={dropdownRef}>
+          <div ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => setIsDropdownOpen(v => !v)}
+              onClick={() => {
+                if (!isDropdownOpen && dropdownRef.current) {
+                  const rect = dropdownRef.current.getBoundingClientRect();
+                  setPortalStyle({
+                    position: 'fixed',
+                    top: rect.bottom + 4,
+                    left: rect.left,
+                    width: rect.width,
+                    zIndex: 9999,
+                  });
+                }
+                setIsDropdownOpen(v => !v);
+              }}
               className="w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
             >
               <span>Change status</span>
@@ -495,20 +507,26 @@ function OfferCard({
                 />
               </svg>
             </button>
-            {isDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
-                {STATUS_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => handleStatusChange(opt.value)}
-                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
+            {isDropdownOpen &&
+              createPortal(
+                <div
+                  ref={portalRef}
+                  style={portalStyle}
+                  className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                >
+                  {STATUS_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleStatusChange(opt.value)}
+                      className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>,
+                document.body,
+              )}
           </div>
         </div>
       )}
@@ -741,23 +759,48 @@ function ClientAccordion({
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
-          {filteredApplyOffers.length > 0 && (
-            <span
-              className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                statusFilter === 'pending_apply'
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
+          {!hasLoaded ? (
+            <svg
+              className="animate-spin h-3 w-3 text-gray-400 shrink-0"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
             >
-              {filteredApplyOffers.length}
-            </span>
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+          ) : (
+            <>
+              {filteredApplyOffers.length > 0 && (
+                <span
+                  className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                    statusFilter === 'pending_apply'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {filteredApplyOffers.length}
+                </span>
+              )}
+              {statusFilter === 'pending_apply' &&
+                filteredLevelUpOffers.length > 0 && (
+                  <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                    {filteredLevelUpOffers.length}
+                  </span>
+                )}
+            </>
           )}
-          {statusFilter === 'pending_apply' &&
-            filteredLevelUpOffers.length > 0 && (
-              <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                {filteredLevelUpOffers.length}
-              </span>
-            )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
@@ -1204,7 +1247,7 @@ export default function ExploreTab({
 
   return (
     <>
-      <div className="px-4 py-5 flex flex-col gap-3">
+      <div className="px-4 py-5 flex flex-col gap-3" style={{ paddingBottom: 500 }}>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 shrink-0">Min score:</span>
