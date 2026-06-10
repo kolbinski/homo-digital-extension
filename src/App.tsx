@@ -139,7 +139,7 @@ function App() {
           <button
             type="button"
             onClick={() => setFeedbackOpen(v => !v)}
-            className="text-gray-400 hover:text-gray-700 transition-colors"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
             aria-label="Feedback & Support"
           >
             <Bug size={16} />
@@ -148,7 +148,7 @@ function App() {
             type="button"
             onClick={handleLogout}
             aria-label="Logout"
-            className="text-gray-400 hover:text-gray-700 transition-colors"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
           >
             <SignOut size={16} />
           </button>
@@ -168,7 +168,9 @@ function App() {
       <div id="main-scroll" className="flex-1 overflow-y-auto">
         {SHOW_TABS ? (
           <>
-            <div style={{ display: activeTab === 'explore' ? 'block' : 'none' }}>
+            <div
+              style={{ display: activeTab === 'explore' ? 'block' : 'none' }}
+            >
               <ExploreTab
                 onLogout={handleLogout}
                 activeTabId={activeTabId}
