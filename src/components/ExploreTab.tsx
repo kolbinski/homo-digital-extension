@@ -425,8 +425,19 @@ function OfferCard({
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     Generating…
                   </button>
@@ -437,7 +448,8 @@ function OfferCard({
                     onClick={e => {
                       e.stopPropagation();
                       if (!isCvDropdownOpen && cvDropdownRef.current) {
-                        const rect = cvDropdownRef.current.getBoundingClientRect();
+                        const rect =
+                          cvDropdownRef.current.getBoundingClientRect();
                         setCvPortalStyle({
                           position: 'fixed',
                           top: rect.bottom + 4,
@@ -448,9 +460,13 @@ function OfferCard({
                       }
                       setIsCvDropdownOpen(v => !v);
                     }}
-                    className="w-full flex items-center justify-between gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                    className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                   >
-                    <span>{offer.cv_status === 'done' ? 'Regenerate CV' : 'Generate CV'}</span>
+                    <span>
+                      {offer.cv_status === 'done'
+                        ? 'Regenerate CV'
+                        : 'Generate CV'}
+                    </span>
                     <svg
                       className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
                       fill="none"
@@ -458,7 +474,11 @@ function OfferCard({
                       stroke="currentColor"
                       strokeWidth={2}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
                 )}
@@ -469,11 +489,17 @@ function OfferCard({
                       style={cvPortalStyle}
                       className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                     >
-                      {[{ value: 'en', label: 'English' }, { value: 'pl', label: 'Polish' }].map(opt => (
+                      {[
+                        { value: 'en', label: 'English' },
+                        { value: 'pl', label: 'Polish' },
+                      ].map(opt => (
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={e => { e.stopPropagation(); handleCvSelect(opt.value); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleCvSelect(opt.value);
+                          }}
                           className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                         >
                           {opt.label}
@@ -486,7 +512,11 @@ function OfferCard({
               {!isGenerating && offer.cv_status === 'done' && offer.cv_url && (
                 <button
                   type="button"
-                  onClick={() => chrome.tabs.create({ url: `${offer.cv_url}?t=${Date.now()}` })}
+                  onClick={() =>
+                    chrome.tabs.create({
+                      url: `${offer.cv_url}?t=${Date.now()}`,
+                    })
+                  }
                   className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                 >
                   <ReadCvLogo size={15} />
@@ -508,6 +538,7 @@ function OfferCard({
             </div>
           )}
 
+          {!isGenerating && (
           <div ref={dropdownRef}>
             <button
               type="button"
@@ -562,6 +593,7 @@ function OfferCard({
                 document.body,
               )}
           </div>
+          )}
         </div>
       )}
     </div>
@@ -572,7 +604,9 @@ async function openOfferUrl(url: string) {
   const JOB_BOARD_DOMAINS = ['https://justjoin.it', 'https://nofluffjobs.com'];
   const tabs = await chrome.tabs.query({});
 
-  const offerTab = tabs.find(tab => tab.url && url.startsWith(tab.url.split('?')[0]));
+  const offerTab = tabs.find(
+    tab => tab.url && url.startsWith(tab.url.split('?')[0]),
+  );
   if (offerTab?.id !== undefined) {
     await chrome.tabs.update(offerTab.id, { url, active: true });
     await chrome.windows.update(offerTab.windowId!, { focused: true });
@@ -772,7 +806,9 @@ function ClientAccordion({
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
       offers.map(o =>
-        o.user_offer_id === offerId ? { ...o, cv_url: cvUrl, cv_status: cvStatus } : o,
+        o.user_offer_id === offerId
+          ? { ...o, cv_url: cvUrl, cv_status: cvStatus }
+          : o,
       );
     setApplyOffers(patch);
     setLevelUpOffers(patch);
@@ -1400,21 +1436,25 @@ export default function ExploreTab({
         {clients.length === 0 ? (
           <p className="text-sm text-gray-500">No clients found.</p>
         ) : (
-          [...clients].sort((a, b) =>
-            `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
-          ).map(client => (
-            <ClientAccordion
-              key={client.id}
-              client={client}
-              activeTabId={activeTabId}
-              currentUrl={currentUrl}
-              sortBy={sortBy}
-              statusFilter={statusFilter}
-              sourceFilter={sourceFilter}
-              minScore={minScore}
-              cvGenerated={cvGenerated}
-            />
-          ))
+          [...clients]
+            .sort((a, b) =>
+              `${a.first_name} ${a.last_name}`.localeCompare(
+                `${b.first_name} ${b.last_name}`,
+              ),
+            )
+            .map(client => (
+              <ClientAccordion
+                key={client.id}
+                client={client}
+                activeTabId={activeTabId}
+                currentUrl={currentUrl}
+                sortBy={sortBy}
+                statusFilter={statusFilter}
+                sourceFilter={sourceFilter}
+                minScore={minScore}
+                cvGenerated={cvGenerated}
+              />
+            ))
         )}
       </div>
       {showScrollTop && (
