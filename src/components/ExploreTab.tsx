@@ -417,7 +417,7 @@ function OfferCard({
                   <button
                     type="button"
                     disabled
-                    className="w-full flex items-center justify-center gap-2 bg-green-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
                   >
                     <svg
                       className="animate-spin h-3.5 w-3.5 text-white"

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { OfferMatch } from '../hooks/useOfferMatches';
 
 const CV_LANGUAGES = [
@@ -19,7 +19,6 @@ interface MatchItemProps {
   onGenerateCV: (
     clientId: string,
     cvLanguage: string,
-    signal: AbortSignal,
   ) => Promise<GenerateCVResult>;
 }
 
@@ -53,22 +52,14 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-
   useEffect(() => {
     setCvLanguage(defaultLanguage);
   }, [defaultLanguage]);
 
   async function handleGenerate() {
-    const controller = new AbortController();
-    abortRef.current = controller;
     setIsGenerating(true);
     setStatus(null);
-    const result = await onGenerateCV(
-      match.client_id,
-      cvLanguage,
-      controller.signal,
-    );
+    const result = await onGenerateCV(match.client_id, cvLanguage);
     setIsGenerating(false);
     if (!result.success) {
       if (result.error) setStatus({ type: 'error', message: result.error });
@@ -78,12 +69,6 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
         message: 'CV ready — save as PDF in the print dialog',
       });
     }
-  }
-
-  function handleAbort() {
-    abortRef.current?.abort();
-    setIsGenerating(false);
-    setStatus(null);
   }
 
   return (
@@ -167,42 +152,22 @@ function MatchItem({ match, defaultLanguage, onGenerateCV }: MatchItemProps) {
           </div>
 
           {isGenerating ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled
-                className="flex-1 bg-indigo-400 cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm flex items-center justify-center gap-2"
+            <button
+              type="button"
+              disabled
+              className="w-full bg-blue-500 cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm flex items-center justify-center gap-2"
+            >
+              <svg
+                className="animate-spin h-3.5 w-3.5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="animate-spin h-3.5 w-3.5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Generating…
-              </button>
-              <button
-                type="button"
-                onClick={handleAbort}
-                className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-              >
-                Abort
-              </button>
-            </div>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Generating…
+            </button>
           ) : (
             <button
               type="button"
@@ -238,7 +203,6 @@ interface MatchListProps {
   onGenerateCV: (
     clientId: string,
     cvLanguage: string,
-    signal: AbortSignal,
   ) => Promise<GenerateCVResult>;
 }
 

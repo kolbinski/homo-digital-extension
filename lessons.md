@@ -37,6 +37,7 @@
 
 | # | Mistake | Correction | Prevention Rule |
 |---|---------|------------|-----------------|
+| 1 | When asked to "remove Abort button entirely", searched only the file currently being edited (ExploreTab.tsx) and declared done when nothing was found there — missed MatchList.tsx | User caught it; had to fix MatchList.tsx and MainScreen.tsx in a follow-up | ALWAYS grep the entire src/ directory when asked to remove, rename, or eliminate any feature — never scope the search to the current file |
 
 ---
 
@@ -52,6 +53,6 @@
 
 ## 📊 Lesson Stats
 
-**Total lessons:** 2
-**Last updated:** 2026-06-06
+**Total lessons:** 3
+**Last updated:** 2026-06-10
 **Sessions since last new lesson:** 0
