@@ -5,6 +5,8 @@ import {
   ArrowsClockwise,
   ArrowUp,
   CurrencyCircleDollar,
+  FileText,
+  PlusCircle,
   ReadCvLogo,
 } from '@phosphor-icons/react';
 import ProfileDrawer from './ProfileDrawer';
@@ -502,7 +504,7 @@ function OfferCard({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      Generating…
+                      Generating CV…
                     </button>
                   ) : (
                     <button
@@ -518,7 +520,10 @@ function OfferCard({
                       }}
                       className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                     >
-                      <span>{offer.cv_status === 'done' ? 'Regenerate CV' : 'Generate CV'}</span>
+                      <span className="flex items-center gap-1.5">
+                        {offer.cv_status === 'done' ? <ArrowsClockwise size={15} /> : <PlusCircle size={15} />}
+                        CV
+                      </span>
                       <svg className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
@@ -560,7 +565,7 @@ function OfferCard({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      Generating…
+                      Generating CL…
                     </button>
                   ) : (
                     <button
@@ -576,7 +581,10 @@ function OfferCard({
                       }}
                       className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                     >
-                      <span>{offer.cl_status === 'done' ? 'Regenerate CL' : 'Generate CL'}</span>
+                      <span className="flex items-center gap-1.5">
+                        {offer.cl_status === 'done' ? <ArrowsClockwise size={15} /> : <PlusCircle size={15} />}
+                        CL
+                      </span>
                       <svg className={`w-4 h-4 text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
@@ -601,7 +609,7 @@ function OfferCard({
                   onClick={() => chrome.tabs.create({ url: `${offer.cl_url}?t=${Date.now()}` })}
                   className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                 >
-                  <ReadCvLogo size={15} />
+                  <FileText size={15} />
                   CL
                 </button>
               )}
