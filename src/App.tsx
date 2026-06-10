@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Bug } from '@phosphor-icons/react';
+import { Bug, SignOut } from '@phosphor-icons/react';
 import LoginScreen from './components/LoginScreen';
 import TabBar, { type Tab } from './components/TabBar';
 import ExploreTab from './components/ExploreTab';
 import SyncTab from './components/SyncTab';
 import FeedbackPopup from './components/FeedbackPopup';
 import { useAuth } from './hooks/useAuth';
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, SHOW_TABS } from './config';
 
 type AuthState = 'checking' | 'logged_out' | 'logged_in';
 
@@ -147,33 +147,46 @@ function App() {
           <button
             type="button"
             onClick={handleLogout}
-            className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
+            aria-label="Logout"
+            className="text-gray-400 hover:text-gray-700 transition-colors"
           >
-            Logout
+            <SignOut size={16} />
           </button>
         </div>
       </header>
       {feedbackOpen && <FeedbackPopup onClose={() => setFeedbackOpen(false)} />}
 
-      <TabBar
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        isSyncing={isSyncing}
-        showSync={settings.show_sync_tab_in_extension}
-      />
+      {SHOW_TABS && (
+        <TabBar
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          isSyncing={isSyncing}
+          showSync={settings.show_sync_tab_in_extension}
+        />
+      )}
 
       <div id="main-scroll" className="flex-1 overflow-y-auto">
-        <div style={{ display: activeTab === 'explore' ? 'block' : 'none' }}>
+        {SHOW_TABS ? (
+          <>
+            <div style={{ display: activeTab === 'explore' ? 'block' : 'none' }}>
+              <ExploreTab
+                onLogout={handleLogout}
+                activeTabId={activeTabId}
+                currentUrl={currentUrl}
+              />
+            </div>
+            {settings.show_sync_tab_in_extension && (
+              <div style={{ display: activeTab === 'sync' ? 'block' : 'none' }}>
+                <SyncTab onSyncingChange={setIsSyncing} />
+              </div>
+            )}
+          </>
+        ) : (
           <ExploreTab
             onLogout={handleLogout}
             activeTabId={activeTabId}
             currentUrl={currentUrl}
           />
-        </div>
-        {settings.show_sync_tab_in_extension && (
-          <div style={{ display: activeTab === 'sync' ? 'block' : 'none' }}>
-            <SyncTab onSyncingChange={setIsSyncing} />
-          </div>
         )}
       </div>
     </div>
