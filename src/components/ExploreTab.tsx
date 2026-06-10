@@ -409,20 +409,6 @@ function OfferCard({
               marginBottom: '2px',
             }}
           >
-            {offer.city && (
-              <span
-                style={{
-                  background: '#f3f4f6',
-                  border: '0.5px solid #e5e7eb',
-                  borderRadius: '3px',
-                  padding: '1px 6px',
-                  fontSize: '11px',
-                  color: '#6b7280',
-                }}
-              >
-                {offer.city}
-              </span>
-            )}
             {offer.work_model && (
               <span
                 style={{
@@ -435,6 +421,20 @@ function OfferCard({
                 }}
               >
                 {offer.work_model}
+              </span>
+            )}
+            {offer.city && (
+              <span
+                style={{
+                  background: '#f3f4f6',
+                  border: '0.5px solid #e5e7eb',
+                  borderRadius: '3px',
+                  padding: '1px 6px',
+                  fontSize: '11px',
+                  color: '#6b7280',
+                }}
+              >
+                {offer.city}
               </span>
             )}
           </div>
