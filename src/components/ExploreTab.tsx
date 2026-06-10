@@ -5,6 +5,7 @@ import {
   ArrowsClockwise,
   ArrowUp,
   CurrencyCircleDollar,
+  ReadCvLogo,
 } from '@phosphor-icons/react';
 import ProfileDrawer from './ProfileDrawer';
 import { API_BASE_URL } from '../config';
@@ -32,6 +33,8 @@ interface UserOffer {
   salary?: OfferSalary[];
   source?: string;
   cv_language?: string | null;
+  cv_status?: string | null;
+  cv_url?: string | null;
   city?: string;
   work_model?: string;
 }
@@ -129,6 +132,7 @@ interface ClientAccordionProps {
   statusFilter: string;
   sourceFilter: string;
   minScore: number;
+  cvGenerated: boolean;
 }
 
 interface OfferCardProps {
@@ -142,6 +146,8 @@ interface OfferCardProps {
   onRemove: (offerId: string) => void;
   onRollback: (offer: UserOffer) => void;
   onError: (message: string) => void;
+  onCvUpdate: (offerId: string, cvUrl: string, cvStatus: string) => void;
+  isOfferLoading: boolean;
 }
 
 function OfferCard({
@@ -155,31 +161,29 @@ function OfferCard({
   onRemove,
   onRollback,
   onError,
+  onCvUpdate,
+  isOfferLoading,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [cvLanguage, setCvLanguage] = useState(
-    offer.cv_language === 'pl' ? 'pl' : 'en',
-  );
   const [status, setStatus] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCvDropdownOpen, setIsCvDropdownOpen] = useState(false);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
-  const abortRef = useRef<AbortController | null>(null);
+  const [cvPortalStyle, setCvPortalStyle] = useState<React.CSSProperties>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen) setCvLanguage(offer.cv_language === 'pl' ? 'pl' : 'en');
-  }, [isOpen]);
+  const cvDropdownRef = useRef<HTMLDivElement>(null);
+  const cvPortalRef = useRef<HTMLDivElement>(null);
 
   const icon = providerIcon(offer.source);
 
-  async function handleGenerate() {
+  async function handleGenerate(language: string) {
     if (activeTabId === undefined) {
       setStatus({ type: 'error', message: 'Could not read page content.' });
       return;
@@ -193,41 +197,29 @@ function OfferCard({
       });
       return;
     }
-    const controller = new AbortController();
-    abortRef.current = controller;
     setIsGenerating(true);
     setStatus(null);
     const result = await generateCV(
       clientId,
       offerText,
-      cvLanguage,
+      language,
       clientFirstName,
       clientLastName,
       offer.offer_company,
       offer.offer_title,
       offer.user_offer_id,
-      controller.signal,
     );
     setIsGenerating(false);
     if (!result.success) {
       if (result.error) setStatus({ type: 'error', message: result.error });
-    } else if (result.clipboardFailed) {
-      setStatus({
-        type: 'success',
-        message: `CV ready — copy manually: ${result.filename}`,
-      });
     } else {
-      setStatus({
-        type: 'success',
-        message: 'CV ready — filename copied to clipboard',
-      });
+      onCvUpdate(offer.user_offer_id, result.cvUrl, result.cvStatus);
     }
   }
 
-  function handleAbort() {
-    abortRef.current?.abort();
-    setIsGenerating(false);
-    setStatus(null);
+  async function handleCvSelect(language: string) {
+    setIsCvDropdownOpen(false);
+    await handleGenerate(language);
   }
 
   useEffect(() => {
@@ -240,6 +232,17 @@ function OfferCard({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
+
+  useEffect(() => {
+    if (!isCvDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      const inTrigger = cvDropdownRef.current?.contains(e.target as Node);
+      const inPortal = cvPortalRef.current?.contains(e.target as Node);
+      if (!inTrigger && !inPortal) setIsCvDropdownOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCvDropdownOpen]);
 
   async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
@@ -407,63 +410,90 @@ function OfferCard({
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
-          {isGenerating ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled
-                className="flex-1 bg-indigo-400 cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="animate-spin h-3.5 w-3.5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Generating…
-              </button>
-              <button
-                type="button"
-                onClick={handleAbort}
-                className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-              >
-                Abort
-              </button>
-            </div>
-          ) : (
-            statusLoading !== offer.user_offer_id && (
-              <div className="flex gap-2 items-center">
-                <select
-                  value={cvLanguage}
-                  onChange={e => setCvLanguage(e.target.value)}
-                  className="shrink-0 px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value="en">English</option>
-                  <option value="pl">Polish</option>
-                </select>
+          {statusLoading !== offer.user_offer_id && (
+            <div className="flex gap-2 items-center">
+              <div ref={cvDropdownRef} className="flex-1">
+                {isGenerating ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full flex items-center justify-center gap-2 bg-green-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
+                  >
+                    <svg
+                      className="animate-spin h-3.5 w-3.5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Generating…
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isOfferLoading}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (!isCvDropdownOpen && cvDropdownRef.current) {
+                        const rect = cvDropdownRef.current.getBoundingClientRect();
+                        setCvPortalStyle({
+                          position: 'fixed',
+                          top: rect.bottom + 4,
+                          left: rect.left,
+                          width: rect.width,
+                          zIndex: 9999,
+                        });
+                      }
+                      setIsCvDropdownOpen(v => !v);
+                    }}
+                    className="w-full flex items-center justify-between gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                  >
+                    <span>{offer.cv_status === 'done' ? 'Regenerate CV' : 'Generate CV'}</span>
+                    <svg
+                      className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
+                {isCvDropdownOpen &&
+                  createPortal(
+                    <div
+                      ref={cvPortalRef}
+                      style={cvPortalStyle}
+                      className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                    >
+                      {[{ value: 'en', label: 'English' }, { value: 'pl', label: 'Polish' }].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={e => { e.stopPropagation(); handleCvSelect(opt.value); }}
+                          className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>,
+                    document.body,
+                  )}
+              </div>
+              {!isGenerating && offer.cv_status === 'done' && offer.cv_url && (
                 <button
                   type="button"
-                  onClick={handleGenerate}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                  onClick={() => chrome.tabs.create({ url: `${offer.cv_url}?t=${Date.now()}` })}
+                  className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                 >
-                  Generate CV
+                  <ReadCvLogo size={15} />
+                  CV
                 </button>
-              </div>
-            )
+              )}
+            </div>
           )}
 
           {status && (
@@ -494,7 +524,7 @@ function OfferCard({
                 }
                 setIsDropdownOpen(v => !v);
               }}
-              className="w-full flex items-center justify-between gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+              className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
             >
               <span>Change status</span>
               <svg
@@ -542,12 +572,10 @@ async function openOfferUrl(url: string) {
   const JOB_BOARD_DOMAINS = ['https://justjoin.it', 'https://nofluffjobs.com'];
   const tabs = await chrome.tabs.query({});
 
-  const activeTab = tabs.find(tab => tab.active && tab.windowId !== undefined);
-  if (
-    activeTab?.url &&
-    JOB_BOARD_DOMAINS.some(d => activeTab.url!.startsWith(d))
-  ) {
-    await chrome.tabs.update(activeTab.id!, { url });
+  const offerTab = tabs.find(tab => tab.url && url.startsWith(tab.url.split('?')[0]));
+  if (offerTab?.id !== undefined) {
+    await chrome.tabs.update(offerTab.id, { url, active: true });
+    await chrome.windows.update(offerTab.windowId!, { focused: true });
     return;
   }
 
@@ -571,6 +599,7 @@ function ClientAccordion({
   statusFilter,
   sourceFilter,
   minScore,
+  cvGenerated,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
@@ -740,13 +769,28 @@ function ClientAccordion({
     setIsRefreshing(false);
   }
 
+  function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
+    const patch = (offers: UserOffer[]) =>
+      offers.map(o =>
+        o.user_offer_id === offerId ? { ...o, cv_url: cvUrl, cv_status: cvStatus } : o,
+      );
+    setApplyOffers(patch);
+    setLevelUpOffers(patch);
+  }
+
   const filteredApplyOffers = useMemo(
-    () => applyOffers.filter(o => (o.claude_score ?? 0) >= minScore),
-    [applyOffers, minScore],
+    () =>
+      applyOffers
+        .filter(o => (o.claude_score ?? 0) >= minScore)
+        .filter(o => !cvGenerated || o.cv_status === 'done'),
+    [applyOffers, minScore, cvGenerated],
   );
   const filteredLevelUpOffers = useMemo(
-    () => levelUpOffers.filter(o => (o.claude_score ?? 0) >= minScore),
-    [levelUpOffers, minScore],
+    () =>
+      levelUpOffers
+        .filter(o => (o.claude_score ?? 0) >= minScore)
+        .filter(o => !cvGenerated || o.cv_status === 'done'),
+    [levelUpOffers, minScore, cvGenerated],
   );
 
   return (
@@ -970,6 +1014,8 @@ function ClientAccordion({
                                   setApplyOffers(prev => [...prev, o])
                                 }
                                 onError={setStatusError}
+                                onCvUpdate={handleCvUpdate}
+                                isOfferLoading={isLoading}
                               />
                             ),
                           )}
@@ -1035,6 +1081,8 @@ function ClientAccordion({
                                   setLevelUpOffers(prev => [...prev, o])
                                 }
                                 onError={setStatusError}
+                                onCvUpdate={handleCvUpdate}
+                                isOfferLoading={isLoading}
                               />
                             ),
                           )}
@@ -1106,6 +1154,8 @@ function ClientAccordion({
                                   setApplyOffers(prev => [...prev, o])
                                 }
                                 onError={setStatusError}
+                                onCvUpdate={handleCvUpdate}
+                                isOfferLoading={isLoading}
                               />
                             ),
                           )}
@@ -1144,6 +1194,7 @@ export default function ExploreTab({
   const [sortBy, setSortBy] = useState('score');
   const [statusFilter, setStatusFilter] = useState('pending_apply');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [cvGenerated, setCvGenerated] = useState(false);
   const [minScore, setMinScore] = useState(75);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -1308,17 +1359,31 @@ export default function ExploreTab({
               <option value="accepted">Accepted</option>
             </select>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Source:</span>
-            <select
-              value={sourceFilter}
-              onChange={e => handleSourceFilterChange(e.target.value)}
-              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value="all">All</option>
-              <option value="justjoin">JustJoin</option>
-              <option value="nofluffjobs">NoFluffJobs</option>
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Source:</span>
+              <select
+                value={sourceFilter}
+                onChange={e => handleSourceFilterChange(e.target.value)}
+                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="all">All</option>
+                <option value="justjoin">JustJoin</option>
+                <option value="nofluffjobs">NoFluffJobs</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Generated:</span>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={cvGenerated}
+                  onChange={e => setCvGenerated(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-xs text-gray-700">CV</span>
+              </label>
+            </div>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-gray-500">Sort by:</span>
@@ -1335,7 +1400,9 @@ export default function ExploreTab({
         {clients.length === 0 ? (
           <p className="text-sm text-gray-500">No clients found.</p>
         ) : (
-          clients.map(client => (
+          [...clients].sort((a, b) =>
+            `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
+          ).map(client => (
             <ClientAccordion
               key={client.id}
               client={client}
@@ -1345,6 +1412,7 @@ export default function ExploreTab({
               statusFilter={statusFilter}
               sourceFilter={sourceFilter}
               minScore={minScore}
+              cvGenerated={cvGenerated}
             />
           ))
         )}
