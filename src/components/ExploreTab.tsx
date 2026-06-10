@@ -5,7 +5,7 @@ import {
   ArrowsClockwise,
   ArrowUp,
   CurrencyCircleDollar,
-  PlusCircle,
+  FilePlusIcon,
 } from '@phosphor-icons/react';
 import ProfileDrawer from './ProfileDrawer';
 import { API_BASE_URL } from '../config';
@@ -557,7 +557,7 @@ function OfferCard({
                       {offer.cv_status === 'done' ? (
                         <ArrowsClockwise size={15} />
                       ) : (
-                        <PlusCircle size={15} />
+                        <FilePlusIcon size={15} />
                       )}
                       CV
                     </span>
@@ -672,7 +672,7 @@ function OfferCard({
                       {offer.cl_status === 'done' ? (
                         <ArrowsClockwise size={15} />
                       ) : (
-                        <PlusCircle size={15} />
+                        <FilePlusIcon size={15} />
                       )}
                       CL
                     </span>
