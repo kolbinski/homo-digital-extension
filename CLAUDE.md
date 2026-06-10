@@ -144,4 +144,5 @@ When moving to a new feature or phase:
 - NEVER add chrome.* API calls without first checking manifest.json permissions
 - NEVER use V2 patterns (persistent background pages, XMLHttpRequest in service workers)
 - When the user writes "commit": ALWAYS run `git status` first to catch any manually changed files (icons, assets, config) not touched by the current task, then commit ALL changes with an appropriate message AND push to git immediately after
-- When the user writes "build": ALWAYS run `npm run build` and report the result
+- When the user writes "build" or "rebuild": ALWAYS run `npm run build` and report the result
+- NEVER commit or push automatically after making code changes — only commit when the user explicitly says "commit"
