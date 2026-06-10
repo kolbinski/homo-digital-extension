@@ -5,9 +5,7 @@ import {
   ArrowsClockwise,
   ArrowUp,
   CurrencyCircleDollar,
-  FileText,
   PlusCircle,
-  ReadCvLogo,
 } from '@phosphor-icons/react';
 import ProfileDrawer from './ProfileDrawer';
 import { API_BASE_URL } from '../config';
@@ -243,7 +241,8 @@ function OfferCard({
     if (!offerText.trim()) {
       setStatus({
         type: 'error',
-        message: 'Could not read page content. Make sure you are on the job offer page.',
+        message:
+          'Could not read page content. Make sure you are on the job offer page.',
       });
       return;
     }
@@ -271,15 +270,27 @@ function OfferCard({
         }),
       });
       if (res.status === 401) {
-        setStatus({ type: 'error', message: 'Session expired. Please log in again.' });
+        setStatus({
+          type: 'error',
+          message: 'Session expired. Please log in again.',
+        });
       } else if (!res.ok) {
-        setStatus({ type: 'error', message: `CL generation failed (${res.status}). Please try again.` });
+        setStatus({
+          type: 'error',
+          message: `CL generation failed (${res.status}). Please try again.`,
+        });
       } else {
-        const data = (await res.json()) as { cl_url: string; cl_status: string };
+        const data = (await res.json()) as {
+          cl_url: string;
+          cl_status: string;
+        };
         onClUpdate(offer.user_offer_id, data.cl_url, data.cl_status);
       }
     } catch {
-      setStatus({ type: 'error', message: 'Network error. Check your connection.' });
+      setStatus({
+        type: 'error',
+        message: 'Network error. Check your connection.',
+      });
     } finally {
       setIsClGenerating(false);
     }
@@ -500,9 +511,25 @@ function OfferCard({
                       disabled
                       className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
                     >
-                      <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="animate-spin h-3.5 w-3.5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       Generating CV…
                     </button>
@@ -513,45 +540,88 @@ function OfferCard({
                       onClick={e => {
                         e.stopPropagation();
                         if (!isCvDropdownOpen && cvDropdownRef.current) {
-                          const rect = cvDropdownRef.current.getBoundingClientRect();
-                          setCvPortalStyle({ position: 'fixed', top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 });
+                          const rect =
+                            cvDropdownRef.current.getBoundingClientRect();
+                          setCvPortalStyle({
+                            position: 'fixed',
+                            top: rect.bottom + 4,
+                            left: rect.left,
+                            width: rect.width,
+                            zIndex: 9999,
+                          });
                         }
                         setIsCvDropdownOpen(v => !v);
                       }}
                       className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        {offer.cv_status === 'done' ? <ArrowsClockwise size={15} /> : <PlusCircle size={15} />}
+                        {offer.cv_status === 'done' ? (
+                          <ArrowsClockwise size={15} />
+                        ) : (
+                          <PlusCircle size={15} />
+                        )}
                         CV
                       </span>
-                      <svg className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      <svg
+                        className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </button>
                   )}
-                  {isCvDropdownOpen && createPortal(
-                    <div ref={cvPortalRef} style={cvPortalStyle} className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
-                      {[{ value: 'en', label: 'English' }, { value: 'pl', label: 'Polish' }].map(opt => (
-                        <button key={opt.value} type="button" onClick={e => { e.stopPropagation(); handleCvSelect(opt.value); }} className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700">
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>,
-                    document.body,
-                  )}
+                  {isCvDropdownOpen &&
+                    createPortal(
+                      <div
+                        ref={cvPortalRef}
+                        style={cvPortalStyle}
+                        className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                      >
+                        {[
+                          { value: 'en', label: 'English' },
+                          { value: 'pl', label: 'Polish' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleCvSelect(opt.value);
+                            }}
+                            className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>,
+                      document.body,
+                    )}
                 </div>
               )}
               {/* Green CV button */}
-              {!isGenerating && !isClGenerating && offer.cv_status === 'done' && offer.cv_url && (
-                <button
-                  type="button"
-                  onClick={() => chrome.tabs.create({ url: `${offer.cv_url}?t=${Date.now()}` })}
-                  className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                >
-                  <ReadCvLogo size={15} />
-                  CV
-                </button>
-              )}
+              {!isGenerating &&
+                !isClGenerating &&
+                offer.cv_status === 'done' &&
+                offer.cv_url && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      chrome.tabs.create({
+                        url: `${offer.cv_url}?t=${Date.now()}`,
+                      })
+                    }
+                    className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                  >
+                    CV
+                  </button>
+                )}
               {/* CL dropdown — hidden while CV is generating */}
               {!isGenerating && (
                 <div ref={clDropdownRef} className="flex-1">
@@ -561,9 +631,25 @@ function OfferCard({
                       disabled
                       className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
                     >
-                      <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="animate-spin h-3.5 w-3.5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       Generating CL…
                     </button>
@@ -574,45 +660,88 @@ function OfferCard({
                       onClick={e => {
                         e.stopPropagation();
                         if (!isClDropdownOpen && clDropdownRef.current) {
-                          const rect = clDropdownRef.current.getBoundingClientRect();
-                          setClPortalStyle({ position: 'fixed', top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 });
+                          const rect =
+                            clDropdownRef.current.getBoundingClientRect();
+                          setClPortalStyle({
+                            position: 'fixed',
+                            top: rect.bottom + 4,
+                            left: rect.left,
+                            width: rect.width,
+                            zIndex: 9999,
+                          });
                         }
                         setIsClDropdownOpen(v => !v);
                       }}
                       className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        {offer.cl_status === 'done' ? <ArrowsClockwise size={15} /> : <PlusCircle size={15} />}
+                        {offer.cl_status === 'done' ? (
+                          <ArrowsClockwise size={15} />
+                        ) : (
+                          <PlusCircle size={15} />
+                        )}
                         CL
                       </span>
-                      <svg className={`w-4 h-4 text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      <svg
+                        className={`w-4 h-4 text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </button>
                   )}
-                  {isClDropdownOpen && createPortal(
-                    <div ref={clPortalRef} style={clPortalStyle} className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
-                      {[{ value: 'en', label: 'English' }, { value: 'pl', label: 'Polish' }].map(opt => (
-                        <button key={opt.value} type="button" onClick={e => { e.stopPropagation(); handleClSelect(opt.value); }} className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700">
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>,
-                    document.body,
-                  )}
+                  {isClDropdownOpen &&
+                    createPortal(
+                      <div
+                        ref={clPortalRef}
+                        style={clPortalStyle}
+                        className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                      >
+                        {[
+                          { value: 'en', label: 'English' },
+                          { value: 'pl', label: 'Polish' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleClSelect(opt.value);
+                            }}
+                            className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>,
+                      document.body,
+                    )}
                 </div>
               )}
               {/* Green CL button */}
-              {!isGenerating && !isClGenerating && offer.cl_status === 'done' && offer.cl_url && (
-                <button
-                  type="button"
-                  onClick={() => chrome.tabs.create({ url: `${offer.cl_url}?t=${Date.now()}` })}
-                  className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                >
-                  <FileText size={15} />
-                  CL
-                </button>
-              )}
+              {!isGenerating &&
+                !isClGenerating &&
+                offer.cl_status === 'done' &&
+                offer.cl_url && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      chrome.tabs.create({
+                        url: `${offer.cl_url}?t=${Date.now()}`,
+                      })
+                    }
+                    className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                  >
+                    CL
+                  </button>
+                )}
             </div>
           )}
 
@@ -629,60 +758,60 @@ function OfferCard({
           )}
 
           {!isGenerating && !isClGenerating && (
-          <div ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => {
-                if (!isDropdownOpen && dropdownRef.current) {
-                  const rect = dropdownRef.current.getBoundingClientRect();
-                  setPortalStyle({
-                    position: 'fixed',
-                    top: rect.bottom + 4,
-                    left: rect.left,
-                    width: rect.width,
-                    zIndex: 9999,
-                  });
-                }
-                setIsDropdownOpen(v => !v);
-              }}
-              className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-            >
-              <span>Change status</span>
-              <svg
-                className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+            <div ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isDropdownOpen && dropdownRef.current) {
+                    const rect = dropdownRef.current.getBoundingClientRect();
+                    setPortalStyle({
+                      position: 'fixed',
+                      top: rect.bottom + 4,
+                      left: rect.left,
+                      width: rect.width,
+                      zIndex: 9999,
+                    });
+                  }
+                  setIsDropdownOpen(v => !v);
+                }}
+                className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-            {isDropdownOpen &&
-              createPortal(
-                <div
-                  ref={portalRef}
-                  style={portalStyle}
-                  className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                <span>Change status</span>
+                <svg
+                  className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
                 >
-                  {STATUS_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleStatusChange(opt.value)}
-                      className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>,
-                document.body,
-              )}
-          </div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {isDropdownOpen &&
+                createPortal(
+                  <div
+                    ref={portalRef}
+                    style={portalStyle}
+                    className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                  >
+                    {STATUS_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleStatusChange(opt.value)}
+                        className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>,
+                  document.body,
+                )}
+            </div>
           )}
         </div>
       )}
