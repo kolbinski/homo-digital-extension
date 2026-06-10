@@ -35,6 +35,7 @@ export function useCvGenerate() {
     clientLastName: string,
     companyName: string,
     jobTitle: string,
+    userOfferId: string,
     signal?: AbortSignal,
   ): Promise<GenerateResult> {
     if (typeof chrome === 'undefined') {
@@ -66,6 +67,7 @@ export function useCvGenerate() {
           cv_language: cvLanguage,
           job_title: jobTitle,
           company_name: companyName,
+          user_offer_id: userOfferId,
         }),
         signal,
       });

@@ -205,6 +205,7 @@ function OfferCard({
       clientLastName,
       offer.offer_company,
       offer.offer_title,
+      offer.user_offer_id,
       controller.signal,
     );
     setIsGenerating(false);
