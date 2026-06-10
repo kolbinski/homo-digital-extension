@@ -502,9 +502,8 @@ function OfferCard({
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
           {statusLoading !== offer.user_offer_id && (
             <div className="flex gap-2 items-center">
-              {/* CV dropdown — hidden while CL is generating */}
-              {!isClGenerating && (
-                <div ref={cvDropdownRef} className="flex-1">
+              {/* CV dropdown */}
+              <div ref={cvDropdownRef} className="flex-1">
                   {isGenerating ? (
                     <button
                       type="button"
@@ -604,10 +603,8 @@ function OfferCard({
                       document.body,
                     )}
                 </div>
-              )}
               {/* Green CV button */}
               {!isGenerating &&
-                !isClGenerating &&
                 offer.cv_status === 'done' &&
                 offer.cv_url && (
                   <button
@@ -622,9 +619,8 @@ function OfferCard({
                     CV
                   </button>
                 )}
-              {/* CL dropdown — hidden while CV is generating */}
-              {!isGenerating && (
-                <div ref={clDropdownRef} className="flex-1">
+              {/* CL dropdown */}
+              <div ref={clDropdownRef} className="flex-1">
                   {isClGenerating ? (
                     <button
                       type="button"
@@ -724,10 +720,8 @@ function OfferCard({
                       document.body,
                     )}
                 </div>
-              )}
               {/* Green CL button */}
-              {!isGenerating &&
-                !isClGenerating &&
+              {!isClGenerating &&
                 offer.cl_status === 'done' &&
                 offer.cl_url && (
                   <button
