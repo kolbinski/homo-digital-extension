@@ -513,7 +513,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
 
       {/* Gender */}
       <Section title="Gender" required>
-        <div className="flex gap-1.5">
+        <div className="flex items-center gap-1.5">
           {(
             [
               ['M', 'Male'],
@@ -527,6 +527,9 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
               onClick={() => update({ gender: b.gender === val ? '' : val })}
             />
           ))}
+          {!b.gender && (
+            <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+          )}
         </div>
       </Section>
 
