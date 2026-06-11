@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from '@phosphor-icons/react';
 import type { RedFlagEntry } from '../types';
 
@@ -15,7 +15,14 @@ const COMPANY_TYPE_OPTIONS = [
   'corporation',
 ];
 
-const SKILLS_SUGGESTIONS = ['php', 'jquery', 'legacy', 'cobol', 'wordpress', '.net framework'];
+const SKILLS_SUGGESTIONS = [
+  'php',
+  'jquery',
+  'legacy',
+  'cobol',
+  'wordpress',
+  '.net framework',
+];
 
 const OTHER_PREDEFINED = [
   'no code review',
@@ -27,7 +34,10 @@ const OTHER_PREDEFINED = [
   'no mentoring',
 ];
 
-function getDescriptions(redFlags: RedFlagEntry[], category: RedFlagEntry['category']): string[] {
+function getDescriptions(
+  redFlags: RedFlagEntry[],
+  category: RedFlagEntry['category'],
+): string[] {
   return redFlags.find(r => r.category === category)?.description ?? [];
 }
 
@@ -37,7 +47,9 @@ function setDescriptions(
   descriptions: string[],
 ): RedFlagEntry[] {
   if (redFlags.some(r => r.category === category)) {
-    return redFlags.map(r => (r.category === category ? { ...r, description: descriptions } : r));
+    return redFlags.map(r =>
+      r.category === category ? { ...r, description: descriptions } : r,
+    );
   }
   return [...redFlags, { category, description: descriptions }];
 }
@@ -61,7 +73,7 @@ function Chip({
       onClick={onClick}
       className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
         selected
-          ? 'bg-red-500 border-red-500 text-white'
+          ? 'bg-blue-500 border-blue-500 text-white'
           : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
       }`}
     >
@@ -70,14 +82,20 @@ function Chip({
   );
 }
 
-function Tag({ label, onRemove }: { label: string; onRemove: () => void }) {
+function RemovableChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 text-xs text-gray-700">
+    <span className="inline-flex items-center gap-1 pl-3 pr-1 py-1 rounded-full text-xs font-medium bg-blue-500 border border-blue-500 text-white">
       {label}
       <button
         type="button"
         onClick={onRemove}
-        className="text-gray-400 hover:text-gray-600 transition-colors"
+        className="text-white/70 hover:text-white transition-colors"
         aria-label={`Remove ${label}`}
       >
         <X size={20} />
@@ -92,9 +110,26 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
   const other = getDescriptions(redFlags, 'other');
 
   const [skillInput, setSkillInput] = useState('');
+  const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
   const [otherInput, setOtherInput] = useState('');
-  const skillInputRef = useRef<HTMLInputElement>(null);
-  const otherInputRef = useRef<HTMLInputElement>(null);
+  const skillWrapperRef = useRef<HTMLDivElement>(null);
+
+  const filteredSuggestions = SKILLS_SUGGESTIONS.filter(
+    s =>
+      !skills.includes(s) &&
+      s.toLowerCase().includes(skillInput.toLowerCase().trim()),
+  );
+
+  useEffect(() => {
+    if (!skillDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (!skillWrapperRef.current?.contains(e.target as Node)) {
+        setSkillDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [skillDropdownOpen]);
 
   function toggleCompanyType(value: string) {
     const next = companyTypes.includes(value)
@@ -110,7 +145,9 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
   }
 
   function removeSkill(value: string) {
-    onChange(setDescriptions(redFlags, 'skills', skills.filter(s => s !== value)));
+    onChange(
+      setDescriptions(redFlags, 'skills', skills.filter(s => s !== value)),
+    );
   }
 
   function handleSkillKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -118,6 +155,9 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
       e.preventDefault();
       addSkill(skillInput);
       setSkillInput('');
+      setSkillDropdownOpen(false);
+    } else if (e.key === 'Escape') {
+      setSkillDropdownOpen(false);
     }
   }
 
@@ -135,7 +175,9 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
   }
 
   function removeOther(value: string) {
-    onChange(setDescriptions(redFlags, 'other', other.filter(o => o !== value)));
+    onChange(
+      setDescriptions(redFlags, 'other', other.filter(o => o !== value)),
+    );
   }
 
   function handleOtherKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -170,32 +212,48 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
       <div>
         <SectionTitle>Skills to avoid</SectionTitle>
         {skills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
+          <div className="flex flex-wrap gap-2 mb-2">
             {skills.map(skill => (
-              <Tag key={skill} label={skill} onRemove={() => removeSkill(skill)} />
+              <RemovableChip
+                key={skill}
+                label={skill}
+                onRemove={() => removeSkill(skill)}
+              />
             ))}
           </div>
         )}
-        <input
-          ref={skillInputRef}
-          type="text"
-          value={skillInput}
-          onChange={e => setSkillInput(e.target.value)}
-          onKeyDown={handleSkillKeyDown}
-          placeholder="Type and press Enter or comma…"
-          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
-        />
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {SKILLS_SUGGESTIONS.filter(s => !skills.includes(s)).map(s => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => addSkill(s)}
-              className="px-2 py-0.5 rounded text-xs bg-gray-100 border border-gray-200 text-gray-500 hover:bg-gray-200 transition-colors"
-            >
-              + {s}
-            </button>
-          ))}
+        <div ref={skillWrapperRef} className="relative">
+          <input
+            type="text"
+            value={skillInput}
+            onChange={e => {
+              setSkillInput(e.target.value);
+              setSkillDropdownOpen(true);
+            }}
+            onFocus={() => setSkillDropdownOpen(true)}
+            onKeyDown={handleSkillKeyDown}
+            placeholder="Type and press Enter or comma…"
+            className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+          />
+          {skillDropdownOpen && filteredSuggestions.length > 0 && (
+            <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-md overflow-hidden">
+              {filteredSuggestions.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    addSkill(s);
+                    setSkillInput('');
+                    setSkillDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -211,22 +269,21 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
               onClick={() => toggleOther(opt)}
             />
           ))}
+          {customOther.map(item => (
+            <RemovableChip
+              key={item}
+              label={item}
+              onRemove={() => removeOther(item)}
+            />
+          ))}
         </div>
-        {customOther.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {customOther.map(item => (
-              <Tag key={item} label={item} onRemove={() => removeOther(item)} />
-            ))}
-          </div>
-        )}
         <input
-          ref={otherInputRef}
           type="text"
           value={otherInput}
           onChange={e => setOtherInput(e.target.value)}
           onKeyDown={handleOtherKeyDown}
           placeholder="Add custom red flag and press Enter…"
-          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
         />
       </div>
 
