@@ -315,7 +315,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   // ── Distance ──────────────────────────────────────────────────────────────
   const storedKm = b.location.max_distance_km ?? 0;
   const displayDist = unit === 'km' ? storedKm : Math.round(storedKm / 1.609);
-  const distMax = unit === 'km' ? 200 : 124;
+  const distMax = unit === 'km' ? 322 : 200;
 
   function handleDistanceChange(val: number) {
     const km = unit === 'km' ? val : Math.round(val * 1.609);
@@ -582,7 +582,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
       {/* Experience */}
       <Section title="Experience">
         <Field label="Experience level" required>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(['junior', 'mid', 'senior', 'lead'] as const).map(level => (
               <Chip
                 key={level}
@@ -595,6 +595,9 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 }
               />
             ))}
+            {!b.experience_level && (
+              <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+            )}
           </div>
         </Field>
         <Field label="Working in tech since">
@@ -609,7 +612,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
           />
         </Field>
         <Field label="Job search status" required>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
                 ['actively_looking', 'Actively looking'],
@@ -628,6 +631,9 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 }
               />
             ))}
+            {!b.job_search_status && (
+              <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+            )}
           </div>
         </Field>
       </Section>
