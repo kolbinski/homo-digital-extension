@@ -52,7 +52,12 @@ const TAB_META: Array<{
     shortLabel: 'Work Exp',
     optional: false,
   },
-  { id: 'skills', label: 'Skills', shortLabel: 'Skills', optional: false },
+  {
+    id: 'skills',
+    label: 'Skills',
+    shortLabel: 'Skills',
+    optional: false,
+  },
   {
     id: 'preferences',
     label: 'Preferences',
@@ -68,7 +73,7 @@ const TAB_META: Array<{
   {
     id: 'own_projects',
     label: 'Own Projects',
-    shortLabel: 'Projects',
+    shortLabel: 'Own Projects',
     optional: true,
   },
   {
@@ -112,17 +117,24 @@ export function getTabCompletions(profile: Profile): TabCompletion[] {
         case 'education':
           hasEntry = (profile.education?.length ?? 0) > 0;
           break;
-        case 'own_projects':
-          hasEntry = (profile.own_projects?.length ?? 0) > 0;
+        case 'own_projects': {
+          const projects = profile.own_projects ?? [];
+          hasEntry = projects.some(p => p.name?.trim());
+          missingCount = projects.filter(p => !p.name?.trim()).length;
           break;
+        }
         case 'certifications': {
           const certs = profile.certifications ?? [];
           hasEntry = certs.length > 0;
-          missingCount = certs.filter(c => !c.name?.trim() || !c.issuer?.trim()).length;
+          missingCount = certs.filter(
+            c => !c.name?.trim() || !c.issuer?.trim(),
+          ).length;
           break;
         }
         case 'red_flags':
-          hasEntry = (profile.red_flags ?? []).some(r => r.description?.length > 0);
+          hasEntry = (profile.red_flags ?? []).some(
+            r => r.description?.length > 0,
+          );
           break;
       }
     }

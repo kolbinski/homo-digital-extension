@@ -42,7 +42,10 @@ export interface CertificationEntry {
 }
 
 export interface OwnProjectEntry {
-  [key: string]: unknown;
+  name: string;
+  url?: string;
+  skills?: string[];
+  achievements?: string[];
 }
 
 export interface RedFlagEntry {

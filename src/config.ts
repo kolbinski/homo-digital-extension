@@ -11,4 +11,12 @@ export const CONFIG = {
     github: true,
   },
   use_template_cv: true,
+  skills_suggestions: [
+    'php',
+    'jquery',
+    'legacy',
+    'cobol',
+    'wordpress',
+    '.net framework',
+  ],
 };

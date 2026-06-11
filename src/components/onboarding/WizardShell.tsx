@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../../config';
 import type { Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
 import CertificationsTab from './tabs/CertificationsTab';
+import OwnProjectsTab from './tabs/OwnProjectsTab';
 import RedFlagsTab from './tabs/RedFlagsTab';
 
 interface Props {
@@ -134,6 +135,11 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           <CertificationsTab
             certifications={profile.certifications}
             onChange={certs => onChange({ ...profile, certifications: certs })}
+          />
+        ) : activeTab === 'own_projects' ? (
+          <OwnProjectsTab
+            projects={profile.own_projects}
+            onChange={projects => onChange({ ...profile, own_projects: projects })}
           />
         ) : activeTab === 'red_flags' ? (
           <RedFlagsTab

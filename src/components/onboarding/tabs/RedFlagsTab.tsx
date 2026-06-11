@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { XCircleIcon } from '@phosphor-icons/react';
+import { CONFIG } from '../../../config';
 import type { RedFlagEntry } from '../types';
 
 interface Props {
@@ -15,14 +16,7 @@ const COMPANY_TYPE_OPTIONS = [
   'corporation',
 ];
 
-const SKILLS_SUGGESTIONS = [
-  'php',
-  'jquery',
-  'legacy',
-  'cobol',
-  'wordpress',
-  '.net framework',
-];
+const SKILLS_SUGGESTIONS = CONFIG.skills_suggestions;
 
 const OTHER_PREDEFINED = [
   'no code review',
