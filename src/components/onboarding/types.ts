@@ -28,13 +28,24 @@ export interface ProfileBasicInfo {
   cv_summary_bullets: string[];
 }
 
+export interface ProjectEntry {
+  name: string;
+  role: string | null;
+  skills: string[];
+  team_size: string | null;
+  achievements: string[];
+}
+
 export interface WorkExperienceEntry {
   title: string;
   company: string;
   date_from: string;
-  date_to?: string;
-  description?: string;
-  [key: string]: unknown;
+  date_to: string | null;
+  industry: string | null;
+  location: string | null;
+  work_model: string | null;
+  company_type: string | null;
+  projects: ProjectEntry[];
 }
 
 export interface EducationEntry {

@@ -20,10 +20,21 @@ function countMissingBasicInfo(p: Profile): number {
 
 function countMissingWorkExperience(p: Profile): number {
   if (!p.work_experience?.length) return 1;
-  const valid = p.work_experience.some(
-    e => e.title && e.company && e.date_from,
-  );
-  return valid ? 0 : 1;
+  let missing = 0;
+  for (const e of p.work_experience) {
+    if (!e.title?.trim()) missing++;
+    if (!e.company?.trim()) missing++;
+    if (!e.date_from?.trim()) missing++;
+    if (e.date_to !== null && !e.date_to?.trim()) missing++;
+    const projects = e.projects ?? [];
+    if (projects.length > 1) {
+      missing += projects.filter(proj => !proj.name?.trim()).length;
+    }
+    for (const proj of projects) {
+      missing += (proj.achievements ?? []).filter(a => !a.trim()).length;
+    }
+  }
+  return missing;
 }
 
 function countMissingSkills(p: Profile): number {

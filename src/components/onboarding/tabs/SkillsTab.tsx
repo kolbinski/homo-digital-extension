@@ -117,9 +117,11 @@ function CategorySection({
         <span className="text-sm font-medium text-gray-900 flex-1 capitalize">
           {category.replace(/_/g, ' ')}
         </span>
-        {skills.length > 0 && (
-          <span className="text-xs text-gray-400 shrink-0">{skills.length}</span>
-        )}
+        {
+          <span className="text-xs text-gray-400 shrink-0">
+            {skills.length}
+          </span>
+        }
       </div>
 
       {/* Body */}

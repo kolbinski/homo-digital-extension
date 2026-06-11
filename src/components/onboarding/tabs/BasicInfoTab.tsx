@@ -639,7 +639,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
           <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
-                ['actively_looking', 'Seeking'],
+                ['actively_looking', 'Actively seeking'],
                 ['open_to_offers', 'Open'],
                 ['not_looking', 'Passive'],
               ] as const
