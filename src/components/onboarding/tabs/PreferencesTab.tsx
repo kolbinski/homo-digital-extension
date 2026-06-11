@@ -121,9 +121,8 @@ export default function PreferencesTab({
   const markets = settings?.markets ?? [];
   const skillsSuggestions = settings?.skills_suggestions ?? [];
 
-  const showOfficeFields = !(
-    prefs.work_model.length > 0 && prefs.work_model.every(m => m === 'remote')
-  );
+  const showOfficeFields =
+    prefs.work_model.includes('hybrid') || prefs.work_model.includes('office');
 
   // ── Salary ──────────────────────────────────────────────────────────────
   function updateSalary(idx: number, patch: Partial<SalaryEntry>) {
@@ -383,7 +382,14 @@ export default function PreferencesTab({
       </Section>
 
       {/* Employment type */}
-      <Section title="Employment type">
+      <Section
+        title="Employment type"
+        badge={
+          prefs.employment_type.length === 0 ? (
+            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+          ) : undefined
+        }
+      >
         <div className="flex flex-wrap gap-1.5">
           {(
             [

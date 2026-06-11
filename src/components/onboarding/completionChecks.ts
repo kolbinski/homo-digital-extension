@@ -12,7 +12,9 @@ function countMissingBasicInfo(p: Profile): number {
   if (!b.experience_level?.trim()) missing++;
   if (!b.job_search_status?.trim()) missing++;
   if (!b.languages?.length) missing++;
-  missing += (b.languages ?? []).filter(l => !l.name?.trim() || !l.level).length;
+  missing += (b.languages ?? []).filter(
+    l => !l.name?.trim() || !l.level,
+  ).length;
   missing += (b.soft_skills ?? []).filter(s => !s.trim()).length;
   missing += (b.cv_summary_bullets ?? []).filter(s => !s.trim()).length;
   return missing;
@@ -60,6 +62,7 @@ function countMissingPreferences(p: Profile): number {
   missing += roles.length === 0 ? 1 : 0;
   missing += roles.filter(r => !r.trim()).length;
   if (!pref.work_model?.length) missing++;
+  if (!pref.employment_type?.length) missing++;
   return missing;
 }
 
@@ -108,7 +111,7 @@ const TAB_META: Array<{
   {
     id: 'preferences',
     label: 'Preferences',
-    shortLabel: 'Prefs',
+    shortLabel: 'Preferences',
     optional: false,
   },
   {
