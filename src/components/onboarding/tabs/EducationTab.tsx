@@ -8,11 +8,11 @@ import {
   Trash,
   XCircle,
 } from '@phosphor-icons/react';
-import type { CertificationEntry } from '../types';
+import type { EducationEntry } from '../types';
 
 interface Props {
-  certifications: CertificationEntry[];
-  onChange: (certifications: CertificationEntry[]) => void;
+  education: EducationEntry[];
+  onChange: (education: EducationEntry[]) => void;
 }
 
 function reorderIndex(i: number, from: number, to: number): number {
@@ -22,29 +22,46 @@ function reorderIndex(i: number, from: number, to: number): number {
   return i;
 }
 
-export default function CertificationsTab({ certifications, onChange }: Props) {
+const fieldClass =
+  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-medium text-gray-600">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+export default function EducationTab({ education, onChange }: Props) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const dragFromIdx = useRef<number | null>(null);
 
   function addEntry() {
-    const idx = certifications.length;
-    onChange([...certifications, { name: '', issuer: '', date: '', url: '' }]);
+    const idx = education.length;
+    onChange([...education, { institution: '' }]);
     setExpanded(prev => new Set(prev).add(idx));
   }
 
-  function updateEntry(
-    idx: number,
-    field: keyof CertificationEntry,
-    value: string,
-  ) {
-    onChange(
-      certifications.map((c, i) => (i === idx ? { ...c, [field]: value } : c)),
-    );
+  function updateEntry(idx: number, patch: Partial<EducationEntry>) {
+    onChange(education.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
   }
 
   function deleteEntry(idx: number) {
-    onChange(certifications.filter((_, i) => i !== idx));
+    onChange(education.filter((_, i) => i !== idx));
     setExpanded(prev => {
       const next = new Set<number>();
       prev.forEach(i => {
@@ -80,7 +97,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
       setDragOverIdx(null);
       return;
     }
-    const reordered = [...certifications];
+    const reordered = [...education];
     const [moved] = reordered.splice(fromIdx, 1);
     reordered.splice(toIdx, 0, moved);
     onChange(reordered);
@@ -100,16 +117,16 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      {certifications.length === 0 && (
+      {education.length === 0 && (
         <p className="text-sm text-gray-400">
-          No certifications yet. Add one below.
+          No education entries yet. Add one below.
         </p>
       )}
 
-      {certifications.map((cert, idx) => {
+      {education.map((entry, idx) => {
         const isOpen = expanded.has(idx);
         const isDragTarget = dragOverIdx === idx;
-        const isComplete = !!cert.name?.trim() && !!cert.issuer?.trim();
+        const isComplete = !!entry.institution?.trim();
 
         return (
           <div
@@ -148,11 +165,11 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {cert.name || 'Untitled certification'}
+                    {entry.institution || 'Untitled institution'}
                   </p>
-                  {cert.issuer && (
+                  {entry.degree && (
                     <p className="text-xs text-gray-500 truncate">
-                      {cert.issuer}
+                      {entry.degree}
                     </p>
                   )}
                 </div>
@@ -175,7 +192,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
               <button
                 type="button"
                 onClick={() => deleteEntry(idx)}
-                aria-label="Delete certification"
+                aria-label="Delete education entry"
                 className="shrink-0 text-red-400 hover:text-red-600 transition-colors p-1"
               >
                 <Trash size={20} />
@@ -185,34 +202,82 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
             {/* Expanded fields */}
             {isOpen && (
               <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col gap-3">
-                <Field
-                  label="Name"
-                  value={cert.name}
-                  onChange={v => updateEntry(idx, 'name', v)}
-                  placeholder="e.g. AWS Solutions Architect"
-                  required
-                  multiline
-                />
-                <Field
-                  label="Issuer"
-                  value={cert.issuer}
-                  onChange={v => updateEntry(idx, 'issuer', v)}
-                  placeholder="e.g. Amazon Web Services"
-                  required
-                  multiline
-                />
-                <Field
-                  label="Date"
-                  value={cert.date ?? ''}
-                  onChange={v => updateEntry(idx, 'date', v)}
-                  placeholder="YYYY-MM"
-                />
-                <Field
-                  label="URL"
-                  value={cert.url ?? ''}
-                  onChange={v => updateEntry(idx, 'url', v)}
-                  placeholder="https://..."
-                />
+                <Field label="Institution" required>
+                  <textarea
+                    rows={2}
+                    value={entry.institution}
+                    onChange={e =>
+                      updateEntry(idx, { institution: e.target.value })
+                    }
+                    placeholder="e.g. Warsaw University of Technology"
+                    className={`${fieldClass} resize-y`}
+                  />
+                </Field>
+
+                <Field label="Degree">
+                  <textarea
+                    rows={2}
+                    value={entry.degree ?? ''}
+                    onChange={e => updateEntry(idx, { degree: e.target.value })}
+                    placeholder="e.g. Master of Science"
+                    className={`${fieldClass} resize-y`}
+                  />
+                </Field>
+
+                <Field label="Field of study">
+                  <textarea
+                    rows={2}
+                    value={entry.field ?? ''}
+                    onChange={e => updateEntry(idx, { field: e.target.value })}
+                    placeholder="e.g. Computer Science"
+                    className={`${fieldClass} resize-y`}
+                  />
+                </Field>
+
+                <Field label="Thesis">
+                  <textarea
+                    rows={3}
+                    value={entry.thesis ?? ''}
+                    onChange={e => updateEntry(idx, { thesis: e.target.value })}
+                    placeholder="e.g. Machine Learning approaches to..."
+                    className={`${fieldClass} resize-y`}
+                  />
+                </Field>
+
+                <Field label="GPA">
+                  <input
+                    type="text"
+                    value={entry.gpa ?? ''}
+                    onChange={e => updateEntry(idx, { gpa: e.target.value })}
+                    placeholder="e.g. 3.8 / 4.0 or 4.5 / 5.0"
+                    className={fieldClass}
+                  />
+                </Field>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Date from">
+                    <input
+                      type="text"
+                      value={entry.date_from ?? ''}
+                      onChange={e =>
+                        updateEntry(idx, { date_from: e.target.value })
+                      }
+                      placeholder="YYYY-MM"
+                      className={fieldClass}
+                    />
+                  </Field>
+                  <Field label="Date to">
+                    <input
+                      type="text"
+                      value={entry.date_to ?? ''}
+                      onChange={e =>
+                        updateEntry(idx, { date_to: e.target.value })
+                      }
+                      placeholder="YYYY-MM"
+                      className={fieldClass}
+                    />
+                  </Field>
+                </div>
               </div>
             )}
           </div>
@@ -225,56 +290,8 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
         className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-blue-600"
       >
         <Plus size={20} />
-        Add certification
+        Add education
       </button>
-    </div>
-  );
-}
-
-const fieldClass =
-  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent';
-const ringStyle = { ['--tw-ring-color' as string]: '#16a34a' };
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required,
-  multiline,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  multiline?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-gray-600">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      {multiline ? (
-        <textarea
-          rows={2}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={`${fieldClass} resize-y`}
-          style={ringStyle}
-        />
-      ) : (
-        <input
-          type="text"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={fieldClass}
-          style={ringStyle}
-        />
-      )}
     </div>
   );
 }

@@ -114,9 +114,12 @@ export function getTabCompletions(profile: Profile): TabCompletion[] {
       }
     } else {
       switch (tab.id) {
-        case 'education':
-          hasEntry = (profile.education?.length ?? 0) > 0;
+        case 'education': {
+          const entries = profile.education ?? [];
+          hasEntry = entries.some(e => e.institution?.trim());
+          missingCount = entries.filter(e => !e.institution?.trim()).length;
           break;
+        }
         case 'own_projects': {
           const projects = profile.own_projects ?? [];
           hasEntry = projects.some(p => p.name?.trim());

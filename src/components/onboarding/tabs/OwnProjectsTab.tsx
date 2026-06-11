@@ -130,7 +130,8 @@ function SkillsInput({
           placeholder="Type and press Enter or comma…"
           className={fieldClass}
         />
-        {dropdownOpen && suggestions.length > 0 &&
+        {dropdownOpen &&
+          suggestions.length > 0 &&
           createPortal(
             <div
               ref={portalRef}
@@ -252,7 +253,7 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
             onDragOver={e => handleDragOver(e, idx)}
             onDrop={e => handleDrop(e, idx)}
             className={`bg-white rounded-lg border shadow-sm overflow-hidden transition-colors ${
-              isDragTarget ? 'border-green-400' : 'border-gray-200'
+              isDragTarget ? 'border-blue-400' : 'border-gray-200'
             }`}
           >
             {/* Card header */}
@@ -373,7 +374,9 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
                   </label>
                   <AchievementsList
                     achievements={achievements}
-                    onChange={next => updateProject(idx, { achievements: next })}
+                    onChange={next =>
+                      updateProject(idx, { achievements: next })
+                    }
                   />
                 </div>
               </div>
@@ -385,7 +388,7 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
       <button
         type="button"
         onClick={addProject}
-        className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-green-600"
+        className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-blue-600"
       >
         <Plus size={20} />
         Add project
@@ -404,7 +407,9 @@ function AchievementsList({
   const [dragOver, setDragOver] = useState<number | null>(null);
   const dragFrom = useRef<number | null>(null);
 
-  function handleDragStart(i: number) { dragFrom.current = i; }
+  function handleDragStart(i: number) {
+    dragFrom.current = i;
+  }
 
   function handleDragOver(e: React.DragEvent, i: number) {
     e.preventDefault();
@@ -414,7 +419,10 @@ function AchievementsList({
   function handleDrop(e: React.DragEvent, toIdx: number) {
     e.preventDefault();
     const fromIdx = dragFrom.current;
-    if (fromIdx === null || fromIdx === toIdx) { setDragOver(null); return; }
+    if (fromIdx === null || fromIdx === toIdx) {
+      setDragOver(null);
+      return;
+    }
     const next = [...achievements];
     const [moved] = next.splice(fromIdx, 1);
     next.splice(toIdx, 0, moved);
@@ -423,7 +431,10 @@ function AchievementsList({
     setDragOver(null);
   }
 
-  function handleDragEnd() { dragFrom.current = null; setDragOver(null); }
+  function handleDragEnd() {
+    dragFrom.current = null;
+    setDragOver(null);
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -433,7 +444,7 @@ function AchievementsList({
           onDragOver={e => handleDragOver(e, aIdx)}
           onDrop={e => handleDrop(e, aIdx)}
           className={`flex items-start gap-1.5 rounded transition-colors ${
-            dragOver === aIdx ? 'bg-green-50' : ''
+            dragOver === aIdx ? 'bg-blue-50' : ''
           }`}
         >
           <div

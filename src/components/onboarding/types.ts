@@ -31,7 +31,13 @@ export interface WorkExperienceEntry {
 }
 
 export interface EducationEntry {
-  [key: string]: unknown;
+  institution: string;
+  degree?: string;
+  field?: string;
+  thesis?: string;
+  gpa?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 export interface CertificationEntry {

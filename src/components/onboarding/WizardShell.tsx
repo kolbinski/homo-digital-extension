@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../../config';
 import type { Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
 import CertificationsTab from './tabs/CertificationsTab';
+import EducationTab from './tabs/EducationTab';
 import OwnProjectsTab from './tabs/OwnProjectsTab';
 import RedFlagsTab from './tabs/RedFlagsTab';
 
@@ -135,6 +136,11 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           <CertificationsTab
             certifications={profile.certifications}
             onChange={certs => onChange({ ...profile, certifications: certs })}
+          />
+        ) : activeTab === 'education' ? (
+          <EducationTab
+            education={profile.education}
+            onChange={education => onChange({ ...profile, education })}
           />
         ) : activeTab === 'own_projects' ? (
           <OwnProjectsTab
