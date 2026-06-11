@@ -14,7 +14,9 @@ function countMissingBasicInfo(p: Profile): number {
 
 function countMissingWorkExperience(p: Profile): number {
   if (!p.work_experience?.length) return 1;
-  const valid = p.work_experience.some(e => e.title && e.company && e.date_from);
+  const valid = p.work_experience.some(
+    e => e.title && e.company && e.date_from,
+  );
   return valid ? 0 : 1;
 }
 
@@ -38,14 +40,49 @@ const TAB_META: Array<{
   shortLabel: string;
   optional: boolean;
 }> = [
-  { id: 'basic_info',      label: 'Basic Info',      shortLabel: 'Basic',     optional: false },
-  { id: 'work_experience', label: 'Work Experience', shortLabel: 'Work Exp',  optional: false },
-  { id: 'skills',          label: 'Skills',          shortLabel: 'Skills',    optional: false },
-  { id: 'preferences',     label: 'Preferences',     shortLabel: 'Prefs',     optional: false },
-  { id: 'education',       label: 'Education',       shortLabel: 'Education', optional: true  },
-  { id: 'own_projects',    label: 'Own Projects',    shortLabel: 'Projects',  optional: true  },
-  { id: 'certifications',  label: 'Certifications',  shortLabel: 'Certs',     optional: true  },
-  { id: 'red_flags',       label: 'Red Flags',       shortLabel: 'Red Flags', optional: true  },
+  {
+    id: 'basic_info',
+    label: 'Basic Info',
+    shortLabel: 'Basic',
+    optional: false,
+  },
+  {
+    id: 'work_experience',
+    label: 'Work Experience',
+    shortLabel: 'Work Exp',
+    optional: false,
+  },
+  { id: 'skills', label: 'Skills', shortLabel: 'Skills', optional: false },
+  {
+    id: 'preferences',
+    label: 'Preferences',
+    shortLabel: 'Prefs',
+    optional: false,
+  },
+  {
+    id: 'education',
+    label: 'Education',
+    shortLabel: 'Education',
+    optional: true,
+  },
+  {
+    id: 'own_projects',
+    label: 'Own Projects',
+    shortLabel: 'Projects',
+    optional: true,
+  },
+  {
+    id: 'certifications',
+    label: 'Certifications',
+    shortLabel: 'Certs',
+    optional: true,
+  },
+  {
+    id: 'red_flags',
+    label: 'Red Flags',
+    shortLabel: 'Red Flags',
+    optional: true,
+  },
 ];
 
 export { TAB_META };
@@ -57,17 +94,33 @@ export function getTabCompletions(profile: Profile): TabCompletion[] {
 
     if (!tab.optional) {
       switch (tab.id) {
-        case 'basic_info':      missingCount = countMissingBasicInfo(profile); break;
-        case 'work_experience': missingCount = countMissingWorkExperience(profile); break;
-        case 'skills':          missingCount = countMissingSkills(profile); break;
-        case 'preferences':     missingCount = countMissingPreferences(profile); break;
+        case 'basic_info':
+          missingCount = countMissingBasicInfo(profile);
+          break;
+        case 'work_experience':
+          missingCount = countMissingWorkExperience(profile);
+          break;
+        case 'skills':
+          missingCount = countMissingSkills(profile);
+          break;
+        case 'preferences':
+          missingCount = countMissingPreferences(profile);
+          break;
       }
     } else {
       switch (tab.id) {
-        case 'education':      hasEntry = (profile.education?.length ?? 0) > 0; break;
-        case 'own_projects':   hasEntry = (profile.own_projects?.length ?? 0) > 0; break;
-        case 'certifications': hasEntry = (profile.certifications?.length ?? 0) > 0; break;
-        case 'red_flags':      hasEntry = (profile.red_flags?.length ?? 0) > 0; break;
+        case 'education':
+          hasEntry = (profile.education?.length ?? 0) > 0;
+          break;
+        case 'own_projects':
+          hasEntry = (profile.own_projects?.length ?? 0) > 0;
+          break;
+        case 'certifications':
+          hasEntry = (profile.certifications?.length ?? 0) > 0;
+          break;
+        case 'red_flags':
+          hasEntry = (profile.red_flags?.length ?? 0) > 0;
+          break;
       }
     }
 
