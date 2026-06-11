@@ -9,7 +9,7 @@ interface Props {
 }
 
 const inputClass =
-  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent';
 
 function CategorySection({
   category,
@@ -29,22 +29,18 @@ function CategorySection({
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [suggestionError, setSuggestionError] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const trimmed = input.trim();
     if (!trimmed) {
       setSuggestions([]);
       setLoading(false);
-      setSuggestionError('');
       return;
     }
     setLoading(true);
-    setSuggestionError('');
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
@@ -63,12 +59,11 @@ function CategorySection({
         }
       } catch {
         if (!cancelled) {
-          setSuggestionError('Failed to load suggestions');
           setSuggestions([]);
           setLoading(false);
         }
       }
-    }, 250);
+    }, 300);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -78,7 +73,7 @@ function CategorySection({
   function openDropdown() {
     if (wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
-      setDropdownPos({ top: rect.bottom, left: rect.left, width: rect.width });
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
     setDropdownOpen(true);
   }
@@ -163,10 +158,9 @@ function CategorySection({
             />
             {dropdownOpen &&
               !!input.trim() &&
-              (loading || !!suggestionError || suggestions.length > 0) &&
+              (loading || suggestions.length > 0) &&
               createPortal(
                 <div
-                  ref={portalRef}
                   style={{
                     position: 'fixed',
                     top: dropdownPos.top,
@@ -174,25 +168,21 @@ function CategorySection({
                     width: dropdownPos.width,
                     zIndex: 9999,
                   }}
-                  className="bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto"
+                  className="bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center px-3 py-2.5">
                       <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
                     </div>
-                  ) : suggestionError ? (
-                    <p className="px-3 py-2 text-xs text-red-500">
-                      {suggestionError}
-                    </p>
                   ) : (
                     suggestions.map(s => (
                       <button
                         key={s}
                         type="button"
                         onMouseDown={() => addSkill(s)}
-                        className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-blue-50 transition-colors"
                       >
-                        {s}
+                        <span className="text-sm text-gray-700">{s}</span>
                       </button>
                     ))
                   )}
