@@ -142,13 +142,19 @@ function LoginView({
 
         <div className="w-full flex flex-col gap-3" style={{ marginBottom: 4 }}>
           <p className="text-sm font-medium text-gray-700">Sign in</p>
-          {['Google', 'Facebook', 'Microsoft', 'GitHub'].map(provider => (
+          {[
+            { name: 'Google', logo: '/icons/social-login-logos/google.png' },
+            { name: 'Facebook', logo: '/icons/social-login-logos/facebook.png' },
+            { name: 'Microsoft', logo: '/icons/social-login-logos/microsoft.png' },
+            { name: 'GitHub', logo: '/icons/social-login-logos/github.png' },
+          ].map(({ name, logo }) => (
             <button
-              key={provider}
+              key={name}
               type="button"
               className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
             >
-              Continue with {provider}
+              <img src={logo} alt={name} width={20} height={20} />
+              Continue with {name}
             </button>
           ))}
         </div>
