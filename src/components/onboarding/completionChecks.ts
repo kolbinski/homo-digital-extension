@@ -53,6 +53,24 @@ const TAB_META: Array<{
     optional: false,
   },
   {
+    id: 'own_projects',
+    label: 'Own Projects',
+    shortLabel: 'Own Projects',
+    optional: true,
+  },
+  {
+    id: 'education',
+    label: 'Education',
+    shortLabel: 'Education',
+    optional: true,
+  },
+  {
+    id: 'certifications',
+    label: 'Certifications',
+    shortLabel: 'Certs',
+    optional: true,
+  },
+  {
     id: 'skills',
     label: 'Skills',
     shortLabel: 'Skills',
@@ -63,24 +81,6 @@ const TAB_META: Array<{
     label: 'Preferences',
     shortLabel: 'Prefs',
     optional: false,
-  },
-  {
-    id: 'education',
-    label: 'Education',
-    shortLabel: 'Education',
-    optional: true,
-  },
-  {
-    id: 'own_projects',
-    label: 'Own Projects',
-    shortLabel: 'Own Projects',
-    optional: true,
-  },
-  {
-    id: 'certifications',
-    label: 'Certifications',
-    shortLabel: 'Certs',
-    optional: true,
   },
   {
     id: 'red_flags',
