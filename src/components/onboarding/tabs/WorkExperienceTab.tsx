@@ -611,10 +611,11 @@ function ExperienceCard({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {entry.title.trim()
-                ? `${entry.title.trim()} @ ${entry.company.trim() || '—'}`
-                : 'Untitled experience'}
+              {entry.title.trim() || 'Untitled experience'}
             </p>
+            {entry.company.trim() && (
+              <p className="text-xs text-gray-400 truncate">{entry.company.trim()}</p>
+            )}
             {dateLabel && (
               <p className="text-xs text-gray-400">{dateLabel}</p>
             )}
