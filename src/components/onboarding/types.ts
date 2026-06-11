@@ -35,7 +35,10 @@ export interface EducationEntry {
 }
 
 export interface CertificationEntry {
-  [key: string]: unknown;
+  name: string;
+  issuer: string;
+  date?: string;
+  url?: string;
 }
 
 export interface OwnProjectEntry {

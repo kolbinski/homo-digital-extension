@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { CheckCircle, SignOut } from '@phosphor-icons/react';
+import { CheckCircle, CircleDashed, SignOut } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
 import type { Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
+import CertificationsTab from './tabs/CertificationsTab';
 
 interface Props {
   profile: Profile;
@@ -11,7 +12,7 @@ interface Props {
   onLogout: () => void;
 }
 
-export default function WizardShell({ profile, onChange: _onChange, onLogout }: Props) {
+export default function WizardShell({ profile, onChange, onLogout }: Props) {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
   const [saving, setSaving] = useState(false);
@@ -34,13 +35,17 @@ export default function WizardShell({ profile, onChange: _onChange, onLogout }: 
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(submitted ? { ...profile, submitted: true } : profile),
+        body: JSON.stringify(
+          submitted ? { ...profile, submitted: true } : profile,
+        ),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       setSaveMessage(submitted ? 'Profile submitted!' : 'Draft saved.');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Save failed. Please try again.');
+      setSaveError(
+        err instanceof Error ? err.message : 'Save failed. Please try again.',
+      );
       setTimeout(() => setSaveError(''), 4000);
     } finally {
       setSaving(false);
@@ -51,7 +56,9 @@ export default function WizardShell({ profile, onChange: _onChange, onLogout }: 
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-        <span className="text-sm font-semibold text-gray-900">Build your profile</span>
+        <span className="text-sm font-semibold text-gray-900">
+          Build your profile
+        </span>
         <button
           type="button"
           onClick={onLogout}
@@ -67,8 +74,11 @@ export default function WizardShell({ profile, onChange: _onChange, onLogout }: 
         <div className="flex flex-wrap">
           {completions.map(tab => {
             const isActive = tab.id === activeTab;
-            const showGreen = tab.optional ? tab.hasEntry : tab.missingCount === 0;
+            const showGreen = tab.optional
+              ? tab.hasEntry
+              : tab.missingCount === 0;
             const showRed = !tab.optional && tab.missingCount > 0;
+            const showGray = tab.optional && !tab.hasEntry;
 
             return (
               <button
@@ -84,12 +94,26 @@ export default function WizardShell({ profile, onChange: _onChange, onLogout }: 
                 <span>{tab.shortLabel}</span>
                 <span className="mt-0.5 h-4 flex items-center justify-center">
                   {showGreen && (
-                    <CheckCircle size={13} weight="fill" className="text-green-500" />
+                    <CheckCircle
+                      size={13}
+                      weight="fill"
+                      className="text-green-500"
+                    />
                   )}
                   {showRed && (
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white leading-none" style={{ fontSize: 9 }}>
+                    <span
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white leading-none"
+                      style={{ fontSize: 9 }}
+                    >
                       {tab.missingCount}
                     </span>
+                  )}
+                  {showGray && (
+                    <CircleDashed
+                      size={20}
+                      weight="fill"
+                      className="text-gray-300"
+                    />
                   )}
                 </span>
               </button>
@@ -100,12 +124,19 @@ export default function WizardShell({ profile, onChange: _onChange, onLogout }: 
 
       {/* Tab body */}
       <div className="flex-1 overflow-y-auto p-4">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">
+        <h2 className="text-base font-semibold text-gray-900 mb-3">
           {activeCompletion.label}
         </h2>
-        <p className="text-sm text-gray-400">
-          Tab content coming soon — {activeCompletion.label}
-        </p>
+        {activeTab === 'certifications' ? (
+          <CertificationsTab
+            certifications={profile.certifications}
+            onChange={certs => onChange({ ...profile, certifications: certs })}
+          />
+        ) : (
+          <p className="text-sm text-gray-400">
+            Tab content coming soon — {activeCompletion.label}
+          </p>
+        )}
       </div>
 
       {/* Footer */}
