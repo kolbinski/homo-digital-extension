@@ -16,7 +16,6 @@ interface Props {
 const fieldClass =
   'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function Section({
@@ -343,7 +342,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   const languages = b.languages ?? [];
 
   function addLanguage() {
-    update({ languages: [...languages, { name: '', level: 'B2' }] });
+    update({ languages: [...languages, { name: '', level: '' }] });
   }
 
   function updateLanguage(idx: number, patch: Partial<LanguageEntry>) {
@@ -545,7 +544,11 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             />
           ))}
           {!b.gender && (
-            <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+            <XCircle
+              size={16}
+              weight="fill"
+              className="shrink-0 text-red-400"
+            />
           )}
         </div>
       </Section>
@@ -613,11 +616,15 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
               />
             ))}
             {!b.experience_level && (
-              <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              <XCircle
+                size={16}
+                weight="fill"
+                className="shrink-0 text-red-400"
+              />
             )}
           </div>
         </Field>
-        <Field label="Working in tech since">
+        <Field label="Working in IT since">
           <input
             type="number"
             value={b.experience_since}
@@ -649,7 +656,11 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
               />
             ))}
             {!b.job_search_status && (
-              <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              <XCircle
+                size={16}
+                weight="fill"
+                className="shrink-0 text-red-400"
+              />
             )}
           </div>
         </Field>
@@ -691,13 +702,16 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 onChange={e => updateLanguage(i, { level: e.target.value })}
                 className="w-24 shrink-0 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
+                <option value="" disabled>
+                  Level
+                </option>
                 {CONFIG.language_levels.map(l => (
                   <option key={l} value={l}>
                     {l}
                   </option>
                 ))}
               </select>
-              {!lang.name.trim() && (
+              {(!lang.name.trim() || !lang.level) && (
                 <XCircle
                   size={16}
                   weight="fill"
