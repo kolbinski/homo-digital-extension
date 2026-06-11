@@ -148,8 +148,7 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
           type="button"
           onClick={handlePrepare}
           disabled={loading}
-          className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-          style={{ backgroundColor: '#16a34a' }}
+          className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 bg-green-600"
         >
           {loading ? (
             <>

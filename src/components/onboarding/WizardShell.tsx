@@ -161,8 +161,7 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           onClick={() => saveProfile(true)}
           disabled={saving || !allComplete}
           title={!allComplete ? 'Complete all required tabs first' : undefined}
-          className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: '#16a34a' }}
+          className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
         >
           Submit profile
         </button>

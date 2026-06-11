@@ -54,8 +54,7 @@ export default function ClientView({ onLogout }: Props) {
         <button
           type="button"
           onClick={onLogout}
-          className="text-sm font-medium text-white px-5 py-2 rounded-md transition-colors"
-          style={{ backgroundColor: '#dc2626' }}
+          className="text-sm font-medium text-white px-5 py-2 rounded-md transition-colors bg-red-600"
         >
           Logout
         </button>

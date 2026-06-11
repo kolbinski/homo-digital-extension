@@ -96,16 +96,12 @@ function BulletList({ items }: { items: string[] }) {
       {items.map(item => (
         <div key={item} className="flex items-start gap-2">
           <span
-            style={{
-              color: '#16a34a',
-              fontSize: 12,
-              lineHeight: '18px',
-              flexShrink: 0,
-            }}
+            className="text-green-600 shrink-0"
+            style={{ fontSize: 12, lineHeight: '18px' }}
           >
             ✦
           </span>
-          <span style={{ fontSize: 12, color: '#374151', lineHeight: '18px' }}>
+          <span className="text-gray-700" style={{ fontSize: 12, lineHeight: '18px' }}>
             {item}
           </span>
         </div>
@@ -254,9 +250,9 @@ function LoginView({
           Homo Digital
         </h1>
         <p
+          className="text-gray-900"
           style={{
             textAlign: 'center',
-            color: '#111827',
             fontSize: 15,
             marginBottom: 20,
             fontWeight: 'bold',
@@ -306,9 +302,9 @@ function LoginView({
             width: '100%',
           }}
         >
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
 
         <div className="w-full flex flex-col gap-4">
@@ -363,8 +359,7 @@ function LoginView({
             type="button"
             onClick={handleLogin}
             disabled={isLoading || !email || !password}
-            className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: '#16a34a' }}
+            className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
           >
             {isLoading && <Spinner />}
             {isLoading ? 'Logging in…' : 'Log in'}
@@ -380,16 +375,15 @@ function LoginView({
             width: '100%',
           }}
         >
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
 
         <button
           type="button"
           onClick={onJoin}
-          className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors"
-          style={{ backgroundColor: '#2563eb' }}
+          className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors bg-blue-600"
         >
           Join as agent
         </button>
@@ -446,7 +440,7 @@ function JoinView({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <span style={{ color: '#16a34a', fontSize: 40, lineHeight: 1 }}>
+          <span className="text-green-600" style={{ fontSize: 40, lineHeight: 1 }}>
             ✦
           </span>
           <h2 className="text-xl font-semibold text-gray-900">Thank you!</h2>
@@ -454,8 +448,7 @@ function JoinView({ onBack }: { onBack: () => void }) {
           <button
             type="button"
             onClick={onBack}
-            className="mt-2 text-sm font-medium text-white px-5 py-2 rounded-md transition-colors"
-            style={{ backgroundColor: '#16a34a' }}
+            className="mt-2 text-sm font-medium text-white px-5 py-2 rounded-md transition-colors bg-green-600"
           >
             Go back
           </button>
@@ -493,7 +486,7 @@ function JoinView({ onBack }: { onBack: () => void }) {
           </h2>
         </div>
 
-        <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>
+        <p className="text-gray-500" style={{ fontSize: 13, marginBottom: 16 }}>
           Join the platform that's changing IT recruitment.
         </p>
 
@@ -549,8 +542,7 @@ function JoinView({ onBack }: { onBack: () => void }) {
             type="button"
             onClick={handleRequest}
             disabled={isLoading || !email}
-            className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: '#2563eb' }}
+            className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600"
           >
             {isLoading && <Spinner />}
             {isLoading ? 'Sending…' : 'Request access'}

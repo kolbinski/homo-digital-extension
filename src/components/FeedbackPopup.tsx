@@ -92,8 +92,7 @@ export default function FeedbackPopup({ onClose }: Props) {
                 type="button"
                 onClick={handleSend}
                 disabled={isLoading || !message.trim()}
-                className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#16a34a' }}
+                className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
               >
                 {isLoading && (
                   <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

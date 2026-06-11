@@ -1,5 +1,11 @@
 import { useRef, useState } from 'react';
-import { CaretDown, CaretRight, DotsSixVertical, Plus, Trash } from '@phosphor-icons/react';
+import {
+  CaretDown,
+  CaretRight,
+  DotsSixVertical,
+  Plus,
+  Trash,
+} from '@phosphor-icons/react';
 import type { CertificationEntry } from '../types';
 
 interface Props {
@@ -25,8 +31,14 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
     setExpanded(prev => new Set(prev).add(idx));
   }
 
-  function updateEntry(idx: number, field: keyof CertificationEntry, value: string) {
-    onChange(certifications.map((c, i) => (i === idx ? { ...c, [field]: value } : c)));
+  function updateEntry(
+    idx: number,
+    field: keyof CertificationEntry,
+    value: string,
+  ) {
+    onChange(
+      certifications.map((c, i) => (i === idx ? { ...c, [field]: value } : c)),
+    );
   }
 
   function deleteEntry(idx: number) {
@@ -87,7 +99,9 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {certifications.length === 0 && (
-        <p className="text-sm text-gray-400">No certifications yet. Add one below.</p>
+        <p className="text-sm text-gray-400">
+          No certifications yet. Add one below.
+        </p>
       )}
 
       {certifications.map((cert, idx) => {
@@ -110,7 +124,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                 draggable
                 onDragStart={() => handleDragStart(idx)}
                 onDragEnd={handleDragEnd}
-                className="shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 transition-colors p-0.5"
+                className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors p-0.5"
                 aria-label="Drag to reorder"
               >
                 <DotsSixVertical size={14} />
@@ -134,7 +148,9 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                     {cert.name || 'Untitled certification'}
                   </p>
                   {cert.issuer && (
-                    <p className="text-xs text-gray-500 truncate">{cert.issuer}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {cert.issuer}
+                    </p>
                   )}
                 </div>
               </div>
@@ -190,8 +206,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
       <button
         type="button"
         onClick={addEntry}
-        className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit"
-        style={{ backgroundColor: '#16a34a' }}
+        className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-green-600"
       >
         <Plus size={14} />
         Add certification

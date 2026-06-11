@@ -411,13 +411,12 @@ function OfferCard({
           >
             {offer.work_model && (
               <span
+                className="bg-gray-100 text-gray-500"
                 style={{
-                  background: '#f3f4f6',
                   border: '0.5px solid #e5e7eb',
                   borderRadius: '3px',
                   padding: '1px 6px',
                   fontSize: '11px',
-                  color: '#6b7280',
                 }}
               >
                 {offer.work_model}
@@ -425,13 +424,12 @@ function OfferCard({
             )}
             {offer.city && (
               <span
+                className="bg-gray-100 text-gray-500"
                 style={{
-                  background: '#f3f4f6',
                   border: '0.5px solid #e5e7eb',
                   borderRadius: '3px',
                   padding: '1px 6px',
                   fontSize: '11px',
-                  color: '#6b7280',
                 }}
               >
                 {offer.city}
@@ -451,12 +449,10 @@ function OfferCard({
               {offer.claude_missing_skills.map(skill => (
                 <span
                   key={skill}
-                  className="text-xs px-1.5 py-px rounded"
+                  className="text-xs px-1.5 py-px rounded bg-red-50 text-red-600"
                   style={{
-                    background: '#fef2f2',
                     border: '0.5px solid #fecaca',
                     borderRadius: '3px',
-                    color: '#dc2626',
                   }}
                 >
                   {skill}
