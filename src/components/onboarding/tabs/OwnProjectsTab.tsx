@@ -482,7 +482,7 @@ function AchievementsList({
         onClick={() => onChange([...achievements, ''])}
         className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors w-fit"
       >
-        <Plus size={20} />
+        <Plus size={16} />
         Add achievement
       </button>
     </div>

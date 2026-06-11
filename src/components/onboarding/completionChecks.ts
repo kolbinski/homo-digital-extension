@@ -27,10 +27,14 @@ function countMissingSkills(p: Profile): number {
 
 function countMissingPreferences(p: Profile): number {
   const pref = p.preferences;
+  const salary = pref.salary ?? [];
+  const roles = pref.target_role ?? [];
   let missing = 0;
-  if (!pref.salary?.length) missing++;
+  missing += salary.length === 0 ? 1 : 0;
+  missing += salary.filter(s => !s.min).length;
+  missing += roles.length === 0 ? 1 : 0;
+  missing += roles.filter(r => !r.trim()).length;
   if (!pref.work_model?.length) missing++;
-  if (!pref.target_role?.length) missing++;
   return missing;
 }
 

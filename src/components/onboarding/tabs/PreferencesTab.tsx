@@ -1,6 +1,12 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { DotsSixVertical, Plus, XCircle } from '@phosphor-icons/react';
+import {
+  CheckCircle,
+  DotsSixVertical,
+  Plus,
+  Trash,
+  XCircle,
+} from '@phosphor-icons/react';
 import { CONFIG } from '../../../config';
 import type { ProfilePreferences, SalaryEntry } from '../types';
 
@@ -273,7 +279,7 @@ export default function PreferencesTab({
                 {(['contract', 'permanent'] as const).map(t => (
                   <Chip
                     key={t}
-                    label={t === 'contract' ? 'Contr.' : 'Perma.'}
+                    label={t === 'contract' ? 'Contr' : 'Perm'}
                     selected={row.type === t}
                     onClick={() => updateSalary(i, { type: t })}
                   />
@@ -295,15 +301,27 @@ export default function PreferencesTab({
                 value={row.min || ''}
                 onChange={e => updateSalary(i, { min: Number(e.target.value) })}
                 placeholder="Min"
-                className="w-24 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                style={{ width: 85 }}
               />
+              <span className="shrink-0">
+                {row.min ? (
+                  <CheckCircle
+                    size={18}
+                    weight="fill"
+                    className="text-green-500"
+                  />
+                ) : (
+                  <XCircle size={18} weight="fill" className="text-red-400" />
+                )}
+              </span>
               <button
                 type="button"
                 onClick={() => removeSalary(i)}
                 aria-label="Remove salary row"
                 className="text-red-400 hover:text-red-600 transition-colors shrink-0"
               >
-                <XCircle size={18} weight="fill" />
+                <Trash size={18} />
               </button>
             </div>
           ))}
@@ -314,7 +332,7 @@ export default function PreferencesTab({
           className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-blue-600 hover:bg-blue-700"
         >
           <Plus size={16} />
-          Add salary
+          Add salary expectation
         </button>
       </Section>
 
@@ -396,13 +414,24 @@ export default function PreferencesTab({
                 placeholder="e.g. Senior Fullstack Engineer"
                 className={`${inputClass} resize-y flex-1`}
               />
+              <span className="shrink-0 mt-1.5">
+                {role.trim() ? (
+                  <CheckCircle
+                    size={20}
+                    weight="fill"
+                    className="text-green-500"
+                  />
+                ) : (
+                  <XCircle size={20} weight="fill" className="text-red-400" />
+                )}
+              </span>
               <button
                 type="button"
                 onClick={() => removeRole(i)}
                 aria-label="Remove role"
                 className="shrink-0 text-red-400 hover:text-red-600 transition-colors mt-1.5"
               >
-                <XCircle size={20} weight="fill" />
+                <Trash size={20} />
               </button>
             </div>
           ))}
