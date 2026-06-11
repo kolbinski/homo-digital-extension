@@ -278,7 +278,14 @@ export default function PreferencesTab({
   return (
     <div className="flex flex-col gap-5">
       {/* Salary */}
-      <Section title="Salary expectations">
+      <Section
+        title="Salary expectations"
+        badge={
+          prefs.salary.length === 0 ? (
+            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+          ) : undefined
+        }
+      >
         <div className="flex flex-col gap-2">
           {prefs.salary.map((row, i) => (
             <div key={i} className="flex items-center gap-2 flex-wrap">
@@ -344,7 +351,14 @@ export default function PreferencesTab({
       </Section>
 
       {/* Work model */}
-      <Section title="Work model">
+      <Section
+        title="Work model"
+        badge={
+          prefs.work_model.length === 0 ? (
+            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+          ) : undefined
+        }
+      >
         <div className="flex flex-wrap gap-1.5">
           {(
             [
@@ -394,7 +408,14 @@ export default function PreferencesTab({
       </Section>
 
       {/* Target role */}
-      <Section title="Target role">
+      <Section
+        title="Target role"
+        badge={
+          prefs.target_role.length === 0 ? (
+            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+          ) : undefined
+        }
+      >
         <div className="flex flex-col gap-1.5">
           {prefs.target_role.map((role, i) => (
             <div
