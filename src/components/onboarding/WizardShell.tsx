@@ -7,6 +7,7 @@ import { getTabCompletions, allRequiredComplete } from './completionChecks';
 import CertificationsTab from './tabs/CertificationsTab';
 import EducationTab from './tabs/EducationTab';
 import OwnProjectsTab from './tabs/OwnProjectsTab';
+import PreferencesTab from './tabs/PreferencesTab';
 import RedFlagsTab from './tabs/RedFlagsTab';
 
 interface Props {
@@ -146,6 +147,11 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           <OwnProjectsTab
             projects={profile.own_projects}
             onChange={projects => onChange({ ...profile, own_projects: projects })}
+          />
+        ) : activeTab === 'preferences' ? (
+          <PreferencesTab
+            preferences={profile.preferences}
+            onChange={preferences => onChange({ ...profile, preferences })}
           />
         ) : activeTab === 'red_flags' ? (
           <RedFlagsTab

@@ -36,7 +36,7 @@ export const emptyProfile: Profile = {
     employment_type: [],
     industries: [],
     markets: [],
-    learning_goals: [],
+    learning_skills_goals: [],
     max_office_days_per_week: null,
     office_location_cities: [],
   },

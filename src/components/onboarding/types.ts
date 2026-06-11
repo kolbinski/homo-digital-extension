@@ -59,8 +59,14 @@ export interface RedFlagEntry {
   description: string[];
 }
 
+export interface SalaryEntry {
+  type: 'contract' | 'permanent';
+  currency: string;
+  min: number;
+}
+
 export interface ProfilePreferences {
-  salary: unknown[];
+  salary: SalaryEntry[];
   work_model: string[];
   target_role: string[];
   company_type: string[];
@@ -68,7 +74,7 @@ export interface ProfilePreferences {
   employment_type: string[];
   industries: string[];
   markets: string[];
-  learning_goals: string[];
+  learning_skills_goals: string[];
   max_office_days_per_week: number | null;
   office_location_cities: string[];
 }
