@@ -18,6 +18,8 @@ const fieldClass =
 
 const LEVEL_OPTIONS = ['native', 'C2', 'C1', 'B2', 'B1', 'A2', 'A1'];
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function Section({
   title,
   required,
@@ -291,6 +293,9 @@ function labelFor(val: string): string {
 export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   const [unit, setUnit] = useState<'km' | 'miles'>('km');
   const [industryInput, setIndustryInput] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const emailInvalid =
+    emailTouched && (!b.email.trim() || !EMAIL_RE.test(b.email));
 
   const langDragFrom = useRef<number | null>(null);
   const [langDragOver, setLangDragOver] = useState<number | null>(null);
@@ -455,13 +460,23 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
       {/* Contact */}
       <Section title="Contact">
         <Field label="Email" required>
-          <input
-            type="email"
-            value={b.email}
-            onChange={e => update({ email: e.target.value })}
-            placeholder="you@example.com"
-            className={fieldClass}
-          />
+          <div className="flex items-center gap-1.5">
+            <input
+              type="email"
+              value={b.email}
+              onChange={e => update({ email: e.target.value })}
+              onBlur={() => setEmailTouched(true)}
+              placeholder="you@example.com"
+              className={`${fieldClass} flex-1`}
+            />
+            {emailInvalid && (
+              <XCircle
+                size={16}
+                weight="fill"
+                className="shrink-0 text-red-400"
+              />
+            )}
+          </div>
         </Field>
         <Field label="Phone">
           <input

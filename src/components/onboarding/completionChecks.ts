@@ -1,11 +1,13 @@
 import type { Profile, TabCompletion, WizardTabId } from './types';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function countMissingBasicInfo(p: Profile): number {
   const b = p.basic_info;
   let missing = 0;
   if (!b.first_name?.trim()) missing++;
   if (!b.last_name?.trim()) missing++;
-  if (!b.email?.trim()) missing++;
+  if (!b.email?.trim() || !EMAIL_RE.test(b.email)) missing++;
   if (!b.gender?.trim()) missing++;
   if (!b.experience_level?.trim()) missing++;
   if (!b.job_search_status?.trim()) missing++;
