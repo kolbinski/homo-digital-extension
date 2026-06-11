@@ -120,7 +120,8 @@ function LoginView({
   const { login, setToken, setRole, setOAuthData } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [socialError, setSocialError] = useState('');
+  const [agentError, setAgentError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
@@ -128,11 +129,11 @@ function LoginView({
   async function handleSocialLogin(provider: Provider, providerName: string) {
     console.log('clicked', provider);
     setSocialLoading(providerName);
-    setError('');
+    setSocialError('');
     try {
       await handleOAuthLogin(provider);
     } catch (err) {
-      setError(typeof err === 'string' ? err : 'Sign-in failed. Please try again.');
+      setSocialError(typeof err === 'string' ? err : 'Sign-in failed. Please try again.');
     } finally {
       setSocialLoading(null);
     }
@@ -224,12 +225,12 @@ function LoginView({
 
   async function handleLogin() {
     if (!validateEmail()) return;
-    setError('');
+    setAgentError('');
     setIsLoading(true);
     const result = await login(email, password);
     setIsLoading(false);
     if (!result.success) {
-      setError(result.error);
+      setAgentError(result.error);
       return;
     }
     onLogin('agent');
@@ -291,6 +292,7 @@ function LoginView({
               {socialLoading === name ? `Connecting…` : `Continue with ${name}`}
             </button>
           ))}
+          {socialError && <p className="text-sm text-red-600">{socialError}</p>}
         </div>
 
         <div
@@ -353,7 +355,7 @@ function LoginView({
             />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {agentError && <p className="text-sm text-red-600">{agentError}</p>}
 
           <button
             type="button"
