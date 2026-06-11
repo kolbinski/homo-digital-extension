@@ -132,4 +132,17 @@ export const CONFIG = {
     'Korean',
     'Hindi',
   ],
+  language_levels: [
+    'native',
+    'fluent',
+    'professional',
+    'conversational',
+    'basic',
+    'C2',
+    'C1',
+    'B2',
+    'B1',
+    'A2',
+    'A1',
+  ],
 };

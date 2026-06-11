@@ -16,7 +16,6 @@ interface Props {
 const fieldClass =
   'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
-const LEVEL_OPTIONS = ['native', 'C2', 'C1', 'B2', 'B1', 'A2', 'A1'];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -120,13 +119,21 @@ function StringAutocomplete({
   className?: string;
   wrapperClass?: string;
 }) {
+  const valueRef = useRef(value);
+  const [input, setInput] = useState(value);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    valueRef.current = value;
+    setInput(value);
+  }, [value]);
+
   const filtered = options
-    .filter(o => !value.trim() || o.toLowerCase().includes(value.toLowerCase()))
+    .filter(o => !input.trim() || o.toLowerCase().includes(input.toLowerCase()))
     .slice(0, 8);
+  const noResults = !!input.trim() && filtered.length === 0;
 
   function measure() {
     if (wrapRef.current) {
@@ -139,9 +146,9 @@ function StringAutocomplete({
     <div ref={wrapRef} className={wrapperClass}>
       <input
         type="text"
-        value={value}
+        value={input}
         onChange={e => {
-          onChange(e.target.value);
+          setInput(e.target.value);
           measure();
           setOpen(true);
         }}
@@ -149,12 +156,17 @@ function StringAutocomplete({
           measure();
           setOpen(true);
         }}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={() =>
+          setTimeout(() => {
+            setOpen(false);
+            setInput(valueRef.current);
+          }, 150)
+        }
         placeholder={placeholder}
         className={className}
       />
       {open &&
-        filtered.length > 0 &&
+        (filtered.length > 0 || noResults) &&
         createPortal(
           <div
             style={{
@@ -166,19 +178,24 @@ function StringAutocomplete({
             }}
             className="bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto"
           >
-            {filtered.map(opt => (
-              <button
-                key={opt}
-                type="button"
-                onMouseDown={() => {
-                  onChange(opt);
-                  setOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-              >
-                {opt}
-              </button>
-            ))}
+            {noResults ? (
+              <p className="px-3 py-2 text-sm text-gray-400">No results</p>
+            ) : (
+              filtered.map(opt => (
+                <button
+                  key={opt}
+                  type="button"
+                  onMouseDown={() => {
+                    onChange(opt);
+                    setInput(opt);
+                    setOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                >
+                  {opt}
+                </button>
+              ))
+            )}
           </div>,
           document.body,
         )}
@@ -674,7 +691,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 onChange={e => updateLanguage(i, { level: e.target.value })}
                 className="w-24 shrink-0 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                {LEVEL_OPTIONS.map(l => (
+                {CONFIG.language_levels.map(l => (
                   <option key={l} value={l}>
                     {l}
                   </option>
