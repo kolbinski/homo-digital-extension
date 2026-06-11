@@ -115,9 +115,12 @@ export function getTabCompletions(profile: Profile): TabCompletion[] {
         case 'own_projects':
           hasEntry = (profile.own_projects?.length ?? 0) > 0;
           break;
-        case 'certifications':
-          hasEntry = (profile.certifications?.length ?? 0) > 0;
+        case 'certifications': {
+          const certs = profile.certifications ?? [];
+          hasEntry = certs.length > 0;
+          missingCount = certs.filter(c => !c.name?.trim() || !c.issuer?.trim()).length;
           break;
+        }
         case 'red_flags':
           hasEntry = (profile.red_flags?.length ?? 0) > 0;
           break;

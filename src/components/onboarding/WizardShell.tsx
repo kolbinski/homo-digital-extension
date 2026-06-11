@@ -74,11 +74,9 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
         <div className="flex flex-wrap">
           {completions.map(tab => {
             const isActive = tab.id === activeTab;
-            const showGreen = tab.optional
-              ? tab.hasEntry
-              : tab.missingCount === 0;
-            const showRed = !tab.optional && tab.missingCount > 0;
-            const showGray = tab.optional && !tab.hasEntry;
+            const showRed = tab.missingCount > 0;
+            const showGreen = !showRed && (tab.optional ? tab.hasEntry : tab.missingCount === 0);
+            const showGray = tab.optional && !tab.hasEntry && !showRed;
 
             return (
               <button

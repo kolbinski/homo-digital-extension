@@ -206,7 +206,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
       <button
         type="button"
         onClick={addEntry}
-        className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-green-600"
+        className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-blue-600"
       >
         <Plus size={14} />
         Add certification
