@@ -9,7 +9,8 @@
     "storage",
     "downloads",
     "scripting",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "host_permissions": [
     "https://job-matcher-api-production.up.railway.app/*",

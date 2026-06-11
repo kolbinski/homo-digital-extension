@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import type { Provider } from '@supabase/supabase-js';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import { API_BASE_URL } from '../config';
 
 interface Props {
@@ -8,10 +10,10 @@ interface Props {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function Spinner() {
+function Spinner({ dark = false }: { dark?: boolean }) {
   return (
     <svg
-      className="animate-spin h-4 w-4 text-white"
+      className={`animate-spin h-4 w-4 ${dark ? 'text-gray-500' : 'text-white'}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -78,12 +80,154 @@ function LoginView({
   onLogin: () => void;
   onJoin: () => void;
 }) {
-  const { login } = useAuth();
+  const { login, setToken } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
+
+  async function handleSocialLogin(provider: Provider, providerName: string) {
+    console.log('clicked', provider);
+    setSocialLoading(providerName);
+    setError('');
+    try {
+      if (provider === 'google') {
+        await handleGoogleLogin();
+      } else {
+        await handleOAuthLogin(provider);
+      }
+    } catch (err) {
+      setError(typeof err === 'string' ? err : 'Sign-in failed. Please try again.');
+    } finally {
+      setSocialLoading(null);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    const clientId = '840778170854-1er57pucf17hspq2uqejd9tv4dd00v44.apps.googleusercontent.com';
+    const redirectUri = chrome.identity.getRedirectURL();
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth` +
+      `?client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=token` +
+      `&scope=email%20profile%20openid`;
+
+    console.log('Google authUrl', authUrl);
+    console.log('redirectUri', redirectUri);
+
+    const responseUrl = await new Promise<string>((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        { url: authUrl, interactive: true },
+        url => {
+          console.log('Google launchWebAuthFlow callback', { url, lastError: chrome.runtime.lastError?.message });
+          if (chrome.runtime.lastError || !url) {
+            reject(chrome.runtime.lastError?.message ?? 'Google auth cancelled.');
+          } else {
+            resolve(url);
+          }
+        },
+      );
+    });
+
+    const hashParams = new URLSearchParams(new URL(responseUrl).hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    console.log('Google access_token present:', !!accessToken);
+    if (!accessToken) throw 'No access token received from Google.';
+
+    // Try signInWithIdToken first
+    console.log('trying supabase.auth.signInWithIdToken...');
+    const { data: sessionData, error: sessionError } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: accessToken,
+    });
+    console.log('signInWithIdToken result', { session: !!sessionData.session, error: sessionError?.message });
+
+    if (!sessionError && sessionData.session) {
+      await setToken(sessionData.session.access_token);
+      onLogin();
+      return;
+    }
+
+    // Fallback: REST /auth/v1/token?grant_type=google_id_token
+    console.log('falling back to REST /auth/v1/token...');
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string).replace(/\/$/, '');
+    const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=google_id_token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+      },
+      body: JSON.stringify({ access_token: accessToken }),
+    });
+    console.log('REST token response status', res.status);
+    if (!res.ok) {
+      const body = await res.text();
+      console.log('REST token error body', body);
+      throw `Google sign-in failed (${res.status}).`;
+    }
+    const data = await res.json() as { access_token: string };
+    await setToken(data.access_token);
+    onLogin();
+  }
+
+  async function handleOAuthLogin(provider: Provider) {
+    const redirectTo = chrome.identity.getRedirectURL();
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string).replace(/\/$/, '');
+    const authUrl =
+      `${supabaseUrl}/auth/v1/authorize` +
+      `?provider=${provider}` +
+      `&redirect_to=${encodeURIComponent(redirectTo)}`;
+
+    console.log('redirectTo', redirectTo);
+    console.log('authUrl', authUrl);
+    console.log('calling launchWebAuthFlow...');
+
+    const responseUrl = await new Promise<string>((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        { url: authUrl, interactive: true },
+        url => {
+          console.log('launchWebAuthFlow callback', { url, lastError: chrome.runtime.lastError?.message });
+          if (chrome.runtime.lastError || !url) {
+            reject(chrome.runtime.lastError?.message ?? 'Auth flow cancelled.');
+          } else {
+            resolve(url);
+          }
+        },
+      );
+    });
+
+    console.log('responseUrl', responseUrl);
+    const parsedUrl = new URL(responseUrl);
+
+    // PKCE flow: authorization code in query string
+    const code = parsedUrl.searchParams.get('code');
+    if (code) {
+      const { data: sessionData, error: exchangeError } =
+        await supabase.auth.exchangeCodeForSession(code);
+      if (exchangeError || !sessionData.session) {
+        throw exchangeError?.message ?? 'Failed to complete sign-in.';
+      }
+      await setToken(sessionData.session.access_token);
+      onLogin();
+      return;
+    }
+
+    // Implicit flow: tokens in URL fragment
+    const hashParams = new URLSearchParams(parsedUrl.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    if (!accessToken) {
+      throw 'No token received. Please try again.';
+    }
+    if (refreshToken) {
+      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    }
+    await setToken(accessToken);
+    onLogin();
+  }
 
   function validateEmail() {
     if (email.trim() && !EMAIL_RE.test(email.trim())) {
@@ -142,19 +286,25 @@ function LoginView({
 
         <div className="w-full flex flex-col gap-3" style={{ marginBottom: 4 }}>
           <p className="text-sm font-medium text-gray-700">Sign in</p>
-          {[
-            { name: 'Google', logo: '/icons/social-login-logos/google.png' },
-            { name: 'Facebook', logo: '/icons/social-login-logos/facebook.png' },
-            { name: 'Microsoft', logo: '/icons/social-login-logos/microsoft.png' },
-            { name: 'GitHub', logo: '/icons/social-login-logos/github.png' },
-          ].map(({ name, logo }) => (
+          {([
+            { name: 'Google',    logo: '/icons/social-login-logos/google.png',    provider: 'google'   as Provider },
+            { name: 'Facebook',  logo: '/icons/social-login-logos/facebook.png',  provider: 'facebook' as Provider },
+            { name: 'Microsoft', logo: '/icons/social-login-logos/microsoft.png', provider: 'azure'    as Provider },
+            { name: 'GitHub',    logo: '/icons/social-login-logos/github.png',    provider: 'github'   as Provider },
+          ]).map(({ name, logo, provider }) => (
             <button
               key={name}
               type="button"
-              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              disabled={!!socialLoading}
+              onClick={() => handleSocialLogin(provider, name)}
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <img src={logo} alt={name} width={20} height={20} />
-              Continue with {name}
+              {socialLoading === name ? (
+                <Spinner dark />
+              ) : (
+                <img src={logo} alt={name} width={20} height={20} />
+              )}
+              {socialLoading === name ? `Connecting…` : `Continue with ${name}`}
             </button>
           ))}
         </div>

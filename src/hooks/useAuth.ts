@@ -69,5 +69,5 @@ async function logout(): Promise<void> {
 }
 
 export function useAuth() {
-  return { login, logout, getToken }
+  return { login, logout, getToken, setToken }
 }
