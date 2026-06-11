@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X } from '@phosphor-icons/react';
+import { XCircleIcon } from '@phosphor-icons/react';
 import type { RedFlagEntry } from '../types';
 
 interface Props {
@@ -98,7 +98,7 @@ function RemovableChip({
         className="text-white/70 hover:text-white transition-colors"
         aria-label={`Remove ${label}`}
       >
-        <X size={20} />
+        <XCircleIcon size={16} weight="fill" />
       </button>
     </span>
   );
@@ -146,7 +146,11 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
 
   function removeSkill(value: string) {
     onChange(
-      setDescriptions(redFlags, 'skills', skills.filter(s => s !== value)),
+      setDescriptions(
+        redFlags,
+        'skills',
+        skills.filter(s => s !== value),
+      ),
     );
   }
 
@@ -176,7 +180,11 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
 
   function removeOther(value: string) {
     onChange(
-      setDescriptions(redFlags, 'other', other.filter(o => o !== value)),
+      setDescriptions(
+        redFlags,
+        'other',
+        other.filter(o => o !== value),
+      ),
     );
   }
 
@@ -192,7 +200,6 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-
       {/* Company type */}
       <div>
         <SectionTitle>Company type</SectionTitle>
@@ -286,7 +293,6 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
           className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
         />
       </div>
-
     </div>
   );
 }

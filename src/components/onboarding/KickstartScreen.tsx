@@ -41,7 +41,7 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
   }
 
   async function handlePrepare() {
-    if (CONFIG.use_template_cv) {
+    if (CONFIG.use_template_cv && !file) {
       onPrepared(exampleCv as unknown as Partial<Profile>);
       return;
     }
@@ -54,7 +54,7 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
     try {
       const token = await getToken();
       const body = new FormData();
-      if (file) body.append('cv', file);
+      body.append('cv', file);
       const res = await fetch(`${API_BASE_URL}/v1/onboarding/prepare-profile`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
