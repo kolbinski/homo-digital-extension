@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { API_BASE_URL, CONFIG } from '../config';
 
 interface Props {
-  onLogin: () => void;
+  onLogin: (role: 'agent' | 'client') => void;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,10 +77,10 @@ function LoginView({
   onLogin,
   onJoin,
 }: {
-  onLogin: () => void;
+  onLogin: (role: 'agent' | 'client') => void;
   onJoin: () => void;
 }) {
-  const { login, setToken } = useAuth();
+  const { login, setToken, setRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -138,8 +138,14 @@ function LoginView({
       if (exchangeError || !sessionData.session) {
         throw exchangeError?.message ?? 'Failed to complete sign-in.';
       }
-      await setToken(sessionData.session.access_token);
-      onLogin();
+      const token = sessionData.session.access_token;
+      await setToken(token);
+      await setRole('client');
+      fetch(`${API_BASE_URL}/v1/auth/social-login`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(err => console.warn('[social-login] backend upsert failed:', err));
+      onLogin('client');
       return;
     }
 
@@ -154,7 +160,12 @@ function LoginView({
       await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
     }
     await setToken(accessToken);
-    onLogin();
+    await setRole('client');
+    fetch(`${API_BASE_URL}/v1/auth/social-login`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }).catch(err => console.warn('[social-login] backend upsert failed:', err));
+    onLogin('client');
   }
 
   function validateEmail() {
@@ -176,7 +187,7 @@ function LoginView({
       setError(result.error);
       return;
     }
-    onLogin();
+    onLogin('agent');
   }
 
   return (
@@ -510,3 +521,4 @@ export default function LoginScreen({ onLogin }: Props) {
 
   return <LoginView onLogin={onLogin} onJoin={() => setView('join')} />;
 }
+

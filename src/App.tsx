@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bug, SignOut } from '@phosphor-icons/react';
 import LoginScreen from './components/LoginScreen';
+import ClientView from './components/ClientView';
 import TabBar, { type Tab } from './components/TabBar';
 import ExploreTab from './components/ExploreTab';
 import SyncTab from './components/SyncTab';
@@ -8,10 +9,10 @@ import FeedbackPopup from './components/FeedbackPopup';
 import { useAuth } from './hooks/useAuth';
 import { API_BASE_URL, SHOW_TABS } from './config';
 
-type AuthState = 'checking' | 'logged_out' | 'logged_in';
+type AuthState = 'checking' | 'logged_out' | 'logged_in' | 'client';
 
 function App() {
-  const { getToken, logout } = useAuth();
+  const { getToken, getRole, logout } = useAuth();
   const [authState, setAuthState] = useState<AuthState>('checking');
   const [activeTabId, setActiveTabId] = useState<number | undefined>();
   const [activeTab, setActiveTab] = useState<Tab>('explore');
@@ -29,12 +30,14 @@ function App() {
       setAuthState('logged_out');
       return;
     }
-    getToken()
-      .then(token => {
-        setAuthState(token ? 'logged_in' : 'logged_out');
+    Promise.all([getToken(), getRole()])
+      .then(([token, role]) => {
+        if (!token) setAuthState('logged_out');
+        else if (role === 'client') setAuthState('client');
+        else setAuthState('logged_in');
       })
       .catch(err => {
-        console.error('[App] getToken error:', err);
+        console.error('[App] init auth error:', err);
         setAuthState('logged_out');
       });
   }, []);
@@ -125,10 +128,18 @@ function App() {
     setAuthState('logged_out');
   }
 
+  function handleLogin(role: 'agent' | 'client') {
+    setAuthState(role === 'client' ? 'client' : 'logged_in');
+  }
+
   if (authState === 'checking') return null;
 
-  if (authState !== 'logged_in') {
-    return <LoginScreen onLogin={() => setAuthState('logged_in')} />;
+  if (authState === 'logged_out') {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  if (authState === 'client') {
+    return <ClientView onLogout={handleLogout} />;
   }
 
   return (
