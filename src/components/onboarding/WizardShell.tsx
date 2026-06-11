@@ -97,10 +97,7 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
                     ? 'border-blue-600 text-blue-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
-                style={{
-                  marginLeft: 4,
-                  marginRight: 4,
-                }}
+                style={{ marginLeft: 8 }}
               >
                 {showGreen && (
                   <CheckCircle

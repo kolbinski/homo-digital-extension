@@ -51,10 +51,24 @@ function emptyExperience(): WorkExperienceEntry {
   };
 }
 
-function isExpValid(e: WorkExperienceEntry): boolean {
-  const dateFromOk = DATE_RE.test(e.date_from ?? '');
-  const dateToOk = e.date_to === null || DATE_RE.test(e.date_to);
-  return !!(e.title?.trim() && e.company?.trim() && dateFromOk && dateToOk);
+function countExpInvalid(e: WorkExperienceEntry): number {
+  let count = 0;
+  if (!e.title?.trim()) count++;
+  if (!e.company?.trim()) count++;
+  if (!DATE_RE.test(e.date_from ?? '')) count++;
+  if (e.date_to !== null && !DATE_RE.test(e.date_to ?? '')) count++;
+  const projects = e.projects ?? [];
+  for (const proj of projects) {
+    if (projects.length > 1 && !proj.name?.trim()) count++;
+    if (!proj.role?.trim()) count++;
+    const achievements = proj.achievements ?? [];
+    if (achievements.length === 0) {
+      count++;
+    } else {
+      count += achievements.filter(a => !a.trim()).length;
+    }
+  }
+  return count;
 }
 
 function reorderArr<T>(arr: T[], from: number, to: number): T[] {
@@ -533,7 +547,7 @@ function ExperienceCard({
   const [projDragOver, setProjDragOver] = useState<number | null>(null);
   const projDragFrom = useRef<number | null>(null);
 
-  const valid = isExpValid(entry);
+  const invalidCount = countExpInvalid(entry);
   const projects = entry.projects ?? [emptyProject()];
 
   const dateLabel =
@@ -607,10 +621,15 @@ function ExperienceCard({
           </div>
         </div>
         <span className="shrink-0 p-0.5">
-          {valid ? (
+          {invalidCount === 0 ? (
             <CheckCircle size={20} weight="fill" className="text-green-500" />
           ) : (
-            <XCircle size={20} weight="fill" className="text-red-400" />
+            <span
+              className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none"
+              style={{ fontSize: 9, width: 18, height: 18 }}
+            >
+              {invalidCount}
+            </span>
           )}
         </span>
         <button
