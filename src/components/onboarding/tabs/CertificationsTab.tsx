@@ -2,9 +2,11 @@ import { useRef, useState } from 'react';
 import {
   CaretDown,
   CaretRight,
+  CheckCircle,
   DotsSixVertical,
   Plus,
   Trash,
+  XCircle,
 } from '@phosphor-icons/react';
 import type { CertificationEntry } from '../types';
 
@@ -107,6 +109,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
       {certifications.map((cert, idx) => {
         const isOpen = expanded.has(idx);
         const isDragTarget = dragOverIdx === idx;
+        const isComplete = !!cert.name?.trim() && !!cert.issuer?.trim();
 
         return (
           <div
@@ -127,7 +130,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                 className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors p-0.5"
                 aria-label="Drag to reorder"
               >
-                <DotsSixVertical size={14} />
+                <DotsSixVertical size={20} />
               </div>
 
               {/* Expand toggle */}
@@ -139,9 +142,9 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                 className="flex flex-1 items-center gap-1.5 cursor-pointer min-w-0"
               >
                 {isOpen ? (
-                  <CaretDown size={14} className="text-gray-400 shrink-0" />
+                  <CaretDown size={20} className="text-gray-400 shrink-0" />
                 ) : (
-                  <CaretRight size={14} className="text-gray-400 shrink-0" />
+                  <CaretRight size={20} className="text-gray-400 shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
@@ -155,6 +158,15 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                 </div>
               </div>
 
+              {/* Completion status */}
+              <span className="shrink-0 p-0.5">
+                {isComplete ? (
+                  <CheckCircle size={20} weight="fill" className="text-green-500" />
+                ) : (
+                  <XCircle size={20} weight="fill" className="text-red-400" />
+                )}
+              </span>
+
               {/* Delete */}
               <button
                 type="button"
@@ -162,7 +174,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                 aria-label="Delete certification"
                 className="shrink-0 text-red-400 hover:text-red-600 transition-colors p-1"
               >
-                <Trash size={14} />
+                <Trash size={20} />
               </button>
             </div>
 
@@ -208,7 +220,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
         onClick={addEntry}
         className="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-2 rounded-md transition-colors w-fit bg-blue-600"
       >
-        <Plus size={14} />
+        <Plus size={20} />
         Add certification
       </button>
     </div>

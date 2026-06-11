@@ -75,7 +75,9 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           {completions.map(tab => {
             const isActive = tab.id === activeTab;
             const showRed = tab.missingCount > 0;
-            const showGreen = !showRed && (tab.optional ? tab.hasEntry : tab.missingCount === 0);
+            const showGreen =
+              !showRed &&
+              (tab.optional ? tab.hasEntry : tab.missingCount === 0);
             const showGray = tab.optional && !tab.hasEntry && !showRed;
 
             return (
@@ -83,37 +85,39 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex flex-row items-center gap-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   isActive
                     ? 'border-green-600 text-green-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
+                {showGreen && (
+                  <CheckCircle
+                    size={20}
+                    weight="fill"
+                    className="text-green-500 shrink-0"
+                  />
+                )}
+                {showRed && (
+                  <span
+                    className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none shrink-0"
+                    style={{
+                      fontSize: 8,
+                      width: 16,
+                      height: 16,
+                    }}
+                  >
+                    {tab.missingCount}
+                  </span>
+                )}
+                {showGray && (
+                  <CircleDashed
+                    size={20}
+                    weight="fill"
+                    className="text-gray-300 shrink-0"
+                  />
+                )}
                 <span>{tab.shortLabel}</span>
-                <span className="mt-0.5 h-4 flex items-center justify-center">
-                  {showGreen && (
-                    <CheckCircle
-                      size={20}
-                      weight="fill"
-                      className="text-green-500"
-                    />
-                  )}
-                  {showRed && (
-                    <span
-                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white leading-none"
-                      style={{ fontSize: 9 }}
-                    >
-                      {tab.missingCount}
-                    </span>
-                  )}
-                  {showGray && (
-                    <CircleDashed
-                      size={20}
-                      weight="fill"
-                      className="text-gray-300"
-                    />
-                  )}
-                </span>
               </button>
             );
           })}
