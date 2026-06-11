@@ -40,6 +40,10 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
   }
 
   async function handlePrepare() {
+    if (!file) {
+      setError('Please upload your CV first.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {

@@ -62,9 +62,9 @@ export default function WizardShell({ profile, onChange: _onChange, onLogout }: 
         </button>
       </header>
 
-      {/* Tab bar — horizontally scrollable */}
-      <div className="bg-white border-b border-gray-200 shrink-0 overflow-x-auto">
-        <div className="flex min-w-max">
+      {/* Tab bar — wraps to multiple lines */}
+      <div className="bg-white border-b border-gray-200 shrink-0">
+        <div className="flex flex-wrap">
           {completions.map(tab => {
             const isActive = tab.id === activeTab;
             const showGreen = tab.optional ? tab.hasEntry : tab.missingCount === 0;
