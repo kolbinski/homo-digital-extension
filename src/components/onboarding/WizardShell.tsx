@@ -95,7 +95,7 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
                 <span className="mt-0.5 h-4 flex items-center justify-center">
                   {showGreen && (
                     <CheckCircle
-                      size={13}
+                      size={20}
                       weight="fill"
                       className="text-green-500"
                     />

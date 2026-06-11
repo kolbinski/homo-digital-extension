@@ -1,0 +1,209 @@
+{
+  "basic_info": {
+    "first_name": "Marek",
+    "last_name": "Wiśniewski",
+    "email": "marek.wisniewski.it@gmail.com",
+    "phone": "+48 600 123 456",
+    "linkedin": "linkedin.com/in/marek-wisniewski-dev",
+    "github": "github.com/marek-wisniewski",
+    "gender": "",
+    "location": {
+      "country_code": "pl",
+      "city": "Warszawa",
+      "max_distance_km": 50
+    },
+    "experience_level": "senior",
+    "experience_since": "2014",
+    "languages": [
+      { "name": "polish", "level": "native" },
+      { "name": "english", "level": "C1" }
+    ],
+    "job_search_status": "actively_looking",
+    "soft_skills": [
+      "Comfortable leading technical decisions in ambiguous early-stage environments",
+      "Strong written communicator — documented APIs used by 47 partners",
+      "Bias toward end-to-end ownership over handoffs"
+    ],
+    "cv_summary_bullets": [
+      "10+ years building fullstack and distributed systems at scale",
+      "Led cross-functional teams of 3-6 engineers in fintech and proptech",
+      "Track record of measurable impact: 91% latency reduction, 12,000 tx/min throughput"
+    ]
+  },
+  "skills": {
+    "Frontend": ["react", "next.js", "vue.js"],
+    "Backend": ["node.js", "express", "nest.js", "graphql"],
+    "Databases": ["postgresql", "elasticsearch", "redis"],
+    "Cloud & Infra": ["docker", "kubernetes", "aws"],
+    "Languages": ["typescript"],
+    "Mobile": ["react native"]
+  },
+  "work_experience": [
+    {
+      "title": "Tech Lead / Senior Fullstack Engineer",
+      "company": "PayFlow Sp. z o.o.",
+      "date_from": "2021-03",
+      "date_to": "2024-08",
+      "company_type": "product",
+      "industry": "fintech",
+      "work_model": "remote",
+      "location": "Warszawa",
+      "projects": [
+        {
+          "name": "System real-time płatności",
+          "skills": ["react", "typescript", "node.js", "postgresql", "redis", "stripe", "aws lambda", "docker"],
+          "team_size": 6,
+          "role": "tech lead",
+          "achievements": [
+            "Czas przetwarzania: 4.2s → 380ms (91% szybciej)",
+            "Przepustowość: 500 → 12,000 tx/min",
+            "Zero incydentów przez 18 miesięcy"
+          ]
+        },
+        {
+          "name": "Developer Portal (API docs + sandbox)",
+          "skills": ["next.js", "typescript", "graphql", "storybook", "algolia", "material ui"],
+          "team_size": 3,
+          "role": "lead",
+          "achievements": [
+            "Czas integracji partnera: 3 tygodnie → 4 dni",
+            "47 partnerów onboardowanych bez udziału supportu"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Senior Fullstack Developer",
+      "company": "SoftHouse Warsaw",
+      "date_from": "2018-02",
+      "date_to": "2021-02",
+      "company_type": "outsourcing",
+      "industry": "e-commerce",
+      "work_model": "hybrid",
+      "location": "Warszawa",
+      "projects": [
+        {
+          "name": "E-commerce Niemcy (~2M SKU)",
+          "skills": ["vue.js", "typescript", "elasticsearch", "node.js"],
+          "achievements": ["Trafność wyszukiwania +34%", "Konwersja +12% QoQ"]
+        },
+        {
+          "name": "WMS (logistyka)",
+          "skills": ["node.js", "websockets", "postgresql"],
+          "achievements": ["Czas kompletacji zamówienia -22%"]
+        }
+      ]
+    },
+    {
+      "title": "Fullstack Developer → Tech Lead",
+      "company": "Rentalify (StartupHub)",
+      "date_from": "2016-04",
+      "date_to": "2018-11",
+      "company_type": "product",
+      "industry": "proptech",
+      "work_model": "onsite",
+      "location": "Warszawa",
+      "projects": [
+        {
+          "name": "Platforma wynajmu nieruchomości",
+          "skills": ["react", "node.js", "postgresql"],
+          "achievements": [
+            "15,000 ogłoszeń, 4,200 umów w 18 miesięcy",
+            "Weryfikacja ogłoszeń: 48h → 2h"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Junior/Mid Fullstack Developer",
+      "company": "Pixelmachine",
+      "date_from": "2014-07",
+      "date_to": "2016-03",
+      "company_type": "agency",
+      "industry": "digital",
+      "location": "Warszawa",
+      "projects": [
+        {
+          "name": "Projekty agencyjne",
+          "skills": ["javascript", "php", "css"],
+          "achievements": ["Czas ładowania: 8s → 2.1s", "Konwersja mobilna +18%"]
+        }
+      ]
+    },
+    {
+      "title": "Fullstack Developer",
+      "company": "Freelance",
+      "date_from": "2013-09",
+      "date_to": "2014-06",
+      "projects": [
+        {
+          "name": "System rezerwacji siłowni",
+          "skills": ["php", "javascript", "mysql"],
+          "achievements": ["800+ rezerwacji/mc"]
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Politechnika Warszawska",
+      "degree": "Magister Inżynier",
+      "field": "Informatyka — Inżynieria Oprogramowania",
+      "thesis": "Projektowanie i implementacja skalowalnej architektury mikroserwisów dla systemów płatności online",
+      "gpa": "4.3",
+      "date_from": "2009-09",
+      "date_to": "2014-06"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect – Associate",
+      "issuer": "Amazon Web Services",
+      "date": "2022-11",
+      "url": "https://www.credly.com/badges/..."
+    },
+    {
+      "name": "Certified Kubernetes Administrator (CKA)",
+      "issuer": "Cloud Native Computing Foundation",
+      "date": "2023-03",
+      "url": ""
+    }
+  ],
+  "own_projects": [
+    {
+      "name": "BudgetFlow",
+      "url": "budgetflow.app",
+      "skills": ["next.js", "typescript", "postgresql", "prisma", "openai"],
+      "achievements": ["40 aktywnych użytkowników", "Produkcyjny SaaS z AI-powered budgeting"]
+    },
+    {
+      "name": "pg-migrate-cli",
+      "url": "npmjs.com/package/pg-migrate-cli",
+      "skills": ["node.js", "typescript"],
+      "achievements": ["180 gwiazdek na GitHubie", "Open source — opublikowane na npm"]
+    }
+  ],
+  "red_flags": [
+    { "category": "company_type", "description": "outsourcing, body_leasing, agency" },
+    { "category": "technology", "description": "php, jquery, legacy" },
+    { "category": "work_model", "description": "no office" },
+    { "category": "other", "description": "no code review, no automated tests, micromanagement, take-home task over 2 hours" }
+  ],
+  "preferences": {
+    "salary": [
+      { "type": "b2b", "currency": "USD", "min": 7000 },
+      { "type": "b2b", "currency": "PLN", "min": 22000 },
+      { "type": "permanent", "currency": "PLN", "min": 15000 }
+    ],
+    "work_model": ["office", "remote"],
+    "target_role": ["Senior Fullstack Engineer"],
+    "company_type": ["product"],
+    "company_type_excluded": ["outsourcing", "body_leasing", "agency"],
+    "employment_type": ["b2b", "permanent"],
+    "industries": ["fintech", "saas", "developer_tools", "proptech"],
+    "markets": ["poland", "europe"],
+    "learning_goals": ["python", "terraform"],
+    "max_office_days_per_week": 2,
+    "office_location_cities": ["Gdańsk", "Kraków", "Bruksela"]
+  }
+}

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { API_BASE_URL } from '../../config';
+import { API_BASE_URL, CONFIG } from '../../config';
+import exampleCv from '../../data/example-cv.json';
 import type { Profile } from './types';
 
 interface Props {
@@ -40,6 +41,10 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
   }
 
   async function handlePrepare() {
+    if (CONFIG.use_template_cv) {
+      onPrepared(exampleCv as unknown as Partial<Profile>);
+      return;
+    }
     if (!file) {
       setError('Please upload your CV first.');
       return;

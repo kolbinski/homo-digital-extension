@@ -10,4 +10,5 @@ export const CONFIG = {
     microsoft: false,
     github: true,
   },
+  use_template_cv: true,
 };
