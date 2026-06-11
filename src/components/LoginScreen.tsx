@@ -93,84 +93,12 @@ function LoginView({
     setSocialLoading(providerName);
     setError('');
     try {
-      if (provider === 'google') {
-        await handleGoogleLogin();
-      } else {
-        await handleOAuthLogin(provider);
-      }
+      await handleOAuthLogin(provider);
     } catch (err) {
       setError(typeof err === 'string' ? err : 'Sign-in failed. Please try again.');
     } finally {
       setSocialLoading(null);
     }
-  }
-
-  async function handleGoogleLogin() {
-    const clientId = '840778170854-1er57pucf17hspq2uqejd9tv4dd00v44.apps.googleusercontent.com';
-    const redirectUri = chrome.identity.getRedirectURL();
-    const authUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth` +
-      `?client_id=${clientId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=token` +
-      `&scope=email%20profile%20openid`;
-
-    console.log('Google authUrl', authUrl);
-    console.log('redirectUri', redirectUri);
-
-    const responseUrl = await new Promise<string>((resolve, reject) => {
-      chrome.identity.launchWebAuthFlow(
-        { url: authUrl, interactive: true },
-        url => {
-          console.log('Google launchWebAuthFlow callback', { url, lastError: chrome.runtime.lastError?.message });
-          if (chrome.runtime.lastError || !url) {
-            reject(chrome.runtime.lastError?.message ?? 'Google auth cancelled.');
-          } else {
-            resolve(url);
-          }
-        },
-      );
-    });
-
-    const hashParams = new URLSearchParams(new URL(responseUrl).hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    console.log('Google access_token present:', !!accessToken);
-    if (!accessToken) throw 'No access token received from Google.';
-
-    // Try signInWithIdToken first
-    console.log('trying supabase.auth.signInWithIdToken...');
-    const { data: sessionData, error: sessionError } = await supabase.auth.signInWithIdToken({
-      provider: 'google',
-      token: accessToken,
-    });
-    console.log('signInWithIdToken result', { session: !!sessionData.session, error: sessionError?.message });
-
-    if (!sessionError && sessionData.session) {
-      await setToken(sessionData.session.access_token);
-      onLogin();
-      return;
-    }
-
-    // Fallback: REST /auth/v1/token?grant_type=google_id_token
-    console.log('falling back to REST /auth/v1/token...');
-    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string).replace(/\/$/, '');
-    const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=google_id_token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-      },
-      body: JSON.stringify({ access_token: accessToken }),
-    });
-    console.log('REST token response status', res.status);
-    if (!res.ok) {
-      const body = await res.text();
-      console.log('REST token error body', body);
-      throw `Google sign-in failed (${res.status}).`;
-    }
-    const data = await res.json() as { access_token: string };
-    await setToken(data.access_token);
-    onLogin();
   }
 
   async function handleOAuthLogin(provider: Provider) {
