@@ -6,9 +6,13 @@ function countMissingBasicInfo(p: Profile): number {
   if (!b.first_name?.trim()) missing++;
   if (!b.last_name?.trim()) missing++;
   if (!b.email?.trim()) missing++;
+  if (!b.gender?.trim()) missing++;
   if (!b.experience_level?.trim()) missing++;
   if (!b.job_search_status?.trim()) missing++;
   if (!b.languages?.length) missing++;
+  missing += (b.languages ?? []).filter(l => !l.name?.trim()).length;
+  missing += (b.soft_skills ?? []).filter(s => !s.trim()).length;
+  missing += (b.cv_summary_bullets ?? []).filter(s => !s.trim()).length;
   return missing;
 }
 

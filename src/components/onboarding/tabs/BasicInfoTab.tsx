@@ -1,7 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { DotsSixVertical, Plus, Trash, XCircle } from '@phosphor-icons/react';
 import { CONFIG } from '../../../config';
-import type { LanguageEntry, ProfileBasicInfo, ProfileLocation } from '../types';
+import type {
+  LanguageEntry,
+  ProfileBasicInfo,
+  ProfileLocation,
+} from '../types';
 
 interface Props {
   basicInfo: ProfileBasicInfo;
@@ -15,15 +20,18 @@ const LEVEL_OPTIONS = ['native', 'C2', 'C1', 'B2', 'B1', 'A2', 'A1'];
 
 function Section({
   title,
+  required,
   children,
 }: {
   title: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
         {title}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </h3>
       {children}
     </div>
@@ -95,6 +103,183 @@ function RemovableChip({
   );
 }
 
+function StringAutocomplete({
+  value,
+  onChange,
+  options,
+  placeholder,
+  className,
+  wrapperClass,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  placeholder?: string;
+  className?: string;
+  wrapperClass?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const filtered = options
+    .filter(o => !value.trim() || o.toLowerCase().includes(value.toLowerCase()))
+    .slice(0, 8);
+
+  function measure() {
+    if (wrapRef.current) {
+      const r = wrapRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom, left: r.left, width: r.width });
+    }
+  }
+
+  return (
+    <div ref={wrapRef} className={wrapperClass}>
+      <input
+        type="text"
+        value={value}
+        onChange={e => {
+          onChange(e.target.value);
+          measure();
+          setOpen(true);
+        }}
+        onFocus={() => {
+          measure();
+          setOpen(true);
+        }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder={placeholder}
+        className={className}
+      />
+      {open &&
+        filtered.length > 0 &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 9999,
+            }}
+            className="bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto"
+          >
+            {filtered.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onMouseDown={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              >
+                {opt}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+function CountryAutocomplete({
+  code,
+  onChange,
+  className,
+}: {
+  code: string;
+  onChange: (code: string) => void;
+  className?: string;
+}) {
+  const codeRef = useRef(code);
+  const [input, setInput] = useState(
+    () => CONFIG.countries.find(c => c.code === code)?.name ?? '',
+  );
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    codeRef.current = code;
+    setInput(CONFIG.countries.find(c => c.code === code)?.name ?? '');
+  }, [code]);
+
+  const filtered = CONFIG.countries
+    .filter(
+      c => !input.trim() || c.name.toLowerCase().includes(input.toLowerCase()),
+    )
+    .slice(0, 8);
+
+  function measure() {
+    if (wrapRef.current) {
+      const r = wrapRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom, left: r.left, width: r.width });
+    }
+  }
+
+  return (
+    <div ref={wrapRef}>
+      <input
+        type="text"
+        value={input}
+        onChange={e => {
+          setInput(e.target.value);
+          if (!e.target.value) onChange('');
+          measure();
+          setOpen(true);
+        }}
+        onFocus={() => {
+          measure();
+          setOpen(true);
+        }}
+        onBlur={() =>
+          setTimeout(() => {
+            setOpen(false);
+            setInput(
+              CONFIG.countries.find(c => c.code === codeRef.current)?.name ??
+                '',
+            );
+          }, 150)
+        }
+        placeholder="e.g. Poland"
+        className={className}
+      />
+      {open &&
+        filtered.length > 0 &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 9999,
+            }}
+            className="bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto"
+          >
+            {filtered.map(c => (
+              <button
+                key={c.code}
+                type="button"
+                onMouseDown={() => {
+                  onChange(c.code);
+                  setInput(c.name);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
 function toggle(arr: string[], val: string): string[] {
   return arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
 }
@@ -124,8 +309,8 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
 
   // ── Distance ──────────────────────────────────────────────────────────────
   const storedKm = b.location.max_distance_km ?? 0;
-  const displayDist =
-    unit === 'km' ? storedKm : Math.round(storedKm / 1.609);
+  const displayDist = unit === 'km' ? storedKm : Math.round(storedKm / 1.609);
+  const distMax = unit === 'km' ? 200 : 124;
 
   function handleDistanceChange(val: number) {
     const km = unit === 'km' ? val : Math.round(val * 1.609);
@@ -269,54 +454,50 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
 
       {/* Contact */}
       <Section title="Contact">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Email" required>
-            <input
-              type="email"
-              value={b.email}
-              onChange={e => update({ email: e.target.value })}
-              placeholder="you@example.com"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Phone">
-            <input
-              type="text"
-              value={b.phone}
-              onChange={e => update({ phone: e.target.value })}
-              placeholder="+48 123 456 789"
-              className={fieldClass}
-            />
-          </Field>
-        </div>
+        <Field label="Email" required>
+          <input
+            type="email"
+            value={b.email}
+            onChange={e => update({ email: e.target.value })}
+            placeholder="you@example.com"
+            className={fieldClass}
+          />
+        </Field>
+        <Field label="Phone">
+          <input
+            type="text"
+            value={b.phone}
+            onChange={e => update({ phone: e.target.value })}
+            placeholder="+1 415 555 0123"
+            className={fieldClass}
+          />
+        </Field>
       </Section>
 
       {/* Links */}
       <Section title="Links">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="GitHub">
-            <input
-              type="text"
-              value={b.github}
-              onChange={e => update({ github: e.target.value })}
-              placeholder="github.com/username"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="LinkedIn">
-            <input
-              type="text"
-              value={b.linkedin}
-              onChange={e => update({ linkedin: e.target.value })}
-              placeholder="linkedin.com/in/username"
-              className={fieldClass}
-            />
-          </Field>
-        </div>
+        <Field label="GitHub">
+          <input
+            type="text"
+            value={b.github}
+            onChange={e => update({ github: e.target.value })}
+            placeholder="github.com/username"
+            className={fieldClass}
+          />
+        </Field>
+        <Field label="LinkedIn">
+          <input
+            type="text"
+            value={b.linkedin}
+            onChange={e => update({ linkedin: e.target.value })}
+            placeholder="linkedin.com/in/username"
+            className={fieldClass}
+          />
+        </Field>
       </Section>
 
       {/* Gender */}
-      <Section title="Gender">
+      <Section title="Gender" required>
         <div className="flex gap-1.5">
           {(
             [
@@ -346,24 +527,19 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
               className={fieldClass}
             />
           </Field>
-          <Field label="Country code">
-            <input
-              type="text"
-              value={b.location.country_code}
-              onChange={e => updateLocation({ country_code: e.target.value })}
-              placeholder="pl, us, de…"
+          <Field label="Country">
+            <CountryAutocomplete
+              code={b.location.country_code}
+              onChange={code => updateLocation({ country_code: code })}
               className={fieldClass}
-              maxLength={3}
             />
           </Field>
         </div>
-        <Field
-          label={`Max commute distance — ${displayDist} ${unit}`}
-        >
+        <Field label={`Max commute distance — ${displayDist} ${unit}`}>
           <input
             type="range"
             min={0}
-            max={200}
+            max={distMax}
             value={displayDist}
             onChange={e => handleDistanceChange(Number(e.target.value))}
             className="w-full accent-blue-600"
@@ -380,7 +556,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 />
               ))}
             </div>
-            <span className="text-xs text-gray-400">200</span>
+            <span className="text-xs text-gray-400">{distMax}</span>
           </div>
         </Field>
       </Section>
@@ -396,8 +572,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 selected={b.experience_level === level}
                 onClick={() =>
                   update({
-                    experience_level:
-                      b.experience_level === level ? '' : level,
+                    experience_level: b.experience_level === level ? '' : level,
                   })
                 }
               />
@@ -430,8 +605,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 selected={b.job_search_status === val}
                 onClick={() =>
                   update({
-                    job_search_status:
-                      b.job_search_status === val ? '' : val,
+                    job_search_status: b.job_search_status === val ? '' : val,
                   })
                 }
               />
@@ -454,19 +628,22 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             >
               <div
                 draggable
-                onDragStart={() => { langDragFrom.current = i; }}
+                onDragStart={() => {
+                  langDragFrom.current = i;
+                }}
                 onDragEnd={handleLangDragEnd}
                 className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors"
                 aria-label="Drag to reorder"
               >
                 <DotsSixVertical size={20} />
               </div>
-              <input
-                type="text"
+              <StringAutocomplete
                 value={lang.name}
-                onChange={e => updateLanguage(i, { name: e.target.value })}
+                onChange={name => updateLanguage(i, { name })}
+                options={CONFIG.languages}
                 placeholder="Language"
-                className={`${fieldClass} flex-1`}
+                wrapperClass="flex-1"
+                className={fieldClass}
               />
               <select
                 value={lang.level}
@@ -479,6 +656,13 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                   </option>
                 ))}
               </select>
+              {!lang.name.trim() && (
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400"
+                />
+              )}
               <button
                 type="button"
                 onClick={() => removeLanguage(i)}
@@ -559,7 +743,9 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             >
               <div
                 draggable
-                onDragStart={() => { softDragFrom.current = i; }}
+                onDragStart={() => {
+                  softDragFrom.current = i;
+                }}
                 onDragEnd={softHandlers.onDragEnd}
                 className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-1.5"
                 aria-label="Drag to reorder"
@@ -577,6 +763,13 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 placeholder="e.g. Strong communicator"
                 className={`${fieldClass} resize-y flex-1`}
               />
+              {!skill.trim() && (
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400 mt-1.5"
+                />
+              )}
               <button
                 type="button"
                 onClick={() =>
@@ -614,7 +807,9 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             >
               <div
                 draggable
-                onDragStart={() => { bulletDragFrom.current = i; }}
+                onDragStart={() => {
+                  bulletDragFrom.current = i;
+                }}
                 onDragEnd={bulletHandlers.onDragEnd}
                 className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-1.5"
                 aria-label="Drag to reorder"
@@ -632,6 +827,13 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 placeholder="e.g. 8 years building scalable APIs"
                 className={`${fieldClass} resize-y flex-1`}
               />
+              {!bullet.trim() && (
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400 mt-1.5"
+                />
+              )}
               <button
                 type="button"
                 onClick={() =>
