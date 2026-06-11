@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DotsSixVertical, Plus, Trash, XCircle } from '@phosphor-icons/react';
-import { CONFIG } from '../../../config';
+import { useGeneralSettings } from '../../../store/generalSettingsStore';
 import type {
   LanguageEntry,
   ProfileBasicInfo,
@@ -211,9 +211,11 @@ function CountryAutocomplete({
   onChange: (code: string) => void;
   className?: string;
 }) {
+  const { settings } = useGeneralSettings();
+  const countries = settings?.countries ?? [];
   const codeRef = useRef(code);
   const [input, setInput] = useState(
-    () => CONFIG.countries.find(c => c.code === code)?.name ?? '',
+    () => countries.find(c => c.code === code)?.name ?? '',
   );
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -221,10 +223,10 @@ function CountryAutocomplete({
 
   useEffect(() => {
     codeRef.current = code;
-    setInput(CONFIG.countries.find(c => c.code === code)?.name ?? '');
-  }, [code]);
+    setInput(countries.find(c => c.code === code)?.name ?? '');
+  }, [code, countries]);
 
-  const filtered = CONFIG.countries
+  const filtered = countries
     .filter(
       c => !input.trim() || c.name.toLowerCase().includes(input.toLowerCase()),
     )
@@ -256,8 +258,7 @@ function CountryAutocomplete({
           setTimeout(() => {
             setOpen(false);
             setInput(
-              CONFIG.countries.find(c => c.code === codeRef.current)?.name ??
-                '',
+              countries.find(c => c.code === codeRef.current)?.name ?? '',
             );
           }, 150)
         }
@@ -307,6 +308,12 @@ function labelFor(val: string): string {
 }
 
 export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
+  const { settings } = useGeneralSettings();
+  const industryOptions = settings?.industries ?? [];
+  const markets = settings?.markets ?? [];
+  const languageOptions = settings?.languages ?? [];
+  const languageLevels = settings?.language_levels ?? [];
+
   const [unit, setUnit] = useState<'km' | 'miles'>('km');
   const [industryInput, setIndustryInput] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
@@ -395,7 +402,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   }
 
   const customIndustries = industries.filter(
-    ind => !CONFIG.industries.includes(ind),
+    ind => !industryOptions.includes(ind),
   );
 
   // ── DnD helpers for string[] lists ────────────────────────────────────────
@@ -692,7 +699,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
               <StringAutocomplete
                 value={lang.name}
                 onChange={name => updateLanguage(i, { name })}
-                options={CONFIG.languages}
+                options={languageOptions}
                 placeholder="Language"
                 wrapperClass="flex-1"
                 className={fieldClass}
@@ -705,7 +712,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 <option value="" disabled>
                   Level
                 </option>
-                {CONFIG.language_levels.map(l => (
+                {languageLevels.map(l => (
                   <option key={l} value={l}>
                     {l}
                   </option>
@@ -742,7 +749,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
       {/* Industries */}
       <Section title="Experience in industry">
         <div className="flex flex-wrap gap-1.5">
-          {CONFIG.industries.map(ind => (
+          {industryOptions.map(ind => (
             <Chip
               key={ind}
               label={labelFor(ind)}
@@ -773,7 +780,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
       {/* Markets */}
       <Section title="Experience in country markets">
         <div className="flex flex-wrap gap-1.5">
-          {CONFIG.markets.map(m => (
+          {markets.map(m => (
             <Chip
               key={m}
               label={labelFor(m)}

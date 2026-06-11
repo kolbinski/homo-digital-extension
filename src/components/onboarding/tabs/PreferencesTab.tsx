@@ -7,7 +7,7 @@ import {
   Trash,
   XCircle,
 } from '@phosphor-icons/react';
-import { CONFIG } from '../../../config';
+import { useGeneralSettings } from '../../../store/generalSettingsStore';
 import type { ProfilePreferences, SalaryEntry } from '../types';
 
 interface Props {
@@ -114,6 +114,13 @@ export default function PreferencesTab({
   const roleDragFrom = useRef<number | null>(null);
   const [roleDragOver, setRoleDragOver] = useState<number | null>(null);
 
+  const { settings } = useGeneralSettings();
+  const currencies = settings?.currencies ?? [];
+  const companyTypes = settings?.company_types ?? [];
+  const industries = settings?.industries ?? [];
+  const markets = settings?.markets ?? [];
+  const skillsSuggestions = settings?.skills_suggestions ?? [];
+
   const showOfficeFields = !(
     prefs.work_model.length > 0 && prefs.work_model.every(m => m === 'remote')
   );
@@ -131,7 +138,7 @@ export default function PreferencesTab({
       ...prefs,
       salary: [
         ...prefs.salary,
-        { type: 'contract', currency: CONFIG.currencies[0], min: 0 },
+        { type: 'contract', currency: currencies[0] ?? '', min: 0 },
       ],
     });
   }
@@ -227,7 +234,7 @@ export default function PreferencesTab({
   // ── Learning goals autocomplete ──────────────────────────────────────────
   const goals = prefs.learning_skills_goals ?? [];
 
-  const skillSuggestions = CONFIG.skills_suggestions.filter(
+  const skillSuggestions = skillsSuggestions.filter(
     s =>
       !goals.includes(s) && s.toLowerCase().includes(skillInput.toLowerCase()),
   );
@@ -265,7 +272,7 @@ export default function PreferencesTab({
   }
 
   const customIndustries = prefs.industries.filter(
-    ind => !CONFIG.industries.includes(ind),
+    ind => !industries.includes(ind),
   );
 
   return (
@@ -290,7 +297,7 @@ export default function PreferencesTab({
                 onChange={e => updateSalary(i, { currency: e.target.value })}
                 className={selectClass}
               >
-                {CONFIG.currencies.map(c => (
+                {currencies.map(c => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -449,7 +456,7 @@ export default function PreferencesTab({
       {/* Company type preferred */}
       <Section title="Company type (preferred)">
         <div className="flex flex-wrap gap-1.5">
-          {CONFIG.company_types.map(ct => (
+          {companyTypes.map(ct => (
             <Chip
               key={ct}
               label={labelFor(ct)}
@@ -468,7 +475,7 @@ export default function PreferencesTab({
       {/* Company type excluded */}
       <Section title="Company type (excluded)">
         <div className="flex flex-wrap gap-1.5">
-          {CONFIG.company_types.map(ct => (
+          {companyTypes.map(ct => (
             <Chip
               key={ct}
               label={labelFor(ct)}
@@ -490,7 +497,7 @@ export default function PreferencesTab({
       {/* Industries */}
       <Section title="Industries">
         <div className="flex flex-wrap gap-1.5">
-          {CONFIG.industries.map(ind => (
+          {industries.map(ind => (
             <Chip
               key={ind}
               label={labelFor(ind)}
@@ -529,7 +536,7 @@ export default function PreferencesTab({
       {/* Markets */}
       <Section title="Markets">
         <div className="flex flex-wrap gap-1.5">
-          {CONFIG.markets.map(m => (
+          {markets.map(m => (
             <Chip
               key={m}
               label={labelFor(m)}

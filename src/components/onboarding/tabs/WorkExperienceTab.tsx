@@ -9,7 +9,8 @@ import {
   Trash,
   XCircle,
 } from '@phosphor-icons/react';
-import { API_BASE_URL, CONFIG } from '../../../config';
+import { API_BASE_URL } from '../../../config';
+import { useGeneralSettings } from '../../../store/generalSettingsStore';
 import type { ProjectEntry, WorkExperienceEntry } from '../types';
 
 interface Props {
@@ -547,6 +548,10 @@ function ExperienceCard({
   const [projDragOver, setProjDragOver] = useState<number | null>(null);
   const projDragFrom = useRef<number | null>(null);
 
+  const { settings } = useGeneralSettings();
+  const companyTypes = settings?.company_types ?? [];
+  const industryOptions = settings?.industries ?? [];
+
   const invalidCount = countExpInvalid(entry);
   const projects = entry.projects ?? [emptyProject()];
 
@@ -773,7 +778,7 @@ function ExperienceCard({
               Company type
             </label>
             <div className="flex flex-wrap gap-1.5">
-              {CONFIG.company_types.map(ct => (
+              {companyTypes.map(ct => (
                 <Chip
                   key={ct}
                   label={ct.replace(/_/g, ' ')}
@@ -794,7 +799,7 @@ function ExperienceCard({
               Industry
             </label>
             <div className="flex flex-wrap gap-1.5 mb-1">
-              {CONFIG.industries.map(ind => (
+              {industryOptions.map(ind => (
                 <Chip
                   key={ind}
                   label={ind.replace(/_/g, ' ')}
@@ -807,7 +812,7 @@ function ExperienceCard({
                 />
               ))}
               {entry.industry &&
-                !CONFIG.industries.includes(entry.industry) && (
+                !industryOptions.includes(entry.industry) && (
                   <RemovableChip
                     label={entry.industry}
                     onRemove={() => onChange({ industry: null })}

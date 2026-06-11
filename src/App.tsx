@@ -8,6 +8,7 @@ import SyncTab from './components/SyncTab';
 import FeedbackPopup from './components/FeedbackPopup';
 import { useAuth } from './hooks/useAuth';
 import { API_BASE_URL, SHOW_TABS } from './config';
+import { generalSettingsStore } from './store/generalSettingsStore';
 
 type AuthState = 'checking' | 'logged_out' | 'logged_in' | 'client';
 
@@ -24,6 +25,10 @@ function App() {
   }>({
     show_sync_tab_in_extension: false,
   });
+
+  useEffect(() => {
+    generalSettingsStore.fetch();
+  }, []);
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) {
@@ -132,7 +137,13 @@ function App() {
     setAuthState(role === 'client' ? 'client' : 'logged_in');
   }
 
-  if (authState === 'checking') return null;
+  if (authState === 'checking') {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (authState === 'logged_out') {
     return <LoginScreen onLogin={handleLogin} />;
