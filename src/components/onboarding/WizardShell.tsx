@@ -9,6 +9,7 @@ import EducationTab from './tabs/EducationTab';
 import OwnProjectsTab from './tabs/OwnProjectsTab';
 import PreferencesTab from './tabs/PreferencesTab';
 import RedFlagsTab from './tabs/RedFlagsTab';
+import SkillsTab from './tabs/SkillsTab';
 
 interface Props {
   profile: Profile;
@@ -91,7 +92,7 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex flex-row items-center gap-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-green-600 text-green-700'
+                    ? 'border-blue-600 text-blue-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -146,7 +147,14 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
         ) : activeTab === 'own_projects' ? (
           <OwnProjectsTab
             projects={profile.own_projects}
-            onChange={projects => onChange({ ...profile, own_projects: projects })}
+            onChange={projects =>
+              onChange({ ...profile, own_projects: projects })
+            }
+          />
+        ) : activeTab === 'skills' ? (
+          <SkillsTab
+            skills={profile.skills}
+            onChange={skills => onChange({ ...profile, skills })}
           />
         ) : activeTab === 'preferences' ? (
           <PreferencesTab
