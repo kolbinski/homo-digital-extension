@@ -14,6 +14,8 @@ export const emptyProfile: Profile = {
     experience_level: '',
     experience_since: '',
     job_search_status: '',
+    industries: [],
+    markets: [],
     soft_skills: [],
     cv_summary_bullets: [],
   },

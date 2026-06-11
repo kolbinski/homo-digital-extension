@@ -1,0 +1,661 @@
+import { useRef, useState } from 'react';
+import { DotsSixVertical, Plus, Trash, XCircle } from '@phosphor-icons/react';
+import { CONFIG } from '../../../config';
+import type { LanguageEntry, ProfileBasicInfo, ProfileLocation } from '../types';
+
+interface Props {
+  basicInfo: ProfileBasicInfo;
+  onChange: (basicInfo: ProfileBasicInfo) => void;
+}
+
+const fieldClass =
+  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+
+const LEVEL_OPTIONS = ['native', 'C2', 'C1', 'B2', 'B1', 'A2', 'A1'];
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-medium text-gray-600">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function Chip({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+        selected
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function RemovableChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="hover:text-blue-200 transition-colors"
+      >
+        <XCircle size={13} weight="fill" />
+      </button>
+    </span>
+  );
+}
+
+function toggle(arr: string[], val: string): string[] {
+  return arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
+}
+
+function labelFor(val: string): string {
+  return val.replace(/_/g, ' ');
+}
+
+export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
+  const [unit, setUnit] = useState<'km' | 'miles'>('km');
+  const [industryInput, setIndustryInput] = useState('');
+
+  const langDragFrom = useRef<number | null>(null);
+  const [langDragOver, setLangDragOver] = useState<number | null>(null);
+  const softDragFrom = useRef<number | null>(null);
+  const [softDragOver, setSoftDragOver] = useState<number | null>(null);
+  const bulletDragFrom = useRef<number | null>(null);
+  const [bulletDragOver, setBulletDragOver] = useState<number | null>(null);
+
+  function update(patch: Partial<ProfileBasicInfo>) {
+    onChange({ ...b, ...patch });
+  }
+
+  function updateLocation(patch: Partial<ProfileLocation>) {
+    onChange({ ...b, location: { ...b.location, ...patch } });
+  }
+
+  // ── Distance ──────────────────────────────────────────────────────────────
+  const storedKm = b.location.max_distance_km ?? 0;
+  const displayDist =
+    unit === 'km' ? storedKm : Math.round(storedKm / 1.609);
+
+  function handleDistanceChange(val: number) {
+    const km = unit === 'km' ? val : Math.round(val * 1.609);
+    updateLocation({ max_distance_km: km });
+  }
+
+  // ── Languages ─────────────────────────────────────────────────────────────
+  const languages = b.languages ?? [];
+
+  function addLanguage() {
+    update({ languages: [...languages, { name: '', level: 'B2' }] });
+  }
+
+  function updateLanguage(idx: number, patch: Partial<LanguageEntry>) {
+    update({
+      languages: languages.map((l, i) => (i === idx ? { ...l, ...patch } : l)),
+    });
+  }
+
+  function removeLanguage(idx: number) {
+    update({ languages: languages.filter((_, i) => i !== idx) });
+  }
+
+  function handleLangDragOver(e: React.DragEvent, i: number) {
+    e.preventDefault();
+    setLangDragOver(i);
+  }
+
+  function handleLangDrop(e: React.DragEvent, toIdx: number) {
+    e.preventDefault();
+    const fromIdx = langDragFrom.current;
+    if (fromIdx === null || fromIdx === toIdx) {
+      setLangDragOver(null);
+      return;
+    }
+    const next = [...languages];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    update({ languages: next });
+    langDragFrom.current = null;
+    setLangDragOver(null);
+  }
+
+  function handleLangDragEnd() {
+    langDragFrom.current = null;
+    setLangDragOver(null);
+  }
+
+  // ── Industries ────────────────────────────────────────────────────────────
+  const industries = b.industries ?? [];
+
+  function handleIndustryKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    const val = industryInput.trim();
+    if ((e.key === 'Enter' || e.key === ',') && val) {
+      e.preventDefault();
+      if (!industries.includes(val)) {
+        update({ industries: [...industries, val] });
+      }
+      setIndustryInput('');
+    }
+  }
+
+  const customIndustries = industries.filter(
+    ind => !CONFIG.industries.includes(ind),
+  );
+
+  // ── DnD helpers for string[] lists ────────────────────────────────────────
+  function makeDndHandlers(
+    arr: string[],
+    dragFrom: React.MutableRefObject<number | null>,
+    setDragOver: React.Dispatch<React.SetStateAction<number | null>>,
+    onReorder: (next: string[]) => void,
+  ) {
+    return {
+      onDragOver: (e: React.DragEvent, i: number) => {
+        e.preventDefault();
+        setDragOver(i);
+      },
+      onDrop: (e: React.DragEvent, toIdx: number) => {
+        e.preventDefault();
+        const fromIdx = dragFrom.current;
+        if (fromIdx === null || fromIdx === toIdx) {
+          setDragOver(null);
+          return;
+        }
+        const next = [...arr];
+        const [moved] = next.splice(fromIdx, 1);
+        next.splice(toIdx, 0, moved);
+        onReorder(next);
+        dragFrom.current = null;
+        setDragOver(null);
+      },
+      onDragEnd: () => {
+        dragFrom.current = null;
+        setDragOver(null);
+      },
+    };
+  }
+
+  const softSkills = b.soft_skills ?? [];
+  const softHandlers = makeDndHandlers(
+    softSkills,
+    softDragFrom,
+    setSoftDragOver,
+    next => update({ soft_skills: next }),
+  );
+
+  const bullets = b.cv_summary_bullets ?? [];
+  const bulletHandlers = makeDndHandlers(
+    bullets,
+    bulletDragFrom,
+    setBulletDragOver,
+    next => update({ cv_summary_bullets: next }),
+  );
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Name */}
+      <Section title="Name">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="First name" required>
+            <input
+              type="text"
+              value={b.first_name}
+              onChange={e => update({ first_name: e.target.value })}
+              placeholder="e.g. Anna"
+              className={fieldClass}
+            />
+          </Field>
+          <Field label="Last name" required>
+            <input
+              type="text"
+              value={b.last_name}
+              onChange={e => update({ last_name: e.target.value })}
+              placeholder="e.g. Kowalski"
+              className={fieldClass}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Contact */}
+      <Section title="Contact">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Email" required>
+            <input
+              type="email"
+              value={b.email}
+              onChange={e => update({ email: e.target.value })}
+              placeholder="you@example.com"
+              className={fieldClass}
+            />
+          </Field>
+          <Field label="Phone">
+            <input
+              type="text"
+              value={b.phone}
+              onChange={e => update({ phone: e.target.value })}
+              placeholder="+48 123 456 789"
+              className={fieldClass}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Links */}
+      <Section title="Links">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="GitHub">
+            <input
+              type="text"
+              value={b.github}
+              onChange={e => update({ github: e.target.value })}
+              placeholder="github.com/username"
+              className={fieldClass}
+            />
+          </Field>
+          <Field label="LinkedIn">
+            <input
+              type="text"
+              value={b.linkedin}
+              onChange={e => update({ linkedin: e.target.value })}
+              placeholder="linkedin.com/in/username"
+              className={fieldClass}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Gender */}
+      <Section title="Gender">
+        <div className="flex gap-1.5">
+          {(
+            [
+              ['M', 'Male'],
+              ['F', 'Female'],
+            ] as const
+          ).map(([val, label]) => (
+            <Chip
+              key={val}
+              label={label}
+              selected={b.gender === val}
+              onClick={() => update({ gender: b.gender === val ? '' : val })}
+            />
+          ))}
+        </div>
+      </Section>
+
+      {/* Location */}
+      <Section title="Location">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="City">
+            <input
+              type="text"
+              value={b.location.city}
+              onChange={e => updateLocation({ city: e.target.value })}
+              placeholder="e.g. Warsaw"
+              className={fieldClass}
+            />
+          </Field>
+          <Field label="Country code">
+            <input
+              type="text"
+              value={b.location.country_code}
+              onChange={e => updateLocation({ country_code: e.target.value })}
+              placeholder="pl, us, de…"
+              className={fieldClass}
+              maxLength={3}
+            />
+          </Field>
+        </div>
+        <Field
+          label={`Max commute distance — ${displayDist} ${unit}`}
+        >
+          <input
+            type="range"
+            min={0}
+            max={200}
+            value={displayDist}
+            onChange={e => handleDistanceChange(Number(e.target.value))}
+            className="w-full accent-blue-600"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">0</span>
+            <div className="flex gap-1">
+              {(['km', 'miles'] as const).map(u => (
+                <Chip
+                  key={u}
+                  label={u === 'km' ? 'KM' : 'Miles'}
+                  selected={unit === u}
+                  onClick={() => setUnit(u)}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-400">200</span>
+          </div>
+        </Field>
+      </Section>
+
+      {/* Experience */}
+      <Section title="Experience">
+        <Field label="Experience level" required>
+          <div className="flex flex-wrap gap-1.5">
+            {(['junior', 'mid', 'senior', 'lead'] as const).map(level => (
+              <Chip
+                key={level}
+                label={level.charAt(0).toUpperCase() + level.slice(1)}
+                selected={b.experience_level === level}
+                onClick={() =>
+                  update({
+                    experience_level:
+                      b.experience_level === level ? '' : level,
+                  })
+                }
+              />
+            ))}
+          </div>
+        </Field>
+        <Field label="Working in tech since">
+          <input
+            type="number"
+            value={b.experience_since}
+            onChange={e => update({ experience_since: e.target.value })}
+            placeholder="YYYY"
+            min={1950}
+            max={new Date().getFullYear()}
+            className={fieldClass}
+          />
+        </Field>
+        <Field label="Job search status" required>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                ['actively_looking', 'Actively looking'],
+                ['open_to_offers', 'Open to offers'],
+                ['not_looking', 'Not looking'],
+              ] as const
+            ).map(([val, label]) => (
+              <Chip
+                key={val}
+                label={label}
+                selected={b.job_search_status === val}
+                onClick={() =>
+                  update({
+                    job_search_status:
+                      b.job_search_status === val ? '' : val,
+                  })
+                }
+              />
+            ))}
+          </div>
+        </Field>
+      </Section>
+
+      {/* Languages */}
+      <Section title="Languages">
+        <div className="flex flex-col gap-1.5">
+          {languages.map((lang, i) => (
+            <div
+              key={i}
+              onDragOver={e => handleLangDragOver(e, i)}
+              onDrop={e => handleLangDrop(e, i)}
+              className={`flex items-center gap-1.5 rounded transition-colors ${
+                langDragOver === i ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div
+                draggable
+                onDragStart={() => { langDragFrom.current = i; }}
+                onDragEnd={handleLangDragEnd}
+                className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors"
+                aria-label="Drag to reorder"
+              >
+                <DotsSixVertical size={20} />
+              </div>
+              <input
+                type="text"
+                value={lang.name}
+                onChange={e => updateLanguage(i, { name: e.target.value })}
+                placeholder="Language"
+                className={`${fieldClass} flex-1`}
+              />
+              <select
+                value={lang.level}
+                onChange={e => updateLanguage(i, { level: e.target.value })}
+                className="w-24 shrink-0 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                {LEVEL_OPTIONS.map(l => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => removeLanguage(i)}
+                aria-label="Remove language"
+                className="shrink-0 text-red-400 hover:text-red-600 transition-colors"
+              >
+                <Trash size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={addLanguage}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors w-fit"
+        >
+          <Plus size={16} />
+          Add language
+        </button>
+      </Section>
+
+      {/* Industries */}
+      <Section title="Experience in industry">
+        <div className="flex flex-wrap gap-1.5">
+          {CONFIG.industries.map(ind => (
+            <Chip
+              key={ind}
+              label={labelFor(ind)}
+              selected={industries.includes(ind)}
+              onClick={() => update({ industries: toggle(industries, ind) })}
+            />
+          ))}
+          {customIndustries.map(custom => (
+            <RemovableChip
+              key={custom}
+              label={custom}
+              onRemove={() =>
+                update({ industries: industries.filter(i => i !== custom) })
+              }
+            />
+          ))}
+        </div>
+        <input
+          type="text"
+          value={industryInput}
+          onChange={e => setIndustryInput(e.target.value)}
+          onKeyDown={handleIndustryKey}
+          placeholder="Add custom industry, Enter to add"
+          className={fieldClass}
+        />
+      </Section>
+
+      {/* Markets */}
+      <Section title="Experience in country markets">
+        <div className="flex flex-wrap gap-1.5">
+          {CONFIG.markets.map(m => (
+            <Chip
+              key={m}
+              label={labelFor(m)}
+              selected={(b.markets ?? []).includes(m)}
+              onClick={() => update({ markets: toggle(b.markets ?? [], m) })}
+            />
+          ))}
+        </div>
+      </Section>
+
+      {/* Soft skills */}
+      <Section title="Soft skills">
+        <div className="flex flex-col gap-1.5">
+          {softSkills.map((skill, i) => (
+            <div
+              key={i}
+              onDragOver={e => softHandlers.onDragOver(e, i)}
+              onDrop={e => softHandlers.onDrop(e, i)}
+              className={`flex items-start gap-1.5 rounded transition-colors ${
+                softDragOver === i ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div
+                draggable
+                onDragStart={() => { softDragFrom.current = i; }}
+                onDragEnd={softHandlers.onDragEnd}
+                className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-1.5"
+                aria-label="Drag to reorder"
+              >
+                <DotsSixVertical size={20} />
+              </div>
+              <textarea
+                rows={2}
+                value={skill}
+                onChange={e => {
+                  const next = [...softSkills];
+                  next[i] = e.target.value;
+                  update({ soft_skills: next });
+                }}
+                placeholder="e.g. Strong communicator"
+                className={`${fieldClass} resize-y flex-1`}
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  update({ soft_skills: softSkills.filter((_, j) => j !== i) })
+                }
+                aria-label="Remove soft skill"
+                className="shrink-0 text-red-400 hover:text-red-600 transition-colors mt-1.5"
+              >
+                <Trash size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => update({ soft_skills: [...softSkills, ''] })}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors w-fit"
+        >
+          <Plus size={16} />
+          Add soft skill
+        </button>
+      </Section>
+
+      {/* CV summary bullets */}
+      <Section title="CV summary bullets">
+        <div className="flex flex-col gap-1.5">
+          {bullets.map((bullet, i) => (
+            <div
+              key={i}
+              onDragOver={e => bulletHandlers.onDragOver(e, i)}
+              onDrop={e => bulletHandlers.onDrop(e, i)}
+              className={`flex items-start gap-1.5 rounded transition-colors ${
+                bulletDragOver === i ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div
+                draggable
+                onDragStart={() => { bulletDragFrom.current = i; }}
+                onDragEnd={bulletHandlers.onDragEnd}
+                className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-1.5"
+                aria-label="Drag to reorder"
+              >
+                <DotsSixVertical size={20} />
+              </div>
+              <textarea
+                rows={2}
+                value={bullet}
+                onChange={e => {
+                  const next = [...bullets];
+                  next[i] = e.target.value;
+                  update({ cv_summary_bullets: next });
+                }}
+                placeholder="e.g. 8 years building scalable APIs"
+                className={`${fieldClass} resize-y flex-1`}
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  update({
+                    cv_summary_bullets: bullets.filter((_, j) => j !== i),
+                  })
+                }
+                aria-label="Remove bullet"
+                className="shrink-0 text-red-400 hover:text-red-600 transition-colors mt-1.5"
+              >
+                <Trash size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => update({ cv_summary_bullets: [...bullets, ''] })}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors w-fit"
+        >
+          <Plus size={16} />
+          Add bullet
+        </button>
+      </Section>
+    </div>
+  );
+}

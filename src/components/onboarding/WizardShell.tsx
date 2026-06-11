@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
 import type { Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
+import BasicInfoTab from './tabs/BasicInfoTab';
 import CertificationsTab from './tabs/CertificationsTab';
 import EducationTab from './tabs/EducationTab';
 import OwnProjectsTab from './tabs/OwnProjectsTab';
@@ -62,7 +63,7 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <span className="text-sm font-semibold text-gray-900">
-          Build your profile
+          Great jobs start with a great profile
         </span>
         <button
           type="button"
@@ -130,11 +131,21 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
       </div>
 
       {/* Tab body */}
-      <div className="flex-1 overflow-y-auto p-4" style={{ paddingBottom: 300 }}>
+      <div
+        className="flex-1 overflow-y-auto p-4"
+        style={{ paddingBottom: 300 }}
+      >
         <h2 className="text-base font-semibold text-gray-900 mb-3">
           {activeCompletion.label}
         </h2>
-        {activeTab === 'certifications' ? (
+        {activeTab === 'basic_info' ? (
+          <BasicInfoTab
+            basicInfo={profile.basic_info}
+            onChange={basicInfo =>
+              onChange({ ...profile, basic_info: basicInfo })
+            }
+          />
+        ) : activeTab === 'certifications' ? (
           <CertificationsTab
             certifications={profile.certifications}
             onChange={certs => onChange({ ...profile, certifications: certs })}

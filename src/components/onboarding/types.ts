@@ -4,6 +4,11 @@ export interface ProfileLocation {
   max_distance_km: number | null;
 }
 
+export interface LanguageEntry {
+  name: string;
+  level: string;
+}
+
 export interface ProfileBasicInfo {
   first_name: string;
   last_name: string;
@@ -13,10 +18,12 @@ export interface ProfileBasicInfo {
   github: string;
   linkedin: string;
   location: ProfileLocation;
-  languages: string[];
+  languages: LanguageEntry[];
   experience_level: string;
   experience_since: string;
   job_search_status: string;
+  industries: string[];
+  markets: string[];
   soft_skills: string[];
   cv_summary_bullets: string[];
 }

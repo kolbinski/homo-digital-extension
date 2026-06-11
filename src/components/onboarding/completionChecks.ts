@@ -6,8 +6,8 @@ function countMissingBasicInfo(p: Profile): number {
   if (!b.first_name?.trim()) missing++;
   if (!b.last_name?.trim()) missing++;
   if (!b.email?.trim()) missing++;
-  if (!b.location?.city?.trim()) missing++;
   if (!b.experience_level?.trim()) missing++;
+  if (!b.job_search_status?.trim()) missing++;
   if (!b.languages?.length) missing++;
   return missing;
 }
