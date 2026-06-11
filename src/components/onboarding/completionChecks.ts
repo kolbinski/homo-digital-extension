@@ -122,7 +122,7 @@ export function getTabCompletions(profile: Profile): TabCompletion[] {
           break;
         }
         case 'red_flags':
-          hasEntry = (profile.red_flags?.length ?? 0) > 0;
+          hasEntry = (profile.red_flags ?? []).some(r => r.description?.length > 0);
           break;
       }
     }

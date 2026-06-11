@@ -145,7 +145,8 @@ function LoginView({
     const authUrl =
       `${supabaseUrl}/auth/v1/authorize` +
       `?provider=${provider}` +
-      `&redirect_to=${encodeURIComponent(redirectTo)}`;
+      `&redirect_to=${encodeURIComponent(redirectTo)}` +
+      `&prompt=select_account`;
 
     console.log(`[${provider}] redirectTo`, redirectTo);
     console.log(`[${provider}] authUrl`, authUrl);

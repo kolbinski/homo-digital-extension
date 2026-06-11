@@ -46,7 +46,8 @@ export interface OwnProjectEntry {
 }
 
 export interface RedFlagEntry {
-  [key: string]: unknown;
+  category: 'company_type' | 'skills' | 'other';
+  description: string[];
 }
 
 export interface ProfilePreferences {

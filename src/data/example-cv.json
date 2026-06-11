@@ -15,8 +15,14 @@
     "experience_level": "senior",
     "experience_since": "2014",
     "languages": [
-      { "name": "polish", "level": "native" },
-      { "name": "english", "level": "C1" }
+      {
+        "name": "polish",
+        "level": "native"
+      },
+      {
+        "name": "english",
+        "level": "C1"
+      }
     ],
     "job_search_status": "actively_looking",
     "soft_skills": [
@@ -31,12 +37,33 @@
     ]
   },
   "skills": {
-    "Frontend": ["react", "next.js", "vue.js"],
-    "Backend": ["node.js", "express", "nest.js", "graphql"],
-    "Databases": ["postgresql", "elasticsearch", "redis"],
-    "Cloud & Infra": ["docker", "kubernetes", "aws"],
-    "Languages": ["typescript"],
-    "Mobile": ["react native"]
+    "Frontend": [
+      "react",
+      "next.js",
+      "vue.js"
+    ],
+    "Backend": [
+      "node.js",
+      "express",
+      "nest.js",
+      "graphql"
+    ],
+    "Databases": [
+      "postgresql",
+      "elasticsearch",
+      "redis"
+    ],
+    "Cloud & Infra": [
+      "docker",
+      "kubernetes",
+      "aws"
+    ],
+    "Languages": [
+      "typescript"
+    ],
+    "Mobile": [
+      "react native"
+    ]
   },
   "work_experience": [
     {
@@ -51,7 +78,16 @@
       "projects": [
         {
           "name": "System real-time płatności",
-          "skills": ["react", "typescript", "node.js", "postgresql", "redis", "stripe", "aws lambda", "docker"],
+          "skills": [
+            "react",
+            "typescript",
+            "node.js",
+            "postgresql",
+            "redis",
+            "stripe",
+            "aws lambda",
+            "docker"
+          ],
           "team_size": 6,
           "role": "tech lead",
           "achievements": [
@@ -62,7 +98,14 @@
         },
         {
           "name": "Developer Portal (API docs + sandbox)",
-          "skills": ["next.js", "typescript", "graphql", "storybook", "algolia", "material ui"],
+          "skills": [
+            "next.js",
+            "typescript",
+            "graphql",
+            "storybook",
+            "algolia",
+            "material ui"
+          ],
           "team_size": 3,
           "role": "lead",
           "achievements": [
@@ -84,13 +127,27 @@
       "projects": [
         {
           "name": "E-commerce Niemcy (~2M SKU)",
-          "skills": ["vue.js", "typescript", "elasticsearch", "node.js"],
-          "achievements": ["Trafność wyszukiwania +34%", "Konwersja +12% QoQ"]
+          "skills": [
+            "vue.js",
+            "typescript",
+            "elasticsearch",
+            "node.js"
+          ],
+          "achievements": [
+            "Trafność wyszukiwania +34%",
+            "Konwersja +12% QoQ"
+          ]
         },
         {
           "name": "WMS (logistyka)",
-          "skills": ["node.js", "websockets", "postgresql"],
-          "achievements": ["Czas kompletacji zamówienia -22%"]
+          "skills": [
+            "node.js",
+            "websockets",
+            "postgresql"
+          ],
+          "achievements": [
+            "Czas kompletacji zamówienia -22%"
+          ]
         }
       ]
     },
@@ -106,7 +163,11 @@
       "projects": [
         {
           "name": "Platforma wynajmu nieruchomości",
-          "skills": ["react", "node.js", "postgresql"],
+          "skills": [
+            "react",
+            "node.js",
+            "postgresql"
+          ],
           "achievements": [
             "15,000 ogłoszeń, 4,200 umów w 18 miesięcy",
             "Weryfikacja ogłoszeń: 48h → 2h"
@@ -125,8 +186,15 @@
       "projects": [
         {
           "name": "Projekty agencyjne",
-          "skills": ["javascript", "php", "css"],
-          "achievements": ["Czas ładowania: 8s → 2.1s", "Konwersja mobilna +18%"]
+          "skills": [
+            "javascript",
+            "php",
+            "css"
+          ],
+          "achievements": [
+            "Czas ładowania: 8s → 2.1s",
+            "Konwersja mobilna +18%"
+          ]
         }
       ]
     },
@@ -138,8 +206,14 @@
       "projects": [
         {
           "name": "System rezerwacji siłowni",
-          "skills": ["php", "javascript", "mysql"],
-          "achievements": ["800+ rezerwacji/mc"]
+          "skills": [
+            "php",
+            "javascript",
+            "mysql"
+          ],
+          "achievements": [
+            "800+ rezerwacji/mc"
+          ]
         }
       ]
     }
@@ -173,37 +247,110 @@
     {
       "name": "BudgetFlow",
       "url": "budgetflow.app",
-      "skills": ["next.js", "typescript", "postgresql", "prisma", "openai"],
-      "achievements": ["40 aktywnych użytkowników", "Produkcyjny SaaS z AI-powered budgeting"]
+      "skills": [
+        "next.js",
+        "typescript",
+        "postgresql",
+        "prisma",
+        "openai"
+      ],
+      "achievements": [
+        "40 aktywnych użytkowników",
+        "Produkcyjny SaaS z AI-powered budgeting"
+      ]
     },
     {
       "name": "pg-migrate-cli",
       "url": "npmjs.com/package/pg-migrate-cli",
-      "skills": ["node.js", "typescript"],
-      "achievements": ["180 gwiazdek na GitHubie", "Open source — opublikowane na npm"]
+      "skills": [
+        "node.js",
+        "typescript"
+      ],
+      "achievements": [
+        "180 gwiazdek na GitHubie",
+        "Open source — opublikowane na npm"
+      ]
     }
   ],
   "red_flags": [
-    { "category": "company_type", "description": "outsourcing, body_leasing, agency" },
-    { "category": "technology", "description": "php, jquery, legacy" },
-    { "category": "work_model", "description": "no office" },
-    { "category": "other", "description": "no code review, no automated tests, micromanagement, take-home task over 2 hours" }
+    {
+      "category": "company_type",
+      "description": [
+        "outsourcing",
+        "agency"
+      ]
+    },
+    {
+      "category": "skills",
+      "description": [
+        "php",
+        "jquery"
+      ]
+    },
+    {
+      "category": "other",
+      "description": [
+        "no code review",
+        "micromanagement"
+      ]
+    }
   ],
   "preferences": {
     "salary": [
-      { "type": "b2b", "currency": "USD", "min": 7000 },
-      { "type": "b2b", "currency": "PLN", "min": 22000 },
-      { "type": "permanent", "currency": "PLN", "min": 15000 }
+      {
+        "type": "b2b",
+        "currency": "USD",
+        "min": 7000
+      },
+      {
+        "type": "b2b",
+        "currency": "PLN",
+        "min": 22000
+      },
+      {
+        "type": "permanent",
+        "currency": "PLN",
+        "min": 15000
+      }
     ],
-    "work_model": ["office", "remote"],
-    "target_role": ["Senior Fullstack Engineer"],
-    "company_type": ["product"],
-    "company_type_excluded": ["outsourcing", "body_leasing", "agency"],
-    "employment_type": ["b2b", "permanent"],
-    "industries": ["fintech", "saas", "developer_tools", "proptech"],
-    "markets": ["poland", "europe"],
-    "learning_goals": ["python", "terraform"],
+    "work_model": [
+      "office",
+      "remote"
+    ],
+    "target_role": [
+      "Senior Fullstack Engineer"
+    ],
+    "company_type": [
+      "product"
+    ],
+    "company_type_excluded": [
+      "outsourcing",
+      "body_leasing",
+      "agency"
+    ],
+    "employment_type": [
+      "b2b",
+      "permanent"
+    ],
+    "industries": [
+      "fintech",
+      "saas",
+      "developer_tools",
+      "proptech"
+    ],
+    "markets": [
+      "poland",
+      "europe"
+    ],
+    "learning_goals": [
+      "python",
+      "terraform"
+    ],
     "max_office_days_per_week": 2,
-    "office_location_cities": ["Gdańsk", "Kraków", "Bruksela"]
+    "office_location_cities": [
+      "Gdańsk",
+      "Kraków",
+      "Bruksela"
+    ]
   }
 }

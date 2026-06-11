@@ -22,7 +22,11 @@ export const emptyProfile: Profile = {
   education: [],
   certifications: [],
   own_projects: [],
-  red_flags: [],
+  red_flags: [
+    { category: 'company_type', description: [] },
+    { category: 'skills', description: [] },
+    { category: 'other', description: [] },
+  ],
   preferences: {
     salary: [],
     work_model: [],

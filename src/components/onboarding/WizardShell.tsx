@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../../config';
 import type { Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
 import CertificationsTab from './tabs/CertificationsTab';
+import RedFlagsTab from './tabs/RedFlagsTab';
 
 interface Props {
   profile: Profile;
@@ -133,6 +134,11 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           <CertificationsTab
             certifications={profile.certifications}
             onChange={certs => onChange({ ...profile, certifications: certs })}
+          />
+        ) : activeTab === 'red_flags' ? (
+          <RedFlagsTab
+            redFlags={profile.red_flags}
+            onChange={flags => onChange({ ...profile, red_flags: flags })}
           />
         ) : (
           <p className="text-sm text-gray-400">
