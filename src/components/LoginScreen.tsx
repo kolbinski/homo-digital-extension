@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Provider } from '@supabase/supabase-js';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, CONFIG } from '../config';
 
 interface Props {
   onLogin: () => void;
@@ -181,9 +181,9 @@ function LoginView({
       `?provider=${provider}` +
       `&redirect_to=${encodeURIComponent(redirectTo)}`;
 
-    console.log('redirectTo', redirectTo);
-    console.log('authUrl', authUrl);
-    console.log('calling launchWebAuthFlow...');
+    console.log(`[${provider}] redirectTo`, redirectTo);
+    console.log(`[${provider}] authUrl`, authUrl);
+    console.log(`[${provider}] calling launchWebAuthFlow...`);
 
     const responseUrl = await new Promise<string>((resolve, reject) => {
       chrome.identity.launchWebAuthFlow(
@@ -287,11 +287,11 @@ function LoginView({
         <div className="w-full flex flex-col gap-3" style={{ marginBottom: 4 }}>
           <p className="text-sm font-medium text-gray-700">Sign in</p>
           {([
-            { name: 'Google',    logo: '/icons/social-login-logos/google.png',    provider: 'google'   as Provider },
-            { name: 'Facebook',  logo: '/icons/social-login-logos/facebook.png',  provider: 'facebook' as Provider },
-            { name: 'Microsoft', logo: '/icons/social-login-logos/microsoft.png', provider: 'azure'    as Provider },
-            { name: 'GitHub',    logo: '/icons/social-login-logos/github.png',    provider: 'github'   as Provider },
-          ]).map(({ name, logo, provider }) => (
+            { name: 'Google',    logo: '/icons/social-login-logos/google.png',    provider: 'google'   as Provider, enabled: CONFIG.auth.google },
+            { name: 'Facebook',  logo: '/icons/social-login-logos/facebook.png',  provider: 'facebook' as Provider, enabled: CONFIG.auth.facebook },
+            { name: 'Microsoft', logo: '/icons/social-login-logos/microsoft.png', provider: 'azure'    as Provider, enabled: CONFIG.auth.microsoft },
+            { name: 'GitHub',    logo: '/icons/social-login-logos/github.png',    provider: 'github'   as Provider, enabled: CONFIG.auth.github },
+          ]).filter(({ enabled }) => enabled).map(({ name, logo, provider }) => (
             <button
               key={name}
               type="button"
