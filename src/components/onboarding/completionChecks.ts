@@ -18,20 +18,28 @@ function countMissingBasicInfo(p: Profile): number {
   return missing;
 }
 
+const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
 function countMissingWorkExperience(p: Profile): number {
   if (!p.work_experience?.length) return 1;
   let missing = 0;
   for (const e of p.work_experience) {
     if (!e.title?.trim()) missing++;
     if (!e.company?.trim()) missing++;
-    if (!e.date_from?.trim()) missing++;
-    if (e.date_to !== null && !e.date_to?.trim()) missing++;
+    if (!DATE_RE.test(e.date_from ?? '')) missing++;
+    if (e.date_to !== null && !DATE_RE.test(e.date_to ?? '')) missing++;
     const projects = e.projects ?? [];
     if (projects.length > 1) {
       missing += projects.filter(proj => !proj.name?.trim()).length;
     }
     for (const proj of projects) {
-      missing += (proj.achievements ?? []).filter(a => !a.trim()).length;
+      if (!proj.role?.trim()) missing++;
+      const achievements = proj.achievements ?? [];
+      if (achievements.length === 0) {
+        missing++;
+      } else {
+        missing += achievements.filter(a => !a.trim()).length;
+      }
     }
   }
   return missing;

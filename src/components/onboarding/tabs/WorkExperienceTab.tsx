@@ -20,6 +20,8 @@ interface Props {
 const fieldClass =
   'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
+const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
 const TEAM_SIZE_OPTIONS = [
   '1',
   '2-5',
@@ -50,8 +52,9 @@ function emptyExperience(): WorkExperienceEntry {
 }
 
 function isExpValid(e: WorkExperienceEntry): boolean {
-  const dateToOk = e.date_to === null || !!e.date_to.trim();
-  return !!(e.title?.trim() && e.company?.trim() && e.date_from?.trim() && dateToOk);
+  const dateFromOk = DATE_RE.test(e.date_from ?? '');
+  const dateToOk = e.date_to === null || DATE_RE.test(e.date_to);
+  return !!(e.title?.trim() && e.company?.trim() && dateFromOk && dateToOk);
 }
 
 function reorderArr<T>(arr: T[], from: number, to: number): T[] {
@@ -348,20 +351,41 @@ function ProjectCard({
   requireName,
   onChange,
   onRemove,
+  onDragStart,
+  onDragEnd,
 }: {
   project: ProjectEntry;
   isOnly: boolean;
   requireName: boolean;
   onChange: (patch: Partial<ProjectEntry>) => void;
   onRemove: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const nameInvalid = requireName && !project.name.trim();
+  const roleInvalid = !project.role?.trim();
+  const achievementsInvalid =
+    project.achievements.length === 0 ||
+    project.achievements.some(a => !a.trim());
+  const projInvalid = nameInvalid || roleInvalid || achievementsInvalid;
 
   return (
     <div className="border border-gray-200 rounded-md bg-gray-50 overflow-hidden">
       {/* Project header */}
       <div className="flex items-center gap-1 px-2 py-2">
+        {/* Drag handle */}
+        {!isOnly && (
+          <div
+            draggable
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors p-0.5"
+            aria-label="Drag to reorder"
+          >
+            <DotsSixVertical size={16} />
+          </div>
+        )}
         <div
           role="button"
           tabIndex={0}
@@ -378,7 +402,7 @@ function ProjectCard({
             {project.name.trim() || 'Untitled project'}
           </span>
         </div>
-        {nameInvalid ? (
+        {projInvalid ? (
           <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
         ) : (
           <CheckCircle
@@ -417,16 +441,23 @@ function ProjectCard({
 
           {/* Role */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Role</label>
-            <input
-              type="text"
-              value={project.role ?? ''}
-              onChange={e =>
-                onChange({ role: e.target.value || null })
-              }
-              placeholder="e.g. Tech Lead"
-              className={fieldClass}
-            />
+            <label className="text-xs font-medium text-gray-600">
+              Role <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={project.role ?? ''}
+                onChange={e =>
+                  onChange({ role: e.target.value || null })
+                }
+                placeholder="e.g. Tech Lead"
+                className={`${fieldClass} flex-1`}
+              />
+              {roleInvalid && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              )}
+            </div>
           </div>
 
           {/* Team size */}
@@ -464,9 +495,14 @@ function ProjectCard({
 
           {/* Achievements */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">
-              Achievements
-            </label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-medium text-gray-600">
+                Achievements <span className="text-red-500">*</span>
+              </label>
+              {achievementsInvalid && (
+                <XCircle size={14} weight="fill" className="shrink-0 text-red-400" />
+              )}
+            </div>
             <AchievementsList
               achievements={project.achievements}
               onChange={achievements => onChange({ achievements })}
@@ -483,10 +519,14 @@ function ExperienceCard({
   entry,
   onChange,
   onRemove,
+  onDragStart,
+  onDragEnd,
 }: {
   entry: WorkExperienceEntry;
   onChange: (patch: Partial<WorkExperienceEntry>) => void;
   onRemove: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [industryInput, setIndustryInput] = useState('');
@@ -533,6 +573,16 @@ function ExperienceCard({
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       {/* Card header */}
       <div className="flex items-center gap-1 px-2 py-2.5">
+        {/* Drag handle */}
+        <div
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors p-0.5"
+          aria-label="Drag to reorder"
+        >
+          <DotsSixVertical size={20} />
+        </div>
         <div
           role="button"
           tabIndex={0}
@@ -608,13 +658,18 @@ function ExperienceCard({
             <label className="text-xs font-medium text-gray-600">
               Date from <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={entry.date_from}
-              onChange={e => onChange({ date_from: e.target.value })}
-              placeholder="YYYY-MM"
-              className={fieldClass}
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={entry.date_from}
+                onChange={e => onChange({ date_from: e.target.value })}
+                placeholder="YYYY-MM"
+                className={`${fieldClass} flex-1`}
+              />
+              {!DATE_RE.test(entry.date_from) && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              )}
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2 cursor-pointer w-fit">
@@ -633,13 +688,18 @@ function ExperienceCard({
                 <label className="text-xs font-medium text-gray-600">
                   Date to <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={entry.date_to}
-                  onChange={e => onChange({ date_to: e.target.value })}
-                  placeholder="YYYY-MM"
-                  className={fieldClass}
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={entry.date_to}
+                    onChange={e => onChange({ date_to: e.target.value })}
+                    placeholder="YYYY-MM"
+                    className={`${fieldClass} flex-1`}
+                  />
+                  {!DATE_RE.test(entry.date_to) && (
+                    <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -770,33 +830,19 @@ function ExperienceCard({
                     projDragFrom.current = null;
                     setProjDragOver(null);
                   }}
-                  className={`flex items-start gap-1.5 rounded transition-colors ${
+                  className={`rounded transition-colors ${
                     projDragOver === pi ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <div
-                    draggable
-                    onDragStart={() => {
-                      projDragFrom.current = pi;
-                    }}
-                    onDragEnd={() => {
-                      projDragFrom.current = null;
-                      setProjDragOver(null);
-                    }}
-                    className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-2.5"
-                    aria-label="Drag to reorder"
-                  >
-                    <DotsSixVertical size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <ProjectCard
-                      project={proj}
-                      isOnly={projects.length === 1}
-                      requireName={projects.length > 1}
-                      onChange={patch => updateProject(pi, patch)}
-                      onRemove={() => removeProject(pi)}
-                    />
-                  </div>
+                  <ProjectCard
+                    project={proj}
+                    isOnly={projects.length === 1}
+                    requireName={projects.length > 1}
+                    onChange={patch => updateProject(pi, patch)}
+                    onRemove={() => removeProject(pi)}
+                    onDragStart={() => { projDragFrom.current = pi; }}
+                    onDragEnd={() => { projDragFrom.current = null; setProjDragOver(null); }}
+                  />
                 </div>
               ))}
             </div>
@@ -869,31 +915,17 @@ export default function WorkExperienceTab({
             dragFrom.current = null;
             setDragOver(null);
           }}
-          className={`flex items-start gap-1.5 rounded transition-colors ${
+          className={`rounded transition-colors ${
             dragOver === idx ? 'bg-blue-50' : ''
           }`}
         >
-          <div
-            draggable
-            onDragStart={() => {
-              dragFrom.current = idx;
-            }}
-            onDragEnd={() => {
-              dragFrom.current = null;
-              setDragOver(null);
-            }}
-            className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-3"
-            aria-label="Drag to reorder"
-          >
-            <DotsSixVertical size={20} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <ExperienceCard
-              entry={entry}
-              onChange={patch => updateExperience(idx, patch)}
-              onRemove={() => removeExperience(idx)}
-            />
-          </div>
+          <ExperienceCard
+            entry={entry}
+            onChange={patch => updateExperience(idx, patch)}
+            onRemove={() => removeExperience(idx)}
+            onDragStart={() => { dragFrom.current = idx; }}
+            onDragEnd={() => { dragFrom.current = null; setDragOver(null); }}
+          />
         </div>
       ))}
 
