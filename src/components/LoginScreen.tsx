@@ -34,10 +34,10 @@ function Spinner() {
 }
 
 const LOGIN_BULLETS = [
-  'Easily scan thousands of job offers daily with AI',
-  'Quickly apply on behalf of clients with tailored CVs',
-  'Negotiate salaries and represent candidates',
-  'Earn a success fee on every job change',
+  'Thousands of offers scanned and scored for your profile every day',
+  'Tailored CVs and cover letters generated in one click',
+  'Track every application and stay updated in real time',
+  'Let your dedicated agent apply and negotiate on your behalf',
 ];
 
 const JOIN_BULLETS = [
@@ -124,25 +124,51 @@ function LoginView({
         <p
           style={{
             textAlign: 'center',
-            color: '#6b7280',
-            fontSize: 13,
+            color: '#111827',
+            fontSize: 15,
             marginBottom: 20,
             fontWeight: 'bold',
+            lineHeight: '1.4',
           }}
         >
-          Help senior developers find better jobs.
+          Stop searching for jobs.
           <br />
-          Earn doing it.
+          Start getting hired.
         </p>
 
         <div className="w-full" style={{ marginBottom: 20 }}>
           <BulletList items={LOGIN_BULLETS} />
         </div>
 
+        <div className="w-full flex flex-col gap-3" style={{ marginBottom: 4 }}>
+          <p className="text-sm font-medium text-gray-700">Sign in</p>
+          {['Google', 'Facebook', 'Microsoft', 'GitHub'].map(provider => (
+            <button
+              key={provider}
+              type="button"
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Continue with {provider}
+            </button>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            margin: '12px 0',
+            width: '100%',
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+          <span style={{ fontSize: 12, color: '#9ca3af' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+        </div>
+
         <div className="w-full flex flex-col gap-4">
-          <p className="text-sm font-medium text-gray-700">
-            Login to your account
-          </p>
+          <p className="text-sm font-medium text-gray-700">Login as agent</p>
 
           <div className="flex flex-col gap-1.5">
             <label
@@ -160,7 +186,7 @@ function LoginView({
                 setEmailError('');
               }}
               onBlur={validateEmail}
-              placeholder="agent@example.com"
+              placeholder="agent@homodigital.io"
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
               style={{ ['--tw-ring-color' as string]: '#16a34a' }}
@@ -221,7 +247,7 @@ function LoginView({
           className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors"
           style={{ backgroundColor: '#2563eb' }}
         >
-          Join
+          Join as agent
         </button>
       </div>
     </div>
