@@ -10,7 +10,7 @@ import {
   XCircle,
 } from '@phosphor-icons/react';
 import { XCircleIcon } from '@phosphor-icons/react';
-import { CONFIG } from '../../../config';
+import { API_BASE_URL } from '../../../config';
 import type { OwnProjectEntry } from '../types';
 
 interface Props {
@@ -62,14 +62,49 @@ function SkillsInput({
   const [input, setInput] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
+  const [results, setResults] = useState<{ name: string; category: string }[]>(
+    [],
+  );
+  const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
 
-  const suggestions = CONFIG.skills_suggestions.filter(
-    s =>
-      !skills.includes(s) &&
-      s.toLowerCase().includes(input.toLowerCase().trim()),
-  );
+  useEffect(() => {
+    const q = input.trim();
+    if (!q) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/v1/skills/search?q=${encodeURIComponent(q)}`,
+        );
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        if (!cancelled) {
+          setResults(
+            (data.skills ?? []).filter(
+              (s: { name: string }) => !skills.includes(s.name),
+            ),
+          );
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setResults([]);
+          setLoading(false);
+        }
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [input, skills]);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -99,7 +134,7 @@ function SkillsInput({
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      const trimmed = input.trim().toLowerCase();
+      const trimmed = input.trim();
       if (trimmed && !skills.includes(trimmed)) onAdd(trimmed);
       setInput('');
       setDropdownOpen(false);
@@ -131,28 +166,38 @@ function SkillsInput({
           className={fieldClass}
         />
         {dropdownOpen &&
-          suggestions.length > 0 &&
+          !!input.trim() &&
+          (loading || results.length > 0) &&
           createPortal(
             <div
               ref={portalRef}
               style={portalStyle}
-              className="bg-white border border-gray-200 rounded-md shadow-md overflow-hidden"
+              className="bg-white border border-gray-200 rounded-md shadow-md max-h-44 overflow-y-auto"
             >
-              {suggestions.map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onMouseDown={e => {
-                    e.preventDefault();
-                    onAdd(s);
-                    setInput('');
-                    setDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
+              {loading ? (
+                <div className="flex items-center justify-center px-3 py-2.5">
+                  <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+                </div>
+              ) : (
+                results.map(r => (
+                  <button
+                    key={r.name}
+                    type="button"
+                    onMouseDown={e => {
+                      e.preventDefault();
+                      onAdd(r.name);
+                      setInput('');
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 flex items-center justify-between gap-2 hover:bg-blue-50 transition-colors"
+                  >
+                    <span className="text-sm text-gray-700">{r.name}</span>
+                    <span className="text-xs text-gray-400 shrink-0">
+                      {r.category}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>,
             document.body,
           )}

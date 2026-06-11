@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { XCircleIcon } from '@phosphor-icons/react';
-import { CONFIG } from '../../../config';
+import { API_BASE_URL } from '../../../config';
 import type { RedFlagEntry } from '../types';
 
 interface Props {
@@ -15,8 +16,6 @@ const COMPANY_TYPE_OPTIONS = [
   'consultancy',
   'corporation',
 ];
-
-const SKILLS_SUGGESTIONS = CONFIG.skills_suggestions;
 
 const OTHER_PREDEFINED = [
   'no code review',
@@ -105,25 +104,50 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
 
   const [skillInput, setSkillInput] = useState('');
   const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
+  const [skillResults, setSkillResults] = useState<
+    { name: string; category: string }[]
+  >([]);
+  const [skillLoading, setSkillLoading] = useState(false);
+  const [skillPos, setSkillPos] = useState({ top: 0, left: 0, width: 0 });
   const [otherInput, setOtherInput] = useState('');
   const skillWrapperRef = useRef<HTMLDivElement>(null);
 
-  const filteredSuggestions = SKILLS_SUGGESTIONS.filter(
-    s =>
-      !skills.includes(s) &&
-      s.toLowerCase().includes(skillInput.toLowerCase().trim()),
-  );
-
   useEffect(() => {
-    if (!skillDropdownOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (!skillWrapperRef.current?.contains(e.target as Node)) {
-        setSkillDropdownOpen(false);
-      }
+    const q = skillInput.trim();
+    if (!q) {
+      setSkillResults([]);
+      setSkillLoading(false);
+      return;
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [skillDropdownOpen]);
+    setSkillLoading(true);
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/v1/skills/search?q=${encodeURIComponent(q)}`,
+        );
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        if (!cancelled) {
+          setSkillResults(
+            (data.skills ?? []).filter(
+              (s: { name: string }) => !skills.includes(s.name),
+            ),
+          );
+          setSkillLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setSkillResults([]);
+          setSkillLoading(false);
+        }
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [skillInput, skills]);
 
   function toggleCompanyType(value: string) {
     const next = companyTypes.includes(value)
@@ -132,8 +156,15 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
     onChange(setDescriptions(redFlags, 'company_type', next));
   }
 
+  function measureSkill() {
+    if (skillWrapperRef.current) {
+      const r = skillWrapperRef.current.getBoundingClientRect();
+      setSkillPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+  }
+
   function addSkill(value: string) {
-    const trimmed = value.trim().toLowerCase();
+    const trimmed = value.trim();
     if (!trimmed || skills.includes(trimmed)) return;
     onChange(setDescriptions(redFlags, 'skills', [...skills, trimmed]));
   }
@@ -223,38 +254,64 @@ export default function RedFlagsTab({ redFlags, onChange }: Props) {
             ))}
           </div>
         )}
-        <div ref={skillWrapperRef} className="relative">
+        <div ref={skillWrapperRef}>
           <input
             type="text"
             value={skillInput}
             onChange={e => {
               setSkillInput(e.target.value);
+              measureSkill();
               setSkillDropdownOpen(true);
             }}
-            onFocus={() => setSkillDropdownOpen(true)}
+            onFocus={() => {
+              measureSkill();
+              setSkillDropdownOpen(true);
+            }}
             onKeyDown={handleSkillKeyDown}
-            placeholder="Type and press Enter or comma…"
+            onBlur={() => setTimeout(() => setSkillDropdownOpen(false), 150)}
+            placeholder="Type to search or add skill…"
             className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
-          {skillDropdownOpen && filteredSuggestions.length > 0 && (
-            <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-md overflow-hidden">
-              {filteredSuggestions.map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onMouseDown={e => {
-                    e.preventDefault();
-                    addSkill(s);
-                    setSkillInput('');
-                    setSkillDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
+          {skillDropdownOpen &&
+            !!skillInput.trim() &&
+            (skillLoading || skillResults.length > 0) &&
+            createPortal(
+              <div
+                style={{
+                  position: 'fixed',
+                  top: skillPos.top,
+                  left: skillPos.left,
+                  width: skillPos.width,
+                  zIndex: 9999,
+                }}
+                className="bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto"
+              >
+                {skillLoading ? (
+                  <div className="flex items-center justify-center px-3 py-2.5">
+                    <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  skillResults.map(r => (
+                    <button
+                      key={r.name}
+                      type="button"
+                      onMouseDown={() => {
+                        addSkill(r.name);
+                        setSkillInput('');
+                        setSkillDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 flex items-center justify-between gap-2 hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="text-sm text-gray-700">{r.name}</span>
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {r.category}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>,
+              document.body,
+            )}
         </div>
       </div>
 
