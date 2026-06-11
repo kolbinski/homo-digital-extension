@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CaretDown,
   CaretRight,
@@ -60,7 +61,9 @@ function SkillsInput({
 }) {
   const [input, setInput] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const suggestions = CONFIG.skills_suggestions.filter(
     s =>
@@ -71,12 +74,27 @@ function SkillsInput({
   useEffect(() => {
     if (!dropdownOpen) return;
     function handleClickOutside(e: MouseEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node))
-        setDropdownOpen(false);
+      const inWrapper = wrapperRef.current?.contains(e.target as Node);
+      const inPortal = portalRef.current?.contains(e.target as Node);
+      if (!inWrapper && !inPortal) setDropdownOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownOpen]);
+
+  function openDropdown() {
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setPortalStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+    setDropdownOpen(true);
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' || e.key === ',') {
@@ -99,38 +117,44 @@ function SkillsInput({
           ))}
         </div>
       )}
-      <div ref={wrapperRef} className="relative">
+      <div ref={wrapperRef}>
         <input
           type="text"
           value={input}
           onChange={e => {
             setInput(e.target.value);
-            setDropdownOpen(true);
+            openDropdown();
           }}
-          onFocus={() => setDropdownOpen(true)}
+          onFocus={openDropdown}
           onKeyDown={handleKeyDown}
           placeholder="Type and press Enter or comma…"
           className={fieldClass}
         />
-        {dropdownOpen && suggestions.length > 0 && (
-          <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-md overflow-hidden">
-            {suggestions.map(s => (
-              <button
-                key={s}
-                type="button"
-                onMouseDown={e => {
-                  e.preventDefault();
-                  onAdd(s);
-                  setInput('');
-                  setDropdownOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
+        {dropdownOpen && suggestions.length > 0 &&
+          createPortal(
+            <div
+              ref={portalRef}
+              style={portalStyle}
+              className="bg-white border border-gray-200 rounded-md shadow-md overflow-hidden"
+            >
+              {suggestions.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    onAdd(s);
+                    setInput('');
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )}
       </div>
     </div>
   );
@@ -408,7 +432,7 @@ function AchievementsList({
           key={aIdx}
           onDragOver={e => handleDragOver(e, aIdx)}
           onDrop={e => handleDrop(e, aIdx)}
-          className={`flex items-center gap-1.5 rounded transition-colors ${
+          className={`flex items-start gap-1.5 rounded transition-colors ${
             dragOver === aIdx ? 'bg-green-50' : ''
           }`}
         >
@@ -416,13 +440,13 @@ function AchievementsList({
             draggable
             onDragStart={() => handleDragStart(aIdx)}
             onDragEnd={handleDragEnd}
-            className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors"
+            className="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-500 transition-colors mt-1.5"
             aria-label="Drag to reorder"
           >
             <DotsSixVertical size={20} />
           </div>
-          <input
-            type="text"
+          <textarea
+            rows={2}
             value={ach}
             onChange={e => {
               const next = [...achievements];
@@ -430,13 +454,13 @@ function AchievementsList({
               onChange(next);
             }}
             placeholder="e.g. Reduced build time by 40%"
-            className={fieldClass}
+            className={`${fieldClass} resize-y`}
           />
           <button
             type="button"
             onClick={() => onChange(achievements.filter((_, i) => i !== aIdx))}
             aria-label="Remove achievement"
-            className="shrink-0 text-red-400 hover:text-red-600 transition-colors"
+            className="shrink-0 text-red-400 hover:text-red-600 transition-colors mt-1.5"
           >
             <Trash size={20} />
           </button>
