@@ -2,6 +2,14 @@ import { API_BASE_URL } from '../config'
 
 const JWT_KEY = 'jwt'
 const ROLE_KEY = 'role'
+const OAUTH_DATA_KEY = 'oauth_data'
+
+export interface OAuthData {
+  oauth_first_name: string | null
+  oauth_last_name: string | null
+  oauth_photo_url: string | null
+  oauth_email: string
+}
 
 type LoginResult = { success: true } | { success: false; error: string }
 
@@ -85,6 +93,44 @@ function removeRole(): Promise<void> {
   })
 }
 
+function setOAuthData(data: OAuthData): Promise<void> {
+  return new Promise((resolve) => {
+    if (!storageAvailable()) { resolve(); return }
+    chrome.storage.local.set({ [OAUTH_DATA_KEY]: data }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('[useAuth] setOAuthData:', chrome.runtime.lastError.message)
+      }
+      resolve()
+    })
+  })
+}
+
+function getOAuthData(): Promise<OAuthData | null> {
+  return new Promise((resolve) => {
+    if (!storageAvailable()) { resolve(null); return }
+    chrome.storage.local.get(OAUTH_DATA_KEY, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('[useAuth] getOAuthData:', chrome.runtime.lastError.message)
+        resolve(null)
+        return
+      }
+      resolve((result[OAUTH_DATA_KEY] as OAuthData | undefined) ?? null)
+    })
+  })
+}
+
+function removeOAuthData(): Promise<void> {
+  return new Promise((resolve) => {
+    if (!storageAvailable()) { resolve(); return }
+    chrome.storage.local.remove(OAUTH_DATA_KEY, () => {
+      if (chrome.runtime.lastError) {
+        console.error('[useAuth] removeOAuthData:', chrome.runtime.lastError.message)
+      }
+      resolve()
+    })
+  })
+}
+
 async function login(email: string, password: string): Promise<LoginResult> {
   try {
     const res = await fetch(`${API_BASE_URL}/v1/auth/agent/login`, {
@@ -104,9 +150,9 @@ async function login(email: string, password: string): Promise<LoginResult> {
 }
 
 async function logout(): Promise<void> {
-  await Promise.all([removeToken(), removeRole()])
+  await Promise.all([removeToken(), removeRole(), removeOAuthData()])
 }
 
 export function useAuth() {
-  return { login, logout, getToken, setToken, getRole, setRole }
+  return { login, logout, getToken, setToken, getRole, setRole, getOAuthData, setOAuthData }
 }

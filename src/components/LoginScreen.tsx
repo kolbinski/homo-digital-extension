@@ -1,8 +1,49 @@
 import { useState } from 'react';
 import type { Provider } from '@supabase/supabase-js';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth, type OAuthData } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { API_BASE_URL, CONFIG } from '../config';
+
+type UserMeta = Record<string, unknown>;
+
+function nullIfEmpty(s: unknown): string | null {
+  if (typeof s !== 'string' || !s.trim()) return null;
+  return s.trim();
+}
+
+function splitFirst(s: unknown): string | null {
+  if (typeof s !== 'string' || !s.trim()) return null;
+  return s.trim().split(' ')[0] || null;
+}
+
+function splitSecond(s: unknown): string | null {
+  if (typeof s !== 'string' || !s.trim()) return null;
+  const parts = s.trim().split(' ');
+  return parts[1] || null;
+}
+
+function extractOAuthData(meta: UserMeta): OAuthData {
+  return {
+    oauth_first_name:
+      nullIfEmpty(meta.given_name) ??
+      nullIfEmpty(meta.first_name) ??
+      splitFirst(meta.name) ??
+      splitFirst(meta.full_name) ??
+      null,
+    oauth_last_name:
+      nullIfEmpty(meta.family_name) ??
+      nullIfEmpty(meta.last_name) ??
+      splitSecond(meta.name) ??
+      splitSecond(meta.full_name) ??
+      null,
+    oauth_photo_url:
+      nullIfEmpty(meta.avatar_url) ??
+      nullIfEmpty(meta.picture) ??
+      nullIfEmpty(meta.image) ??
+      null,
+    oauth_email: nullIfEmpty(meta.email) ?? '',
+  };
+}
 
 interface Props {
   onLogin: (role: 'agent' | 'client') => void;
@@ -80,7 +121,7 @@ function LoginView({
   onLogin: (role: 'agent' | 'client') => void;
   onJoin: () => void;
 }) {
-  const { login, setToken, setRole } = useAuth();
+  const { login, setToken, setRole, setOAuthData } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -139,8 +180,10 @@ function LoginView({
         throw exchangeError?.message ?? 'Failed to complete sign-in.';
       }
       const token = sessionData.session.access_token;
+      const userMeta = (sessionData.session.user?.user_metadata ?? {}) as UserMeta;
       await setToken(token);
       await setRole('client');
+      await setOAuthData(extractOAuthData(userMeta));
       fetch(`${API_BASE_URL}/v1/auth/social-login`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -156,11 +199,17 @@ function LoginView({
     if (!accessToken) {
       throw 'No token received. Please try again.';
     }
+    let userMeta: UserMeta = {};
     if (refreshToken) {
-      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      const { data: sessionResult } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      userMeta = (sessionResult.user?.user_metadata ?? {}) as UserMeta;
     }
     await setToken(accessToken);
     await setRole('client');
+    await setOAuthData(extractOAuthData(userMeta));
     fetch(`${API_BASE_URL}/v1/auth/social-login`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
