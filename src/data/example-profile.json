@@ -453,7 +453,7 @@
             "company_type": [],
             "company_type_excluded": [],
             "employment_type": [
-                "b2b",
+                "contract",
                 "permanent"
             ],
             "industries": [

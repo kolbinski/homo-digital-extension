@@ -298,12 +298,12 @@
   "preferences": {
     "salary": [
       {
-        "type": "b2b",
+        "type": "contract",
         "currency": "USD",
         "min": 7000
       },
       {
-        "type": "b2b",
+        "type": "contract",
         "currency": "PLN",
         "min": 22000
       },
@@ -329,7 +329,7 @@
       "agency"
     ],
     "employment_type": [
-      "b2b",
+      "contract",
       "permanent"
     ],
     "industries": [
