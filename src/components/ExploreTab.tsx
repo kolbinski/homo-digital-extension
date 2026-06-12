@@ -1366,7 +1366,11 @@ function ClientAccordion({
                   )}
                   {filteredApplyOffers.length === 0 &&
                     filteredLevelUpOffers.length === 0 && (
-                      <p className="px-3 py-3 text-gray-400">No offers found</p>
+                      <p className="px-3 py-3 text-gray-400 text-xs">
+                        {selfMode
+                          ? "We're scanning thousands of offers for you. Your first matches will appear here shortly."
+                          : 'No offers found'}
+                      </p>
                     )}
                 </>
               ) : (
@@ -1438,7 +1442,11 @@ function ClientAccordion({
                       )}
                     </div>
                   ) : (
-                    <p className="px-3 py-3 text-gray-400">No offers found</p>
+                    <p className="px-3 py-3 text-gray-400 text-xs">
+                      {selfMode
+                        ? "We're scanning thousands of offers for you. Your first matches will appear here shortly."
+                        : 'No offers found'}
+                    </p>
                   )}
                 </>
               )}
