@@ -136,8 +136,9 @@ export default function WizardShell({
           <button
             type="button"
             onClick={onClose}
+            disabled={autoSaveStatus === 'saving'}
             aria-label="Close"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
+            className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X size={16} />
           </button>
