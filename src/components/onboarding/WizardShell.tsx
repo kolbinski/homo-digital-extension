@@ -29,8 +29,9 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
   const activeCompletion = completions.find(t => t.id === activeTab)!;
+  const totalErrors = completions.reduce((sum, t) => sum + t.missingCount, 0);
 
-  async function saveProfile(submitted: boolean) {
+  async function saveProfile() {
     setSaving(true);
     setSaveMessage('');
     setSaveError('');
@@ -42,12 +43,10 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(
-          submitted ? { ...profile, submitted: true } : profile,
-        ),
+        body: JSON.stringify({ ...profile, submitted: true }),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
-      setSaveMessage(submitted ? 'Profile submitted!' : 'Draft saved.');
+      setSaveMessage('Profile submitted!');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (err) {
       setSaveError(
@@ -194,30 +193,29 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3">
-        {saveMessage && (
-          <p className="text-xs text-green-700 flex-1">{saveMessage}</p>
+      <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-between">
+        {saveMessage ? (
+          <p className="text-xs text-green-700">{saveMessage}</p>
+        ) : saveError ? (
+          <p className="text-xs text-red-600">{saveError}</p>
+        ) : totalErrors > 0 ? (
+          <span
+            className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none font-medium"
+            style={{ fontSize: 11, minWidth: 20, height: 20, padding: '0 4px' }}
+          >
+            {totalErrors}
+          </span>
+        ) : (
+          <CheckCircle size={20} weight="fill" className="text-green-500" />
         )}
-        {saveError && (
-          <p className="text-xs text-red-600 flex-1">{saveError}</p>
-        )}
-        {!saveMessage && !saveError && <span className="flex-1" />}
         <button
           type="button"
-          onClick={() => saveProfile(false)}
-          disabled={saving}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Save draft'}
-        </button>
-        <button
-          type="button"
-          onClick={() => saveProfile(true)}
+          onClick={() => saveProfile()}
           disabled={saving || !allComplete}
           title={!allComplete ? 'Complete all required tabs first' : undefined}
           className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
         >
-          Submit profile
+          Submit
         </button>
       </div>
     </div>
