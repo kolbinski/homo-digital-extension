@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Bug, SignOut } from '@phosphor-icons/react';
+import { Gear, SignOut } from '@phosphor-icons/react';
 import LoginScreen from './components/LoginScreen';
 import ClientView from './components/ClientView';
 import TabBar, { type Tab } from './components/TabBar';
 import ExploreTab from './components/ExploreTab';
 import SyncTab from './components/SyncTab';
-import FeedbackPopup from './components/FeedbackPopup';
+import SettingsDrawer from './components/SettingsDrawer';
 import { useAuth } from './hooks/useAuth';
 import { API_BASE_URL, SHOW_TABS } from './config';
 import { generalSettingsStore } from './store/generalSettingsStore';
@@ -19,7 +19,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('explore');
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<{
     show_sync_tab_in_extension: boolean;
   }>({
@@ -166,11 +166,11 @@ function App() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setFeedbackOpen(v => !v)}
+            onClick={() => setSettingsOpen(v => !v)}
             className="text-gray-800 hover:text-gray-700 transition-colors"
-            aria-label="Feedback & Support"
+            aria-label="Settings"
           >
-            <Bug size={16} />
+            <Gear size={16} />
           </button>
           <button
             type="button"
@@ -182,7 +182,12 @@ function App() {
           </button>
         </div>
       </header>
-      {feedbackOpen && <FeedbackPopup onClose={() => setFeedbackOpen(false)} />}
+      {settingsOpen && (
+        <SettingsDrawer
+          onClose={() => setSettingsOpen(false)}
+          onLogout={handleLogout}
+        />
+      )}
 
       {SHOW_TABS && (
         <TabBar

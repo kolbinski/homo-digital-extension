@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { SignOut } from '@phosphor-icons/react';
+import { Gear, SignOut } from '@phosphor-icons/react';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import OnboardingWizard from './onboarding/OnboardingWizard';
 import ExploreTab from './ExploreTab';
+import SettingsDrawer from './SettingsDrawer';
 import type { Profile } from './onboarding/types';
 
 interface Props {
@@ -18,6 +19,7 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
   const { getToken } = useAuth();
   const [profileState, setProfileState] = useState<ProfileState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     getToken().then(async token => {
@@ -64,14 +66,24 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <span />
-        <button
-          type="button"
-          onClick={onLogout}
-          aria-label="Logout"
-          className="text-gray-800 hover:text-gray-700 transition-colors"
-        >
-          <SignOut size={16} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <Gear size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Logout"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <SignOut size={16} />
+          </button>
+        </div>
       </header>
       <div id="main-scroll" className="flex-1 overflow-y-auto">
         <ExploreTab
@@ -81,6 +93,12 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
           currentUrl={currentUrl}
         />
       </div>
+      {settingsOpen && (
+        <SettingsDrawer
+          onClose={() => setSettingsOpen(false)}
+          onLogout={onLogout}
+        />
+      )}
     </div>
   );
 }
