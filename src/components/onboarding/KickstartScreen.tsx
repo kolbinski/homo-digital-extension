@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { API_BASE_URL, CONFIG } from '../../config';
-import exampleCv from '../../data/example-cv.json';
+import { API_BASE_URL } from '../../config';
 import type { Profile } from './types';
 
 interface Props {
@@ -61,13 +60,6 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
   }
 
   async function handlePrepare() {
-    if (CONFIG.use_template_cv && !file) {
-      setLoading(true);
-      const prepared = exampleCv as unknown as Partial<Profile>;
-      const fromDb = await patchProfile(prepared);
-      onPrepared(fromDb ?? prepared);
-      return;
-    }
     if (!file) {
       setError('Please upload your CV first.');
       return;
