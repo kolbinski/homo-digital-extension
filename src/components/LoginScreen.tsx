@@ -52,7 +52,6 @@ interface Props {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-
 const LOGIN_BULLETS = [
   'Thousands of offers scanned and scored for your profile every day',
   'Tailored CVs and cover letters generated in one click',
@@ -320,8 +319,10 @@ function LoginView({
                 onClick={() => handleSocialLogin(provider, name)}
                 className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {socialLoading === name && <Spinner className="text-gray-500" />}
                 <img src={logo} alt={name} width={20} height={20} />
+                {socialLoading === name && (
+                  <Spinner className="text-gray-500" />
+                )}
                 {socialLoading === name
                   ? `Connecting…`
                   : `Continue with ${name}`}

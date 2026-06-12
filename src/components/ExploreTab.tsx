@@ -1027,6 +1027,7 @@ function ClientAccordion({
 
   useEffect(() => {
     if (!selfMode) return;
+    console.log('[Realtime] setting up channel for user:', client.id);
     const channel = supabase
       .channel('user_offers_changes')
       .on(
@@ -1038,6 +1039,7 @@ function ClientAccordion({
           filter: `user_id=eq.${client.id}`,
         },
         payload => {
+          console.log('[Realtime] INSERT received:', payload.new);
           if ((payload.new as { status?: string }).status === 'pending_apply') {
             setHasNewOffers(true);
             if (!hasOffersRef.current) {
@@ -1046,7 +1048,9 @@ function ClientAccordion({
           }
         },
       )
-      .subscribe();
+      .subscribe(status => {
+        console.log('[Realtime] subscription status:', status);
+      });
     return () => {
       void supabase.removeChannel(channel);
     };
