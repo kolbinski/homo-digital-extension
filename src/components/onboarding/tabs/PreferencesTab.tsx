@@ -281,7 +281,11 @@ export default function PreferencesTab({
         title="Salary expectations"
         badge={
           prefs.salary.length === 0 ? (
-            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+            <XCircle
+              size={16}
+              weight="fill"
+              className="text-red-400 shrink-0"
+            />
           ) : undefined
         }
       >
@@ -354,7 +358,11 @@ export default function PreferencesTab({
         title="Work model"
         badge={
           prefs.work_model.length === 0 ? (
-            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+            <XCircle
+              size={16}
+              weight="fill"
+              className="text-red-400 shrink-0"
+            />
           ) : undefined
         }
       >
@@ -381,12 +389,71 @@ export default function PreferencesTab({
         </div>
       </Section>
 
+      {/* Office-relevant fields — hidden when only remote */}
+      {showOfficeFields && (
+        <>
+          <Section
+            title="Max office days per week"
+            badge={
+              <span className="text-xs font-bold text-blue-600">
+                {prefs.max_office_days_per_week ?? 0}
+              </span>
+            }
+          >
+            <input
+              type="range"
+              min={0}
+              max={7}
+              value={prefs.max_office_days_per_week ?? 0}
+              onChange={e =>
+                onChange({
+                  ...prefs,
+                  max_office_days_per_week: Number(e.target.value),
+                })
+              }
+              className="w-full accent-blue-600"
+            />
+            <div className="flex justify-between text-xs text-gray-400 px-0.5">
+              {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
+                <span key={n}>{n}</span>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Office location cities">
+            {prefs.office_location_cities.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {prefs.office_location_cities.map(city => (
+                  <RemovableChip
+                    key={city}
+                    label={city}
+                    onRemove={() => removeCity(city)}
+                  />
+                ))}
+              </div>
+            )}
+            <input
+              type="text"
+              value={cityInput}
+              onChange={e => setCityInput(e.target.value)}
+              onKeyDown={handleCityKey}
+              placeholder="Type city name, Enter to add"
+              className={inputClass}
+            />
+          </Section>
+        </>
+      )}
+
       {/* Employment type */}
       <Section
         title="Employment type"
         badge={
           prefs.employment_type.length === 0 ? (
-            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+            <XCircle
+              size={16}
+              weight="fill"
+              className="text-red-400 shrink-0"
+            />
           ) : undefined
         }
       >
@@ -418,7 +485,11 @@ export default function PreferencesTab({
         title="Target role"
         badge={
           prefs.target_role.length === 0 ? (
-            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+            <XCircle
+              size={16}
+              weight="fill"
+              className="text-red-400 shrink-0"
+            />
           ) : undefined
         }
       >
@@ -632,61 +703,6 @@ export default function PreferencesTab({
             )}
         </div>
       </Section>
-
-      {/* Office-relevant fields — hidden when only remote */}
-      {showOfficeFields && (
-        <>
-          <Section
-            title="Max office days per week"
-            badge={
-              <span className="text-xs font-bold text-blue-600">
-                {prefs.max_office_days_per_week ?? 0}
-              </span>
-            }
-          >
-            <input
-              type="range"
-              min={0}
-              max={7}
-              value={prefs.max_office_days_per_week ?? 0}
-              onChange={e =>
-                onChange({
-                  ...prefs,
-                  max_office_days_per_week: Number(e.target.value),
-                })
-              }
-              className="w-full accent-blue-600"
-            />
-            <div className="flex justify-between text-xs text-gray-400 px-0.5">
-              {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
-                <span key={n}>{n}</span>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="Office location cities">
-            {prefs.office_location_cities.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {prefs.office_location_cities.map(city => (
-                  <RemovableChip
-                    key={city}
-                    label={city}
-                    onRemove={() => removeCity(city)}
-                  />
-                ))}
-              </div>
-            )}
-            <input
-              type="text"
-              value={cityInput}
-              onChange={e => setCityInput(e.target.value)}
-              onKeyDown={handleCityKey}
-              placeholder="Type city name, Enter to add"
-              className={inputClass}
-            />
-          </Section>
-        </>
-      )}
     </div>
   );
 }

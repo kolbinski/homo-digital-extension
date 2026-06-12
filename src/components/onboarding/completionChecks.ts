@@ -74,20 +74,20 @@ const TAB_META: Array<{
 }> = [
   {
     id: 'basic_info',
-    label: 'Basic Info',
+    label: 'Basic info',
     shortLabel: 'Basic',
     optional: false,
   },
   {
     id: 'work_experience',
-    label: 'Work Experience',
-    shortLabel: 'Work Exp',
+    label: 'Work experience',
+    shortLabel: 'Work exp',
     optional: false,
   },
   {
     id: 'own_projects',
-    label: 'Own Projects',
-    shortLabel: 'Own Projects',
+    label: 'Own projects',
+    shortLabel: 'Own projects',
     optional: true,
   },
   {
@@ -116,8 +116,8 @@ const TAB_META: Array<{
   },
   {
     id: 'red_flags',
-    label: 'Red Flags',
-    shortLabel: 'Red Flags',
+    label: 'Red flags',
+    shortLabel: 'Red flags',
     optional: true,
   },
 ];
