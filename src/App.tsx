@@ -150,7 +150,13 @@ function App() {
   }
 
   if (authState === 'client') {
-    return <ClientView onLogout={handleLogout} />;
+    return (
+      <ClientView
+        onLogout={handleLogout}
+        activeTabId={activeTabId}
+        currentUrl={currentUrl}
+      />
+    );
   }
 
   return (

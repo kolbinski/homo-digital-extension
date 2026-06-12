@@ -124,6 +124,7 @@ interface Props {
   onLogout: () => void;
   activeTabId?: number;
   currentUrl?: string;
+  selfMode?: boolean;
 }
 
 interface ClientAccordionProps {
@@ -136,6 +137,7 @@ interface ClientAccordionProps {
   minScore: number;
   cvGenerated: boolean;
   clGenerated: boolean;
+  selfMode?: boolean;
 }
 
 interface OfferCardProps {
@@ -842,10 +844,11 @@ function ClientAccordion({
   minScore,
   cvGenerated,
   clGenerated,
+  selfMode,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(selfMode === true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -960,7 +963,8 @@ function ClientAccordion({
   ): Promise<UserOffer[]> {
     const token = await getToken();
     if (!token) return [];
-    const params = new URLSearchParams({ client_id: client.id, status });
+    const params = new URLSearchParams({ status });
+    if (!selfMode) params.append('client_id', client.id);
     if (hasLearningGoals) params.append('has_learning_goals', 'true');
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
     try {
@@ -1051,8 +1055,8 @@ function ClientAccordion({
   );
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
-      <div
+    <div className={selfMode ? '' : 'border border-gray-200 rounded-md overflow-hidden'}>
+      {!selfMode && <div
         role="button"
         tabIndex={0}
         onClick={handleToggle}
@@ -1171,10 +1175,10 @@ function ClientAccordion({
             />
           </svg>
         </div>
-      </div>
+      </div>}
 
       {isOpen && (
-        <div className="border-t border-gray-200">
+        <div className={selfMode ? '' : 'border-t border-gray-200'}>
           {statusError && (
             <div className="mx-3 mt-2 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
               <span>{statusError}</span>
@@ -1446,6 +1450,7 @@ export default function ExploreTab({
   onLogout,
   activeTabId,
   currentUrl,
+  selfMode,
 }: Props) {
   const { fetchClients } = useClients();
   const [clients, setClients] = useState<Client[]>([]);
@@ -1533,6 +1538,10 @@ export default function ExploreTab({
   }
 
   useEffect(() => {
+    if (selfMode) {
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
     async function load() {
       const result = await fetchClients();
@@ -1667,7 +1676,20 @@ export default function ExploreTab({
             </select>
           </div>
         </div>
-        {clients.length === 0 ? (
+        {selfMode ? (
+          <ClientAccordion
+            client={{ id: '', first_name: '', last_name: '', email: '' }}
+            selfMode
+            activeTabId={activeTabId}
+            currentUrl={currentUrl}
+            sortBy={sortBy}
+            statusFilter={statusFilter}
+            sourceFilter={sourceFilter}
+            minScore={minScore}
+            cvGenerated={cvGenerated}
+            clGenerated={clGenerated}
+          />
+        ) : clients.length === 0 ? (
           <p className="text-sm text-gray-500">No clients found.</p>
         ) : (
           [...clients]
