@@ -44,7 +44,7 @@ export default function WizardShell({
 }: Props) {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
-  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('saved');
   const [submitting, setSubmitting] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
