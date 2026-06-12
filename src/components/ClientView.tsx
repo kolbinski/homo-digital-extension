@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Gear, SignOut } from '@phosphor-icons/react';
+import { Gear } from '@phosphor-icons/react';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import OnboardingWizard from './onboarding/OnboardingWizard';
@@ -74,14 +74,6 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
             className="text-gray-800 hover:text-gray-700 transition-colors"
           >
             <Gear size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={onLogout}
-            aria-label="Logout"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
-          >
-            <SignOut size={16} />
           </button>
         </div>
       </header>

@@ -159,6 +159,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Account
             </h2>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full font-medium py-2 px-4 rounded-md text-sm transition-colors bg-gray-100 hover:bg-gray-200 text-gray-700"
+            >
+              Log out
+            </button>
             {deleteError && (
               <p className="text-xs text-red-600">{deleteError}</p>
             )}

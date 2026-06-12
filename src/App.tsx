@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Gear, SignOut } from '@phosphor-icons/react';
+import { Gear } from '@phosphor-icons/react';
 import LoginScreen from './components/LoginScreen';
 import ClientView from './components/ClientView';
 import TabBar, { type Tab } from './components/TabBar';
@@ -171,14 +171,6 @@ function App() {
             aria-label="Settings"
           >
             <Gear size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="Logout"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
-          >
-            <SignOut size={16} />
           </button>
         </div>
       </header>
