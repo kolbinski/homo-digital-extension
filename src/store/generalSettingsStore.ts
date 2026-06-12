@@ -13,6 +13,7 @@ export interface GeneralSettings {
   languages: string[];
   language_levels: string[];
   skills_suggestions: string[];
+  experience_levels: string[];
 }
 
 interface StoreState {

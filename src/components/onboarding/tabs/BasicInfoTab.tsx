@@ -313,6 +313,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   const markets = settings?.markets ?? [];
   const languageOptions = settings?.languages ?? [];
   const languageLevels = settings?.language_levels ?? [];
+  const experienceLevels = settings?.experience_levels ?? ['junior', 'mid', 'senior', 'lead'];
 
   const [unit, setUnit] = useState<'km' | 'miles'>('km');
   const [industryInput, setIndustryInput] = useState('');
@@ -628,7 +629,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
       <Section title="Experience">
         <Field label="Experience level" required>
           <div className="flex flex-wrap items-center gap-1.5">
-            {(['junior', 'mid', 'senior', 'lead'] as const).map(level => (
+            {experienceLevels.map(level => (
               <Chip
                 key={level}
                 label={level.charAt(0).toUpperCase() + level.slice(1)}
