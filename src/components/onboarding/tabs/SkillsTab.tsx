@@ -156,6 +156,7 @@ function CategorySection({
         <span className="text-sm font-medium text-gray-900 flex-1 capitalize">
           {category.replace(/_/g, ' ')}
         </span>
+        <span className="text-xs text-gray-400 shrink-0">{skills.length}</span>
         {isEmpty && (
           <CircleDashed
             size={16}
