@@ -102,30 +102,35 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
         {/* Drop zone */}
         <div
           role="button"
-          tabIndex={0}
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={e => e.key === 'Enter' && inputRef.current?.click()}
+          tabIndex={loading ? -1 : 0}
+          onClick={() => !loading && inputRef.current?.click()}
+          onKeyDown={e => !loading && e.key === 'Enter' && inputRef.current?.click()}
           onDragOver={e => {
+            if (loading) return;
             e.preventDefault();
             setDragging(true);
           }}
-          onDragLeave={() => setDragging(false)}
+          onDragLeave={() => !loading && setDragging(false)}
           onDrop={e => {
+            if (loading) return;
             e.preventDefault();
             setDragging(false);
             const f = e.dataTransfer.files[0];
             if (f) handleFile(f);
           }}
-          className={`w-full border-2 border-dashed rounded-lg px-4 py-8 flex flex-col items-center gap-2 cursor-pointer transition-colors ${
-            dragging
-              ? 'border-green-500 bg-green-50'
-              : 'border-gray-300 bg-white hover:bg-gray-50'
+          className={`w-full border-2 border-dashed rounded-lg px-4 py-8 flex flex-col items-center gap-2 transition-colors ${
+            loading
+              ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50'
+              : dragging
+                ? 'border-green-500 bg-green-50 cursor-pointer'
+                : 'border-gray-300 bg-white hover:bg-gray-50 cursor-pointer'
           }`}
         >
           <input
             ref={inputRef}
             type="file"
             accept="application/pdf"
+            disabled={loading}
             className="hidden"
             onChange={e => {
               const f = e.target.files?.[0];
@@ -176,14 +181,15 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
           )}
         </button>
 
-        <button
-          type="button"
-          onClick={onSkip}
-          disabled={loading}
-          className="text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
-        >
-          Skip
-        </button>
+        {!loading && (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Skip
+          </button>
+        )}
       </div>
     </div>
   );
