@@ -67,7 +67,7 @@ export interface CertificationEntry {
 
 export interface OwnProjectEntry {
   name: string;
-  url?: string;
+  urls?: Array<{ label: string; url: string }>;
   skills?: string[];
   achievements?: string[];
 }

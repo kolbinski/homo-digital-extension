@@ -246,7 +246,7 @@
   "own_projects": [
     {
       "name": "BudgetFlow",
-      "url": "budgetflow.app",
+      "urls": [{ "label": "Live app", "url": "https://budgetflow.app" }],
       "skills": [
         "next.js",
         "typescript",
@@ -261,7 +261,7 @@
     },
     {
       "name": "pg-migrate-cli",
-      "url": "npmjs.com/package/pg-migrate-cli",
+      "urls": [{ "label": "npm", "url": "https://npmjs.com/package/pg-migrate-cli" }],
       "skills": [
         "node.js",
         "typescript"

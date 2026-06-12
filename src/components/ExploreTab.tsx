@@ -7,7 +7,9 @@ import {
   CurrencyCircleDollar,
   FilePlusIcon,
 } from '@phosphor-icons/react';
-import ProfileDrawer from './ProfileDrawer';
+import WizardShell from './onboarding/WizardShell';
+import { emptyProfile } from './onboarding/emptyProfile';
+import type { Profile } from './onboarding/types';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
@@ -118,6 +120,10 @@ function getPageText(tabId: number): Promise<string> {
       },
     );
   });
+}
+
+function clientToProfile(raw: Record<string, unknown> | undefined): Profile {
+  return { ...emptyProfile, ...(raw as Partial<Profile> ?? {}) } as Profile;
 }
 
 interface Props {
@@ -849,6 +855,7 @@ function ClientAccordion({
   const [isOpen, setIsOpen] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
@@ -914,7 +921,9 @@ function ClientAccordion({
       setHasLoaded(true);
       const allOffers = [...pending, ...levelUp];
       const match = url
-        ? allOffers.find(o => o.offer_url && url.startsWith(o.offer_url.split('?')[0]))
+        ? allOffers.find(
+            o => o.offer_url && url.startsWith(o.offer_url.split('?')[0]),
+          )
         : undefined;
       if (match) {
         setIsOpen(true);
@@ -1064,6 +1073,18 @@ function ClientAccordion({
         className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
+          {client.photo_url ? (
+            <img
+              src={client.photo_url}
+              alt=""
+              className="w-6 h-6 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-white text-[10px] font-medium shrink-0 leading-none">
+              {(client.first_name?.[0] ?? '').toUpperCase()}
+              {(client.last_name?.[0] ?? '').toUpperCase()}
+            </span>
+          )}
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
@@ -1111,19 +1132,18 @@ function ClientAccordion({
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {client.profile && (
-            <button
-              type="button"
-              onClick={e => {
-                e.stopPropagation();
-                setProfileOpen(v => !v);
-              }}
-              title="View profile"
-              className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
-            >
-              <AddressBook size={14} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation();
+              setWizardProfile(clientToProfile(client.profile));
+              setProfileOpen(v => !v);
+            }}
+            title="Edit profile"
+            className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
+          >
+            <AddressBook size={14} />
+          </button>
           <button
             type="button"
             onClick={e => {
@@ -1433,13 +1453,17 @@ function ClientAccordion({
           )}
         </div>
       )}
-      {profileOpen && client.profile && (
-        <ProfileDrawer
-          clientName={`${client.first_name} ${client.last_name}`}
-          profile={client.profile}
-          onClose={() => setProfileOpen(false)}
-        />
-      )}
+      {profileOpen && wizardProfile &&
+        createPortal(
+          <WizardShell
+            profile={wizardProfile}
+            onChange={setWizardProfile}
+            clientId={client.id}
+            onClose={() => setProfileOpen(false)}
+            onSubmitted={() => setProfileOpen(false)}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
@@ -1545,7 +1569,10 @@ export default function ExploreTab({
         setError(result.error);
         if (result.error.includes('Session expired')) onLogout();
       } else {
-        console.log('[ExploreTab] clients loaded:', JSON.stringify(result.clients));
+        console.log(
+          '[ExploreTab] clients loaded:',
+          JSON.stringify(result.clients),
+        );
         setClients(result.clients);
       }
     }
@@ -1555,7 +1582,11 @@ export default function ExploreTab({
     };
   }, []);
 
-  console.log('[ExploreTab] selfMode render:', { selfMode, clientsLength: clients.length, client0: clients[0] });
+  console.log('[ExploreTab] selfMode render:', {
+    selfMode,
+    clientsLength: clients.length,
+    client0: clients[0],
+  });
 
   if (isLoading) {
     return (
@@ -1607,7 +1638,7 @@ export default function ExploreTab({
               className="flex-1"
             />
             <span className="text-xs font-medium text-gray-700 w-7 text-right">
-              {minScore}
+              {minScore}%
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -1676,9 +1707,25 @@ export default function ExploreTab({
         {selfMode ? (
           clients.length === 0 ? (
             <div className="flex items-center justify-center py-6">
-              <svg className="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="animate-spin h-4 w-4 text-indigo-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
             </div>
           ) : (

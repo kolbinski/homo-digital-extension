@@ -6,6 +6,7 @@ import {
   CloudLightning,
   QuestionIcon,
   SignOut,
+  X,
 } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
@@ -25,8 +26,10 @@ type AutoSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 interface Props {
   profile: Profile;
   onChange: (profile: Profile) => void;
-  onLogout: () => void;
+  onLogout?: () => void;
   onSubmitted: () => void;
+  clientId?: string;
+  onClose?: () => void;
 }
 
 export default function WizardShell({
@@ -34,15 +37,18 @@ export default function WizardShell({
   onChange,
   onLogout,
   onSubmitted,
+  clientId,
+  onClose,
 }: Props) {
-  const { getSupabaseToken } = useAuth();
+  const { getSupabaseToken, getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
   const [submitting, setSubmitting] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
-  const getSupabaseTokenRef = useRef(getSupabaseToken);
-  getSupabaseTokenRef.current = getSupabaseToken;
+  const getAuthToken = clientId ? getToken : getSupabaseToken;
+  const getAuthTokenRef = useRef(getAuthToken);
+  getAuthTokenRef.current = getAuthToken;
 
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
@@ -59,14 +65,17 @@ export default function WizardShell({
     autoSaveTimerRef.current = setTimeout(async () => {
       autoSaveTimerRef.current = null;
       try {
-        const token = await getSupabaseTokenRef.current();
+        const token = await getAuthTokenRef.current();
         const res = await fetch(`${API_BASE_URL}/v1/profile`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ profile }),
+          body: JSON.stringify({
+            profile,
+            ...(clientId ? { client_id: clientId } : {}),
+          }),
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         setAutoSaveStatus('saved');
@@ -89,14 +98,17 @@ export default function WizardShell({
     }
     setSubmitting(true);
     try {
-      const token = await getSupabaseToken();
+      const token = await getAuthToken();
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ profile, profile_ready: true }),
+        body: JSON.stringify({
+          profile,
+          ...(clientId ? { client_id: clientId } : { profile_ready: true }),
+        }),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       onSubmitted();
@@ -114,14 +126,25 @@ export default function WizardShell({
         <span className="text-sm font-semibold text-gray-900">
           Great jobs start with a great profile
         </span>
-        <button
-          type="button"
-          onClick={onLogout}
-          aria-label="Logout"
-          className="text-gray-800 hover:text-gray-700 transition-colors"
-        >
-          <SignOut size={16} />
-        </button>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        ) : onLogout ? (
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Logout"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <SignOut size={16} />
+          </button>
+        ) : null}
       </header>
 
       {/* Tab bar — wraps to multiple lines */}
@@ -166,7 +189,7 @@ export default function WizardShell({
                   <QuestionIcon
                     size={20}
                     weight="fill"
-                    className="text-gray-300 shrink-0"
+                    className="text-orange-300 shrink-0"
                   />
                 )}
                 <span>{tab.shortLabel}</span>

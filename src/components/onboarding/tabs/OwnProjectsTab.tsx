@@ -50,6 +50,79 @@ function RemovableChip({
 const fieldClass =
   'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
+function isUrlInvalid(value: string): boolean {
+  if (!value.trim()) return false;
+  try {
+    const u = new URL(value.startsWith('http') ? value : `https://${value}`);
+    return (
+      (u.protocol !== 'http:' && u.protocol !== 'https:') ||
+      !u.hostname.includes('.')
+    );
+  } catch {
+    return true;
+  }
+}
+
+function UrlList({
+  urls,
+  onChange,
+}: {
+  urls: Array<{ label: string; url: string }>;
+  onChange: (next: Array<{ label: string; url: string }>) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      {urls.map((u, i) => (
+        <div key={i} className="flex flex-col gap-1">
+          <input
+            type="text"
+            value={u.label}
+            onChange={e => {
+              const next = [...urls];
+              next[i] = { ...u, label: e.target.value };
+              onChange(next);
+            }}
+            placeholder="e.g. GitHub, npm, ProductHunt, Live app…"
+            className={fieldClass}
+          />
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={u.url}
+              onChange={e => {
+                const next = [...urls];
+                next[i] = { ...u, url: e.target.value };
+                onChange(next);
+              }}
+              placeholder="https://..."
+              className={`${fieldClass} flex-1`}
+            />
+            {isUrlInvalid(u.url) && (
+              <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+            )}
+            <button
+              type="button"
+              onClick={() => onChange(urls.filter((_, j) => j !== i))}
+              aria-label="Remove URL"
+              className="shrink-0 text-red-400 hover:text-red-600 transition-colors"
+            >
+              <Trash size={16} />
+            </button>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...urls, { label: '', url: '' }])}
+        className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors w-fit"
+      >
+        <Plus size={16} />
+        Add URL
+      </button>
+    </div>
+  );
+}
+
 function SkillsInput({
   skills,
   onAdd,
@@ -215,7 +288,7 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
     const idx = projects.length;
     onChange([
       ...projects,
-      { name: '', url: '', skills: [], achievements: [] },
+      { name: '', urls: [], skills: [], achievements: [] },
     ]);
     setExpanded(prev => new Set(prev).add(idx));
   }
@@ -335,12 +408,12 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {project.name || 'Untitled project'}
                   </p>
-                  {project.url ? (
+                  {(project.urls ?? []).length > 0 ? (
                     <p className="text-xs text-gray-500 truncate">
-                      {project.url}
+                      {project.urls![0].url || project.urls![0].label || 'URL added'}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400">No URL</p>
+                    <p className="text-xs text-gray-400">No URLs</p>
                   )}
                 </div>
               </div>
@@ -396,17 +469,14 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
                   </div>
                 </div>
 
-                {/* URL */}
+                {/* URLs */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-gray-600">
-                    URL
+                    URLs
                   </label>
-                  <input
-                    type="text"
-                    value={project.url ?? ''}
-                    onChange={e => updateProject(idx, { url: e.target.value })}
-                    placeholder="https://github.com/..."
-                    className={fieldClass}
+                  <UrlList
+                    urls={project.urls ?? []}
+                    onChange={next => updateProject(idx, { urls: next })}
                   />
                 </div>
 
