@@ -119,6 +119,14 @@ export default function WizardShell({
         }),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
+      if (!clientId) {
+        void getAuthTokenRef.current().then(t =>
+          fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+            method: 'POST',
+            headers: t ? { Authorization: `Bearer ${t}` } : {},
+          }),
+        );
+      }
       onSubmitted();
     } catch {
       setAutoSaveStatus('error');
