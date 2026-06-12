@@ -66,6 +66,7 @@ export default function WizardShell({
       autoSaveTimerRef.current = null;
       try {
         const token = await getAuthTokenRef.current();
+        console.log('[patchProfile] token:', token?.slice(0, 20));
         const res = await fetch(`${API_BASE_URL}/v1/profile`, {
           method: 'PATCH',
           headers: {
@@ -99,6 +100,7 @@ export default function WizardShell({
     setSubmitting(true);
     try {
       const token = await getAuthToken();
+      console.log('[patchProfile] token:', token?.slice(0, 20));
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {

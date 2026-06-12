@@ -1135,6 +1135,7 @@ function ClientAccordion({
           <button
             type="button"
             onClick={e => {
+              console.log('address book clicked', client.id);
               e.stopPropagation();
               setWizardProfile(clientToProfile(client.profile));
               setProfileOpen(v => !v);
@@ -1455,13 +1456,15 @@ function ClientAccordion({
       )}
       {profileOpen && wizardProfile &&
         createPortal(
-          <WizardShell
-            profile={wizardProfile}
-            onChange={setWizardProfile}
-            clientId={client.id}
-            onClose={() => setProfileOpen(false)}
-            onSubmitted={() => setProfileOpen(false)}
-          />,
+          <div className="fixed inset-0 z-50">
+            <WizardShell
+              profile={wizardProfile}
+              onChange={setWizardProfile}
+              clientId={client.id}
+              onClose={() => setProfileOpen(false)}
+              onSubmitted={() => setProfileOpen(false)}
+            />
+          </div>,
           document.body,
         )}
     </div>
