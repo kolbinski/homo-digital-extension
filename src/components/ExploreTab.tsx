@@ -964,7 +964,7 @@ function ClientAccordion({
     const token = await getToken();
     if (!token) return [];
     const params = new URLSearchParams({ status });
-    if (!selfMode) params.append('client_id', client.id);
+    params.append('client_id', client.id);
     if (hasLearningGoals) params.append('has_learning_goals', 'true');
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
     try {
@@ -1355,7 +1355,11 @@ function ClientAccordion({
                   )}
                   {filteredApplyOffers.length === 0 &&
                     filteredLevelUpOffers.length === 0 && (
-                      <p className="px-3 py-3 text-gray-400">No offers found</p>
+                      <p className="px-3 py-3 text-gray-400">
+                        {selfMode
+                          ? 'No offers yet. Your profile has been submitted and matches will appear here after the next sync.'
+                          : 'No offers found'}
+                      </p>
                     )}
                 </>
               ) : (
@@ -1427,7 +1431,11 @@ function ClientAccordion({
                       )}
                     </div>
                   ) : (
-                    <p className="px-3 py-3 text-gray-400">No offers found</p>
+                    <p className="px-3 py-3 text-gray-400">
+                      {selfMode
+                        ? 'No offers yet. Your profile has been submitted and matches will appear here after the next sync.'
+                        : 'No offers found'}
+                    </p>
                   )}
                 </>
               )}
@@ -1538,10 +1546,6 @@ export default function ExploreTab({
   }
 
   useEffect(() => {
-    if (selfMode) {
-      setIsLoading(false);
-      return;
-    }
     let cancelled = false;
     async function load() {
       const result = await fetchClients();
@@ -1677,18 +1681,20 @@ export default function ExploreTab({
           </div>
         </div>
         {selfMode ? (
-          <ClientAccordion
-            client={{ id: '', first_name: '', last_name: '', email: '' }}
-            selfMode
-            activeTabId={activeTabId}
-            currentUrl={currentUrl}
-            sortBy={sortBy}
-            statusFilter={statusFilter}
-            sourceFilter={sourceFilter}
-            minScore={minScore}
-            cvGenerated={cvGenerated}
-            clGenerated={clGenerated}
-          />
+          clients.length === 0 ? null : (
+            <ClientAccordion
+              client={clients[0]}
+              selfMode
+              activeTabId={activeTabId}
+              currentUrl={currentUrl}
+              sortBy={sortBy}
+              statusFilter={statusFilter}
+              sourceFilter={sourceFilter}
+              minScore={minScore}
+              cvGenerated={cvGenerated}
+              clGenerated={clGenerated}
+            />
+          )
         ) : clients.length === 0 ? (
           <p className="text-sm text-gray-500">No clients found.</p>
         ) : (
