@@ -46,6 +46,8 @@ export default function WizardShell({
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('saved');
   const [submitting, setSubmitting] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
   const getAuthTokenRef = useRef(getToken);
@@ -122,6 +124,43 @@ export default function WizardShell({
       setAutoSaveStatus('error');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleReview() {
+    setIsReviewing(true);
+    setReviewError(null);
+    try {
+      const token = await getAuthTokenRef.current();
+      const res = await fetch(`${API_BASE_URL}/v1/onboarding/review-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ profile }),
+      });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const html = await res.text();
+      await chrome.storage.local.set({ hd_profile_review: html });
+      const existing = await chrome.tabs.query({
+        title: 'Homo Digital - Profile Review',
+      });
+      if (existing.length > 0 && existing[0].id !== undefined) {
+        await chrome.tabs.reload(existing[0].id);
+        await chrome.tabs.update(existing[0].id, { active: true });
+        if (existing[0].windowId !== undefined) {
+          await chrome.windows.update(existing[0].windowId, { focused: true });
+        }
+      } else {
+        await chrome.tabs.create({
+          url: chrome.runtime.getURL('review.html'),
+        });
+      }
+    } catch {
+      setReviewError('Review failed. Please try again.');
+    } finally {
+      setIsReviewing(false);
     }
   }
 
@@ -288,7 +327,7 @@ export default function WizardShell({
           )}
         </div>
 
-        {/* Right: save status + Submit grouped */}
+        {/* Right: save status + Review + Submit grouped */}
         <div className="flex-1 flex items-center justify-end gap-3">
           <div className="flex items-center gap-1">
             {autoSaveStatus === 'saving' && (
@@ -308,6 +347,46 @@ export default function WizardShell({
                 <span className="text-xs text-red-400">Save failed</span>
                 <CloudLightning size={15} className="text-red-400" />
               </>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={handleReview}
+              disabled={isReviewing || totalErrors > 0}
+              title={totalErrors > 0 ? 'Fix all errors first' : undefined}
+              className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+            >
+              {isReviewing ? (
+                <>
+                  <svg
+                    className="animate-spin h-3.5 w-3.5 text-white shrink-0"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  Reviewing…
+                </>
+              ) : (
+                'Review by AI'
+              )}
+            </button>
+            {reviewError && (
+              <span className="text-xs text-red-500">{reviewError}</span>
             )}
           </div>
           <button
