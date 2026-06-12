@@ -283,7 +283,11 @@ export default function PreferencesTab({
   function openSkillDropdown() {
     if (skillWrapperRef.current) {
       const rect = skillWrapperRef.current.getBoundingClientRect();
-      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      setDropdownPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
     }
     setSkillDropdownOpen(true);
   }
@@ -562,13 +566,7 @@ export default function PreferencesTab({
                 className={`${inputClass} resize-y flex-1`}
               />
               <span className="shrink-0 mt-1.5">
-                {role.trim() ? (
-                  <CheckCircle
-                    size={20}
-                    weight="fill"
-                    className="text-green-500"
-                  />
-                ) : (
+                {role.trim() === '' && (
                   <XCircle size={20} weight="fill" className="text-red-400" />
                 )}
               </span>
