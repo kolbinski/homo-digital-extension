@@ -557,8 +557,8 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
         <div className="flex items-center gap-1.5">
           {(
             [
-              ['M', 'Male'],
-              ['F', 'Female'],
+              ['Male', 'Male'],
+              ['Female', 'Female'],
             ] as const
           ).map(([val, label]) => (
             <Chip

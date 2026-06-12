@@ -50,6 +50,7 @@ function emptyExperience(): WorkExperienceEntry {
     company: '',
     date_from: '',
     date_to: null,
+    currently_working: false,
     industry: null,
     location: null,
     work_model: null,
@@ -63,7 +64,7 @@ function countExpInvalid(e: WorkExperienceEntry): number {
   if (!e.title?.trim()) count++;
   if (!e.company?.trim()) count++;
   if (!DATE_RE.test(e.date_from ?? '')) count++;
-  if (e.date_to !== null && !DATE_RE.test(e.date_to ?? '')) count++;
+  if (!e.currently_working && !DATE_RE.test(e.date_to ?? '')) count++;
   if (!e.work_model) count++;
   const projects = e.projects ?? [];
   for (const proj of projects) {
@@ -576,7 +577,7 @@ function ExperienceCard({
   const projects = entry.projects ?? [emptyProject()];
 
   const dateLabel = entry.date_from
-    ? `${entry.date_from} → ${entry.date_to ?? 'present'}`
+    ? `${entry.date_from} → ${entry.currently_working ? 'present' : (entry.date_to ?? '')}`
     : '';
 
   function setIndustry(val: string | null) {
@@ -733,9 +734,12 @@ function ExperienceCard({
             <label className="flex items-center gap-2 cursor-pointer w-fit">
               <input
                 type="checkbox"
-                checked={entry.date_to === null}
+                checked={entry.currently_working ?? false}
                 onChange={e =>
-                  onChange({ date_to: e.target.checked ? null : '' })
+                  onChange({
+                    currently_working: e.target.checked,
+                    date_to: e.target.checked ? null : '',
+                  })
                 }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
@@ -743,7 +747,7 @@ function ExperienceCard({
                 I currently work here
               </span>
             </label>
-            {entry.date_to !== null && (
+            {!entry.currently_working && (
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600">
                   Date to <span className="text-red-500">*</span>
@@ -751,12 +755,12 @@ function ExperienceCard({
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
-                    value={entry.date_to}
+                    value={entry.date_to ?? ''}
                     onChange={e => onChange({ date_to: e.target.value })}
                     placeholder="YYYY-MM"
                     className={`${fieldClass} flex-1`}
                   />
-                  {!DATE_RE.test(entry.date_to) && (
+                  {!DATE_RE.test(entry.date_to ?? '') && (
                     <XCircle
                       size={16}
                       weight="fill"

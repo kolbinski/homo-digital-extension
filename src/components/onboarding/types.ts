@@ -41,6 +41,7 @@ export interface WorkExperienceEntry {
   company: string;
   date_from: string;
   date_to: string | null;
+  currently_working: boolean;
   industry: string | null;
   location: string | null;
   work_model: string | null;

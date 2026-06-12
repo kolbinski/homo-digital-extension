@@ -142,21 +142,9 @@ export default function WizardShell({
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const html = await res.text();
-      await chrome.storage.local.set({ hd_profile_review: html });
-      const existing = await chrome.tabs.query({
-        title: 'Homo Digital - Profile Review',
-      });
-      if (existing.length > 0 && existing[0].id !== undefined) {
-        await chrome.tabs.reload(existing[0].id);
-        await chrome.tabs.update(existing[0].id, { active: true });
-        if (existing[0].windowId !== undefined) {
-          await chrome.windows.update(existing[0].windowId, { focused: true });
-        }
-      } else {
-        await chrome.tabs.create({
-          url: chrome.runtime.getURL('review.html'),
-        });
-      }
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      await chrome.tabs.create({ url });
     } catch {
       setReviewError('Review failed. Please try again.');
     } finally {
@@ -379,7 +367,7 @@ export default function WizardShell({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Reviewing…
+                  Reviewing
                 </>
               ) : (
                 'Review by AI'
@@ -392,7 +380,12 @@ export default function WizardShell({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting || !allComplete || autoSaveStatus === 'saving' || isReviewing}
+            disabled={
+              submitting ||
+              !allComplete ||
+              autoSaveStatus === 'saving' ||
+              isReviewing
+            }
             title={
               !allComplete ? 'Complete all required tabs first' : undefined
             }
