@@ -711,7 +711,7 @@ export default function PreferencesTab({
             onFocus={openSkillDropdown}
             onKeyDown={handleSkillKey}
             onBlur={() => setTimeout(() => setSkillDropdownOpen(false), 150)}
-            placeholder="Type and press Enter or comma…"
+            placeholder="Type to search or add skill…"
             className={inputClass}
           />
           {skillDropdownOpen &&
