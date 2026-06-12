@@ -23,12 +23,14 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
   const [profileState, setProfileState] = useState<ProfileState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
     getSupabaseJwt().then(async jwt => {
       if (jwt) {
         await supabase.auth.setSession({ access_token: jwt, refresh_token: '' });
       }
+      setSessionReady(true);
     });
   }, []);
 
@@ -97,6 +99,7 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
       <div id="main-scroll" className="flex-1 overflow-y-auto">
         <ExploreTab
           selfMode
+          sessionReady={sessionReady}
           onLogout={onLogout}
           activeTabId={activeTabId}
           currentUrl={currentUrl}

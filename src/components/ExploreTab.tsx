@@ -137,6 +137,7 @@ interface Props {
   activeTabId?: number;
   currentUrl?: string;
   selfMode?: boolean;
+  sessionReady?: boolean;
 }
 
 interface ClientAccordionProps {
@@ -152,6 +153,7 @@ interface ClientAccordionProps {
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
   defaultExpanded?: boolean;
   selfMode?: boolean;
+  sessionReady?: boolean;
 }
 
 interface OfferCardProps {
@@ -841,6 +843,7 @@ function ClientAccordion({
   onClientUpdate,
   defaultExpanded = false,
   selfMode = false,
+  sessionReady = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
@@ -1026,7 +1029,7 @@ function ClientAccordion({
   handleRefreshRef.current = handleRefresh;
 
   useEffect(() => {
-    if (!selfMode) return;
+    if (!sessionReady || !selfMode) return;
     console.log('[Realtime] setting up channel for user:', client.id);
     const channel = supabase
       .channel('user_offers_changes')
@@ -1054,7 +1057,7 @@ function ClientAccordion({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [selfMode, client.id]);
+  }, [sessionReady, selfMode, client.id]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
@@ -1504,6 +1507,7 @@ export default function ExploreTab({
   activeTabId,
   currentUrl,
   selfMode,
+  sessionReady,
 }: Props) {
   const { fetchClients } = useClients();
   const [clients, setClients] = useState<Client[]>([]);
@@ -1738,6 +1742,7 @@ export default function ExploreTab({
               onClientUpdate={handleClientUpdate}
               defaultExpanded={true}
               selfMode={true}
+              sessionReady={sessionReady}
             />
           )
         ) : clients.length === 0 ? (
