@@ -25,8 +25,10 @@ export default function ClientView({ onLogout }: Props) {
           setProfileState('onboarding');
           return;
         }
-        const data = (await res.json()) as Profile | null;
-        if (!data) {
+        const data = (await res.json()) as
+          | (Profile & { profile_ready?: boolean })
+          | null;
+        if (!data || !data.profile_ready) {
           setProfileState('onboarding');
         } else {
           setProfile(data);
