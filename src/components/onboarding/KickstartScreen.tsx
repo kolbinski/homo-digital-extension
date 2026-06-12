@@ -173,9 +173,16 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
         <div className="w-full max-w-sm flex flex-col items-center gap-5">
           <div className="text-center">
             <h1 className="text-xl font-semibold text-gray-900 mb-1">
-              Let's get you started
+              {loading ? 'Analyzing your CV...' : 'Let\'s get you started'}
             </h1>
-            {!loading && (
+            {loading ? (
+              <p className="text-sm text-gray-500">
+                The more we know about you, the better we match you with roles
+                that fit - not just roles that exist. A complete profile also
+                means personalized CVs and cover letters, ready in seconds for
+                every application.
+              </p>
+            ) : (
               <p className="text-sm text-gray-500">
                 Drop your CV below and we'll build your profile in seconds. No
                 forms, no hassle.
