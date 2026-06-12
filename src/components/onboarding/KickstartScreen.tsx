@@ -172,8 +172,9 @@ export default function KickstartScreen({
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
+          disabled={loading}
           aria-label="Settings"
-          className="text-gray-800 hover:text-gray-700 transition-colors"
+          className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Gear size={16} />
         </button>

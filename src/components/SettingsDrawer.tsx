@@ -89,14 +89,15 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           <button
             type="button"
             onClick={handleClose}
+            disabled={isDeleting}
             aria-label="Close"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
+            className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X size={16} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+        <div className={`flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6 ${isDeleting ? 'pointer-events-none opacity-50' : ''}`}>
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Feedback
