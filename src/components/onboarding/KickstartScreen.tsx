@@ -13,7 +13,6 @@ const PROGRESS_ITEMS = [
   'Your certifications',
   'Your skills',
   'Your preferences',
-  'Your red flags',
 ];
 
 interface Props {
