@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Gear } from '@phosphor-icons/react';
+import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import OnboardingWizard from './onboarding/OnboardingWizard';
@@ -53,7 +54,7 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
   if (profileState === 'loading') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+        <Spinner size={20} className="text-blue-500" />
       </div>
     );
   }

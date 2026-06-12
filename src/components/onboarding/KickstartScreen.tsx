@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CheckCircle, Gear } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
+import Spinner from '../Spinner';
 import SettingsDrawer from '../SettingsDrawer';
 import type { Profile } from './types';
 
@@ -20,30 +21,6 @@ interface Props {
   onLogout: () => void;
 }
 
-function ItemSpinner() {
-  return (
-    <svg
-      className="animate-spin h-4 w-4 text-gray-400 shrink-0"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
-  );
-}
 
 export default function KickstartScreen({
   onPrepared,
@@ -275,7 +252,7 @@ export default function KickstartScreen({
                   <div key={item} className="flex items-center gap-2">
                     {isActive ? (
                       <>
-                        <ItemSpinner />
+                        <Spinner className="text-gray-400" />
                         <span className="text-sm text-gray-500">
                           Reading {item.toLowerCase()}...
                         </span>
@@ -295,7 +272,7 @@ export default function KickstartScreen({
               })}
               {displayStep >= PROGRESS_ITEMS.length && (
                 <div className="flex items-center gap-2">
-                  <ItemSpinner />
+                  <Spinner className="text-gray-400" />
                   <span className="text-sm text-gray-500">Finalizing...</span>
                 </div>
               )}

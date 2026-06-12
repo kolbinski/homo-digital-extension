@@ -15,6 +15,7 @@ import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
 import { useCvGenerate } from '../hooks/useCvGenerate';
+import Spinner from './Spinner';
 
 interface OfferSalary {
   min: number;
@@ -516,26 +517,7 @@ function OfferCard({
                     disabled
                     className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
                   >
-                    <svg
-                      className="animate-spin h-3.5 w-3.5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
+                    <Spinner size={14} className="text-white" />
                     CV…
                   </button>
                 ) : (
@@ -631,26 +613,7 @@ function OfferCard({
                     disabled
                     className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
                   >
-                    <svg
-                      className="animate-spin h-3.5 w-3.5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
+                    <Spinner size={14} className="text-white" />
                     CL…
                   </button>
                 ) : (
@@ -1095,26 +1058,7 @@ function ClientAccordion({
             {client.first_name} {client.last_name}
           </span>
           {!hasLoaded ? (
-            <svg
-              className="animate-spin h-3 w-3 text-gray-400 shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
+            <Spinner size={12} className="text-gray-400" />
           ) : (
             <>
               {filteredApplyOffers.length > 0 && (
@@ -1178,26 +1122,7 @@ function ClientAccordion({
             className="text-gray-800 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
           >
             {isRefreshing ? (
-              <svg
-                className="animate-spin h-3.5 w-3.5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
+              <Spinner size={14} />
             ) : (
               <ArrowsClockwise size={14} />
             )}
@@ -1234,26 +1159,7 @@ function ClientAccordion({
           )}
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
-              <svg
-                className="animate-spin h-4 w-4 text-indigo-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
+              <Spinner className="text-indigo-600" />
             </div>
           ) : (
             <>
@@ -1495,15 +1401,7 @@ function ClientAccordion({
                   </button>
                 </header>
                 <div className="flex-1 flex items-center justify-center">
-                  <svg
-                    className="animate-spin h-6 w-6 text-indigo-600"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <Spinner size={24} className="text-indigo-600" />
                 </div>
               </div>
             ) : (
@@ -1656,26 +1554,7 @@ export default function ExploreTab({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <svg
-          className="animate-spin h-5 w-5 text-indigo-600"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
+        <Spinner size={20} className="text-indigo-600" />
       </div>
     );
   }
@@ -1772,26 +1651,7 @@ export default function ExploreTab({
         {selfMode ? (
           clients.length === 0 ? (
             <div className="flex items-center justify-center py-6">
-              <svg
-                className="animate-spin h-4 w-4 text-indigo-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
+              <Spinner className="text-indigo-600" />
             </div>
           ) : (
             <ClientAccordion

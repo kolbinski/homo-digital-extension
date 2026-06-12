@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from '@phosphor-icons/react';
+import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 
@@ -128,28 +129,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   disabled={isSending || !message.trim()}
                   className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700"
                 >
-                  {isSending && (
-                    <svg
-                      className="animate-spin h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                  )}
+                  {isSending && <Spinner className="text-white" />}
                   {isSending ? 'Sending…' : 'Send'}
                 </button>
               </>
@@ -198,28 +178,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     disabled={isDeleting}
                     className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
-                    {isDeleting && (
-                      <svg
-                        className="animate-spin h-3.5 w-3.5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                    )}
+                    {isDeleting && <Spinner size={14} className="text-white" />}
                     Delete account
                   </button>
                 </div>

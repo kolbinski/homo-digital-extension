@@ -8,6 +8,7 @@ import {
   XCircle,
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
+import Spinner from '../../Spinner';
 import type { SkillEntry } from '../types';
 
 interface Props {
@@ -283,7 +284,7 @@ function CategorySection({
                 >
                   {loading ? (
                     <div className="flex items-center justify-center px-3 py-2.5">
-                      <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+                      <Spinner className="text-blue-500" />
                     </div>
                   ) : (
                     suggestions.map(s => (

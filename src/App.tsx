@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Gear } from '@phosphor-icons/react';
+import Spinner from './components/Spinner';
 import LoginScreen from './components/LoginScreen';
 import ClientView from './components/ClientView';
 import TabBar, { type Tab } from './components/TabBar';
@@ -140,7 +141,7 @@ function App() {
   if (authState === 'checking') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+        <Spinner size={20} className="text-blue-500" />
       </div>
     );
   }
