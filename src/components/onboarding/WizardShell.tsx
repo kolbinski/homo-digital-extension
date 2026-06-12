@@ -258,38 +258,38 @@ export default function WizardShell({
           )}
         </div>
 
-        {/* Center: auto-save status */}
-        <div className="flex-1 flex items-center justify-center gap-1">
-          {autoSaveStatus === 'saving' && (
-            <>
-              <CloudArrowUp size={20} className="text-gray-400" />
-              <span className="text-sm text-gray-400">Saving...</span>
-            </>
-          )}
-          {autoSaveStatus === 'saved' && (
-            <>
-              <CloudCheck size={20} className="text-gray-400" />
-              <span className="text-sm text-gray-400">Saved</span>
-            </>
-          )}
-          {autoSaveStatus === 'error' && (
-            <>
-              <CloudLightning size={15} className="text-red-400" />
-              <span className="text-xs text-red-400">Save failed</span>
-            </>
-          )}
+        {/* Right: save status + Submit grouped */}
+        <div className="flex-1 flex items-center justify-end gap-3">
+          <div className="flex items-center gap-1">
+            {autoSaveStatus === 'saving' && (
+              <>
+                <CloudArrowUp size={20} className="text-gray-400" />
+                <span className="text-sm text-gray-400">Saving...</span>
+              </>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <>
+                <CloudCheck size={20} className="text-gray-400" />
+                <span className="text-sm text-gray-400">Saved</span>
+              </>
+            )}
+            {autoSaveStatus === 'error' && (
+              <>
+                <CloudLightning size={15} className="text-red-400" />
+                <span className="text-xs text-red-400">Save failed</span>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || !allComplete}
+            title={!allComplete ? 'Complete all required tabs first' : undefined}
+            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
+          >
+            {submitting ? 'Submitting…' : 'Submit'}
+          </button>
         </div>
-
-        {/* Right: Submit button */}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitting || !allComplete}
-          title={!allComplete ? 'Complete all required tabs first' : undefined}
-          className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
-        >
-          {submitting ? 'Submitting…' : 'Submit'}
-        </button>
       </div>
     </div>
   );
