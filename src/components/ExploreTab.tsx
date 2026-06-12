@@ -1606,10 +1606,6 @@ export default function ExploreTab({
         setError(result.error);
         if (result.error.includes('Session expired')) onLogout();
       } else {
-        console.log(
-          '[ExploreTab] clients loaded:',
-          JSON.stringify(result.clients),
-        );
         setClients(result.clients);
       }
     }
