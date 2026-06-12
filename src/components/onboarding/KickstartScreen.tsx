@@ -21,30 +21,6 @@ interface Props {
   onLogout: () => void;
 }
 
-function ButtonSpinner() {
-  return (
-    <svg
-      className="animate-spin h-4 w-4 text-white"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
-  );
-}
 
 function ItemSpinner() {
   return (
@@ -199,10 +175,12 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
             <h1 className="text-xl font-semibold text-gray-900 mb-1">
               Let's get you started
             </h1>
-            <p className="text-sm text-gray-500">
-              Drop your CV below and we'll build your profile in seconds. No
-              forms, no hassle.
-            </p>
+            {!loading && (
+              <p className="text-sm text-gray-500">
+                Drop your CV below and we'll build your profile in seconds. No
+                forms, no hassle.
+              </p>
+            )}
           </div>
 
           {/* Drop zone — hidden while loading */}
@@ -305,21 +283,15 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
 
           {error && <p className="text-sm text-red-600 w-full">{error}</p>}
 
-          <button
-            type="button"
-            onClick={handlePrepare}
-            disabled={loading}
-            className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 bg-green-600"
-          >
-            {loading ? (
-              <>
-                <ButtonSpinner />
-                Preparing your profile...
-              </>
-            ) : (
-              'Prepare my profile'
-            )}
-          </button>
+          {!loading && (
+            <button
+              type="button"
+              onClick={handlePrepare}
+              className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 bg-green-600"
+            >
+              Prepare my profile
+            </button>
+          )}
 
           {!loading && (
             <button
