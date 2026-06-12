@@ -4,8 +4,10 @@ import {
   AddressBook,
   ArrowsClockwise,
   ArrowUp,
+  CheckCircle,
   CurrencyCircleDollar,
   FilePlusIcon,
+  WarningCircle,
   X,
 } from '@phosphor-icons/react';
 import WizardShell from './onboarding/WizardShell';
@@ -35,6 +37,7 @@ interface UserOffer {
   claude_score?: number | null;
   claude_role_fit?: string;
   claude_missing_skills?: string[];
+  claude_matched_reasons?: { pros: string[]; cons: string[] };
   salary?: OfferSalary[];
   source?: string;
   cv_language?: string | null;
@@ -473,6 +476,24 @@ function OfferCard({
               ))}
             </div>
           )}
+        {offer.claude_matched_reasons && (
+          (offer.claude_matched_reasons.cons.length > 0 || offer.claude_matched_reasons.pros.length > 0)
+        ) && (
+          <div className="flex flex-col gap-0.5">
+            {offer.claude_matched_reasons.cons.map((item, i) => (
+              <span key={i} className="flex items-start gap-1 text-xs text-gray-700">
+                <WarningCircle size={13} weight="fill" className="text-orange-500 shrink-0 mt-px" />
+                {item}
+              </span>
+            ))}
+            {offer.claude_matched_reasons.pros.map((item, i) => (
+              <span key={i} className="flex items-start gap-1 text-xs text-gray-700">
+                <CheckCircle size={13} weight="fill" className="text-green-500 shrink-0 mt-px" />
+                {item}
+              </span>
+            ))}
+          </div>
+        )}
         {offer.salary && offer.salary.length > 0 ? (
           <div className="flex flex-col gap-0.5">
             {offer.salary.map((s, i) => {
