@@ -347,7 +347,7 @@ export default function WizardShell({
         </div>
 
         {/* Right: save status + Review + Submit grouped */}
-        <div className="flex-1 flex items-center justify-end gap-3">
+        <div className="flex-1 flex items-center justify-end gap-2">
           <div className="flex items-center gap-1">
             {autoSaveStatus === 'saving' && (
               <>
@@ -422,7 +422,7 @@ export default function WizardShell({
             }
             className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
           >
-            {submitting ? 'Submitting…' : 'Submit'}
+            {submitting ? 'Submitting' : 'Submit'}
           </button>
         </div>
       </div>

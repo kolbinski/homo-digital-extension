@@ -186,6 +186,7 @@ export default function KickstartScreen({
             </h1>
             {loading ? (
               <p className="text-sm text-gray-500">
+                <br />
                 The more we know about you, the better we match you with roles
                 that fit - not just roles that exist.
                 <br />
