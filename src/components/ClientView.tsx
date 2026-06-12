@@ -15,12 +15,12 @@ interface Props {
 type ProfileState = 'loading' | 'onboarding' | 'loaded';
 
 export default function ClientView({ onLogout, activeTabId, currentUrl }: Props) {
-  const { getSupabaseToken } = useAuth();
+  const { getToken } = useAuth();
   const [profileState, setProfileState] = useState<ProfileState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    getSupabaseToken().then(async token => {
+    getToken().then(async token => {
       try {
         const res = await fetch(`${API_BASE_URL}/v1/profile`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},

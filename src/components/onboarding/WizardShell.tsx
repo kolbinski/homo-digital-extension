@@ -40,13 +40,13 @@ export default function WizardShell({
   clientId,
   onClose,
 }: Props) {
-  const { getSupabaseToken, getToken } = useAuth();
+  const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
   const [submitting, setSubmitting] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
-  const getAuthToken = clientId ? getToken : getSupabaseToken;
+  const getAuthToken = getToken;
   const getAuthTokenRef = useRef(getAuthToken);
   getAuthTokenRef.current = getAuthToken;
 
