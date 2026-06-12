@@ -16,6 +16,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
 import { useCvGenerate } from '../hooks/useCvGenerate';
 import Spinner from './Spinner';
+import { supabase } from '../lib/supabase';
 
 interface OfferSalary {
   min: number;
@@ -147,6 +148,7 @@ interface ClientAccordionProps {
   clGenerated: boolean;
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
   defaultExpanded?: boolean;
+  selfMode?: boolean;
 }
 
 interface OfferCardProps {
@@ -817,11 +819,13 @@ function ClientAccordion({
   clGenerated,
   onClientUpdate,
   defaultExpanded = false,
+  selfMode = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasNewOffers, setHasNewOffers] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
   const [wizardProfileLoading, setWizardProfileLoading] = useState(false);
@@ -975,9 +979,15 @@ function ClientAccordion({
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const hasOffersRef = useRef(false);
+  useEffect(() => {
+    hasOffersRef.current = applyOffers.length > 0 || levelUpOffers.length > 0;
+  }, [applyOffers, levelUpOffers]);
+
   async function handleRefresh() {
     setIsRefreshing(true);
     setIsLoading(true);
+    setHasNewOffers(false);
     const [pending, levelUp] = await Promise.all([
       fetchOffers(statusFilter),
       statusFilter === 'pending_apply'
@@ -990,6 +1000,36 @@ function ClientAccordion({
     setHasLoaded(true);
     setIsRefreshing(false);
   }
+
+  const handleRefreshRef = useRef(handleRefresh);
+  handleRefreshRef.current = handleRefresh;
+
+  useEffect(() => {
+    if (!selfMode) return;
+    const channel = supabase
+      .channel('user_offers_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_offers',
+          filter: `user_id=eq.${client.id}`,
+        },
+        payload => {
+          if ((payload.new as { status?: string }).status === 'pending_apply') {
+            setHasNewOffers(true);
+            if (!hasOffersRef.current) {
+              void handleRefreshRef.current();
+            }
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selfMode, client.id]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
@@ -1119,12 +1159,15 @@ function ClientAccordion({
             }}
             disabled={isRefreshing}
             title="Refresh"
-            className="text-gray-800 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
+            className="relative text-gray-800 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
           >
             {isRefreshing ? (
               <Spinner size={14} />
             ) : (
               <ArrowsClockwise size={14} />
+            )}
+            {hasNewOffers && !isRefreshing && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
             )}
           </button>
           <svg
@@ -1667,6 +1710,7 @@ export default function ExploreTab({
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
               defaultExpanded={true}
+              selfMode={true}
             />
           )
         ) : clients.length === 0 ? (
