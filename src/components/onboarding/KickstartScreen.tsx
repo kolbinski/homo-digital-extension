@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle, SignOut } from '@phosphor-icons/react';
+import { CheckCircle, Gear } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
+import SettingsDrawer from '../SettingsDrawer';
 import type { Profile } from './types';
 
 const PROGRESS_ITEMS = [
@@ -57,6 +58,7 @@ export default function KickstartScreen({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [displayStep, setDisplayStep] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -169,11 +171,11 @@ export default function KickstartScreen({
       <header className="flex items-center justify-end px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <button
           type="button"
-          onClick={onLogout}
-          aria-label="Logout"
+          onClick={() => setSettingsOpen(true)}
+          aria-label="Settings"
           className="text-gray-800 hover:text-gray-700 transition-colors"
         >
-          <SignOut size={16} />
+          <Gear size={16} />
         </button>
       </header>
 
@@ -324,6 +326,12 @@ export default function KickstartScreen({
           )}
         </div>
       </div>
+      {settingsOpen && (
+        <SettingsDrawer
+          onClose={() => setSettingsOpen(false)}
+          onLogout={onLogout}
+        />
+      )}
     </div>
   );
 }

@@ -4,12 +4,13 @@ import {
   CloudArrowUp,
   CloudCheck,
   CloudLightning,
+  Gear,
   QuestionIcon,
-  SignOut,
   X,
 } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
+import SettingsDrawer from '../SettingsDrawer';
 import type { Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
 import BasicInfoTab from './tabs/BasicInfoTab';
@@ -48,6 +49,7 @@ export default function WizardShell({
   const [submitting, setSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
   const getAuthTokenRef = useRef(getToken);
@@ -203,11 +205,11 @@ export default function WizardShell({
         ) : onLogout ? (
           <button
             type="button"
-            onClick={onLogout}
-            aria-label="Logout"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
             className="text-gray-800 hover:text-gray-700 transition-colors"
           >
-            <SignOut size={16} />
+            <Gear size={16} />
           </button>
         ) : null}
       </header>
@@ -324,6 +326,13 @@ export default function WizardShell({
           </p>
         )}
       </div>
+
+      {settingsOpen && onLogout && (
+        <SettingsDrawer
+          onClose={() => setSettingsOpen(false)}
+          onLogout={onLogout}
+        />
+      )}
 
       {/* Footer */}
       <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-2">

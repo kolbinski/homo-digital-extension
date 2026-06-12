@@ -162,7 +162,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
             <button
               type="button"
               onClick={onLogout}
-              className="w-full font-medium py-2 px-4 rounded-md text-sm transition-colors bg-gray-100 hover:bg-gray-200 text-gray-700"
+              className="w-full font-medium py-2 px-4 rounded-md text-sm transition-colors bg-gray-700 hover:bg-gray-800 text-gray-100"
             >
               Log out
             </button>
