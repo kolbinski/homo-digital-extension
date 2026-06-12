@@ -118,7 +118,9 @@ export default function KickstartScreen({
         body: JSON.stringify({ profile }),
       });
       if (!res.ok) return null;
-      const envelope = (await res.json()) as { profile: Partial<Profile> | null };
+      const envelope = (await res.json()) as {
+        profile: Partial<Profile> | null;
+      };
       return envelope.profile;
     } catch {
       return null;

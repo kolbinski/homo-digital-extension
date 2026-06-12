@@ -179,13 +179,23 @@ function LoginView({
       }
       const token = sessionData.session.access_token;
       const userMeta = (sessionData.session.user?.user_metadata ?? {}) as UserMeta;
-      await setToken(token);
       await setRole('client');
       await setOAuthData(extractOAuthData(userMeta));
-      fetch(`${API_BASE_URL}/v1/auth/social-login`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(err => console.warn('[social-login] backend upsert failed:', err));
+      try {
+        const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (socialRes.ok) {
+          const { token: internalToken } = (await socialRes.json()) as { token: string };
+          await setToken(internalToken);
+        } else {
+          await setToken(token);
+        }
+      } catch (err) {
+        console.warn('[social-login] backend upsert failed:', err);
+        await setToken(token);
+      }
       onLogin('client');
       return;
     }
@@ -205,13 +215,23 @@ function LoginView({
       });
       userMeta = (sessionResult.user?.user_metadata ?? {}) as UserMeta;
     }
-    await setToken(accessToken);
     await setRole('client');
     await setOAuthData(extractOAuthData(userMeta));
-    fetch(`${API_BASE_URL}/v1/auth/social-login`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }).catch(err => console.warn('[social-login] backend upsert failed:', err));
+    try {
+      const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (socialRes.ok) {
+        const { token: internalToken } = (await socialRes.json()) as { token: string };
+        await setToken(internalToken);
+      } else {
+        await setToken(accessToken);
+      }
+    } catch (err) {
+      console.warn('[social-login] backend upsert failed:', err);
+      await setToken(accessToken);
+    }
     onLogin('client');
   }
 

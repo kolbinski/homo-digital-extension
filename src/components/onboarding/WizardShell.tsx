@@ -263,20 +263,20 @@ export default function WizardShell({
           <div className="flex items-center gap-1">
             {autoSaveStatus === 'saving' && (
               <>
-                <CloudArrowUp size={20} className="text-gray-400" />
                 <span className="text-sm text-gray-400">Saving...</span>
+                <CloudArrowUp size={20} className="text-gray-400" />
               </>
             )}
             {autoSaveStatus === 'saved' && (
               <>
-                <CloudCheck size={20} className="text-gray-400" />
                 <span className="text-sm text-gray-400">Saved</span>
+                <CloudCheck size={20} className="text-gray-400" />
               </>
             )}
             {autoSaveStatus === 'error' && (
               <>
-                <CloudLightning size={15} className="text-red-400" />
                 <span className="text-xs text-red-400">Save failed</span>
+                <CloudLightning size={15} className="text-red-400" />
               </>
             )}
           </div>
@@ -284,7 +284,9 @@ export default function WizardShell({
             type="button"
             onClick={handleSubmit}
             disabled={submitting || !allComplete}
-            title={!allComplete ? 'Complete all required tabs first' : undefined}
+            title={
+              !allComplete ? 'Complete all required tabs first' : undefined
+            }
             className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
           >
             {submitting ? 'Submitting…' : 'Submit'}
