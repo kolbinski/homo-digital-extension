@@ -263,7 +263,7 @@ export default function WizardShell({
           <div className="flex items-center gap-1">
             {autoSaveStatus === 'saving' && (
               <>
-                <span className="text-sm text-gray-400">Saving...</span>
+                <span className="text-sm text-gray-400">Saving</span>
                 <CloudArrowUp size={20} className="text-gray-400" />
               </>
             )}
@@ -283,7 +283,7 @@ export default function WizardShell({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting || !allComplete}
+            disabled={submitting || !allComplete || autoSaveStatus === 'saving'}
             title={
               !allComplete ? 'Complete all required tabs first' : undefined
             }

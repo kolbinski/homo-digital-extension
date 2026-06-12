@@ -180,16 +180,17 @@ export default function KickstartScreen({
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
         <div className="w-full max-w-sm flex flex-col items-center gap-5">
-          <div className="text-center">
+          <div className={loading ? 'text-left w-full' : 'text-center'}>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">
               {loading ? 'Analyzing your CV' : "Let's get you started"}
             </h1>
             {loading ? (
               <p className="text-sm text-gray-500">
                 The more we know about you, the better we match you with roles
-                that fit - not just roles that exist. A complete profile also
-                means personalized CVs and cover letters, ready in seconds for
-                every application.
+                that fit - not just roles that exist.
+                <br />
+                <br />A complete profile also means personalized CVs and cover
+                letters, ready in seconds for every application.
               </p>
             ) : (
               <p className="text-sm text-gray-500">
