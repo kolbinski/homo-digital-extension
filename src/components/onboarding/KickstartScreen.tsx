@@ -21,7 +21,6 @@ interface Props {
   onLogout: () => void;
 }
 
-
 function ItemSpinner() {
   return (
     <svg
@@ -47,7 +46,11 @@ function ItemSpinner() {
   );
 }
 
-export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props) {
+export default function KickstartScreen({
+  onPrepared,
+  onSkip,
+  onLogout,
+}: Props) {
   const { getToken } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -115,7 +118,8 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
         body: JSON.stringify({ profile }),
       });
       if (!res.ok) return null;
-      return (await res.json()) as Partial<Profile>;
+      const envelope = (await res.json()) as { profile: Partial<Profile> | null };
+      return envelope.profile;
     } catch {
       return null;
     }
@@ -148,7 +152,9 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
     } catch (err) {
       if (timerRef.current) clearTimeout(timerRef.current);
       setError(
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong. Please try again.',
       );
       setLoading(false);
     }
@@ -173,7 +179,7 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
         <div className="w-full max-w-sm flex flex-col items-center gap-5">
           <div className="text-center">
             <h1 className="text-xl font-semibold text-gray-900 mb-1">
-              {loading ? 'Analyzing your CV...' : 'Let\'s get you started'}
+              {loading ? 'Analyzing your CV' : "Let's get you started"}
             </h1>
             {loading ? (
               <p className="text-sm text-gray-500">
@@ -239,7 +245,9 @@ export default function KickstartScreen({ onPrepared, onSkip, onLogout }: Props)
               </svg>
               <p className="text-sm text-gray-500 text-center">
                 {file ? (
-                  <span className="font-medium text-green-700">{file.name}</span>
+                  <span className="font-medium text-green-700">
+                    {file.name}
+                  </span>
                 ) : (
                   <>
                     Drag & drop or{' '}

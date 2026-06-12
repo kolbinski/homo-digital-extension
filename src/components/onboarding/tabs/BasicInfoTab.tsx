@@ -469,7 +469,11 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 className={`${fieldClass} flex-1`}
               />
               {!b.first_name.trim() && (
-                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400"
+                />
               )}
             </div>
           </Field>
@@ -483,7 +487,11 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 className={`${fieldClass} flex-1`}
               />
               {!b.last_name.trim() && (
-                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400"
+                />
               )}
             </div>
           </Field>
@@ -529,7 +537,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             type="text"
             value={b.github}
             onChange={e => update({ github: e.target.value })}
-            placeholder="github.com/username"
+            placeholder="https://github.com/username"
             className={fieldClass}
           />
         </Field>
@@ -538,7 +546,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             type="text"
             value={b.linkedin}
             onChange={e => update({ linkedin: e.target.value })}
-            placeholder="linkedin.com/in/username"
+            placeholder="https://linkedin.com/in/username"
             className={fieldClass}
           />
         </Field>

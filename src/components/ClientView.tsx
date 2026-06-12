@@ -25,16 +25,17 @@ export default function ClientView({ onLogout }: Props) {
           setProfileState('onboarding');
           return;
         }
-        const data = (await res.json()) as
-          | (Profile & { profile_ready?: boolean })
-          | null;
-        if (!data) {
+        const { profile: dbProfile, profile_ready } = (await res.json()) as {
+          profile: Profile | null;
+          profile_ready: boolean;
+        };
+        if (!dbProfile) {
           setProfileState('onboarding');
-        } else if (!data.profile_ready) {
-          setProfile(data);
+        } else if (!profile_ready) {
+          setProfile(dbProfile);
           setProfileState('onboarding');
         } else {
-          setProfile(data);
+          setProfile(dbProfile);
           setProfileState('loaded');
         }
       } catch {
