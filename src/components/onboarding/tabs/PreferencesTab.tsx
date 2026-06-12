@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   CheckCircle,
@@ -7,6 +7,7 @@ import {
   Trash,
   XCircle,
 } from '@phosphor-icons/react';
+import { API_BASE_URL } from '../../../config';
 import { useGeneralSettings } from '../../../store/generalSettingsStore';
 import type { ProfilePreferences, SalaryEntry } from '../types';
 
@@ -109,8 +110,11 @@ export default function PreferencesTab({
     left: 0,
     width: 0,
   });
+  const [skillLoading, setSkillLoading] = useState(false);
+  const [skillResults, setSkillResults] = useState<
+    { name: string; category: string }[]
+  >([]);
   const skillWrapperRef = useRef<HTMLDivElement>(null);
-  const skillPortalRef = useRef<HTMLDivElement>(null);
   const roleDragFrom = useRef<number | null>(null);
   const [roleDragOver, setRoleDragOver] = useState<number | null>(null);
 
@@ -119,7 +123,6 @@ export default function PreferencesTab({
   const companyTypes = settings?.company_types ?? [];
   const industries = settings?.industries ?? [];
   const markets = settings?.markets ?? [];
-  const skillsSuggestions = settings?.skills_suggestions ?? [];
 
   const showOfficeFields =
     prefs.work_model.includes('hybrid') || prefs.work_model.includes('office');
@@ -233,15 +236,54 @@ export default function PreferencesTab({
   // ── Learning goals autocomplete ──────────────────────────────────────────
   const goals = prefs.learning_skills_goals ?? [];
 
-  const skillSuggestions = skillsSuggestions.filter(
-    s =>
-      !goals.includes(s) && s.toLowerCase().includes(skillInput.toLowerCase()),
-  );
+  useEffect(() => {
+    const q = skillInput.trim();
+    if (!q) {
+      setSkillResults([]);
+      setSkillLoading(false);
+      return;
+    }
+    setSkillLoading(true);
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/v1/skills/search?q=${encodeURIComponent(q)}`,
+        );
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        if (!cancelled) {
+          const q_lower = q.toLowerCase();
+          const filtered = (data.skills ?? []).filter(
+            (s: { name: string }) => !goals.includes(s.name),
+          );
+          filtered.sort((a: { name: string }, b: { name: string }) => {
+            const aStarts = a.name.toLowerCase().startsWith(q_lower);
+            const bStarts = b.name.toLowerCase().startsWith(q_lower);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return 0;
+          });
+          setSkillResults(filtered);
+          setSkillLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setSkillResults([]);
+          setSkillLoading(false);
+        }
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [skillInput, goals]);
 
   function openSkillDropdown() {
     if (skillWrapperRef.current) {
       const rect = skillWrapperRef.current.getBoundingClientRect();
-      setDropdownPos({ top: rect.bottom, left: rect.left, width: rect.width });
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
     setSkillDropdownOpen(true);
   }
@@ -675,10 +717,10 @@ export default function PreferencesTab({
             className={inputClass}
           />
           {skillDropdownOpen &&
-            skillSuggestions.length > 0 &&
+            !!skillInput.trim() &&
+            (skillLoading || skillResults.length > 0) &&
             createPortal(
               <div
-                ref={skillPortalRef}
                 style={{
                   position: 'fixed',
                   top: dropdownPos.top,
@@ -686,18 +728,30 @@ export default function PreferencesTab({
                   width: dropdownPos.width,
                   zIndex: 9999,
                 }}
-                className="bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto"
+                className="bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto"
               >
-                {skillSuggestions.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onMouseDown={() => addSkill(s)}
-                    className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                  >
-                    {s}
-                  </button>
-                ))}
+                {skillLoading ? (
+                  <div className="flex items-center justify-center px-3 py-2.5">
+                    <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  skillResults.map(r => (
+                    <button
+                      key={r.name}
+                      type="button"
+                      onMouseDown={() => {
+                        addSkill(r.name);
+                        setSkillDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 flex items-center justify-between gap-2 hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="text-sm text-gray-700">{r.name}</span>
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {r.category}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>,
               document.body,
             )}
