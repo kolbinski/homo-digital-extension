@@ -145,6 +145,7 @@ interface ClientAccordionProps {
   cvGenerated: boolean;
   clGenerated: boolean;
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
+  defaultExpanded?: boolean;
 }
 
 interface OfferCardProps {
@@ -852,10 +853,11 @@ function ClientAccordion({
   cvGenerated,
   clGenerated,
   onClientUpdate,
+  defaultExpanded = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultExpanded);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
@@ -1804,6 +1806,7 @@ export default function ExploreTab({
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
+              defaultExpanded={true}
             />
           )
         ) : clients.length === 0 ? (

@@ -381,7 +381,7 @@ export default function WizardShell({
             <button
               type="button"
               onClick={handleReview}
-              disabled={isReviewing || submitting || totalErrors > 0}
+              disabled={isReviewing || submitting || autoSaveStatus === 'saving' || totalErrors > 0}
               title={totalErrors > 0 ? 'Fix all errors first' : undefined}
               className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
             >
