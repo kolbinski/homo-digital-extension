@@ -137,7 +137,6 @@ interface ClientAccordionProps {
   minScore: number;
   cvGenerated: boolean;
   clGenerated: boolean;
-  selfMode?: boolean;
 }
 
 interface OfferCardProps {
@@ -844,11 +843,10 @@ function ClientAccordion({
   minScore,
   cvGenerated,
   clGenerated,
-  selfMode,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
-  const [isOpen, setIsOpen] = useState(selfMode === true);
+  const [isOpen, setIsOpen] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -915,9 +913,9 @@ function ClientAccordion({
       setLevelUpOffers(levelUp);
       setHasLoaded(true);
       const allOffers = [...pending, ...levelUp];
-      const match = allOffers.find(
-        o => o.offer_url && url.startsWith(o.offer_url.split('?')[0]),
-      );
+      const match = url
+        ? allOffers.find(o => o.offer_url && url.startsWith(o.offer_url.split('?')[0]))
+        : undefined;
       if (match) {
         setIsOpen(true);
         setExpandedOfferId(match.user_offer_id);
@@ -932,7 +930,7 @@ function ClientAccordion({
     return () => {
       cancelled = true;
     };
-  }, [currentUrl]);
+  }, [currentUrl, client.id]);
 
   useEffect(() => {
     setHasLoaded(false);
@@ -1055,8 +1053,8 @@ function ClientAccordion({
   );
 
   return (
-    <div className={selfMode ? '' : 'border border-gray-200 rounded-md overflow-hidden'}>
-      {!selfMode && <div
+    <div className="border border-gray-200 rounded-md overflow-hidden">
+      <div
         role="button"
         tabIndex={0}
         onClick={handleToggle}
@@ -1175,10 +1173,10 @@ function ClientAccordion({
             />
           </svg>
         </div>
-      </div>}
+      </div>
 
       {isOpen && (
-        <div className={selfMode ? '' : 'border-t border-gray-200'}>
+        <div className="border-t border-gray-200">
           {statusError && (
             <div className="mx-3 mt-2 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
               <span>{statusError}</span>
@@ -1355,11 +1353,7 @@ function ClientAccordion({
                   )}
                   {filteredApplyOffers.length === 0 &&
                     filteredLevelUpOffers.length === 0 && (
-                      <p className="px-3 py-3 text-gray-400">
-                        {selfMode
-                          ? 'No offers yet. Your profile has been submitted and matches will appear here after the next sync.'
-                          : 'No offers found'}
-                      </p>
+                      <p className="px-3 py-3 text-gray-400">No offers found</p>
                     )}
                 </>
               ) : (
@@ -1431,11 +1425,7 @@ function ClientAccordion({
                       )}
                     </div>
                   ) : (
-                    <p className="px-3 py-3 text-gray-400">
-                      {selfMode
-                        ? 'No offers yet. Your profile has been submitted and matches will appear here after the next sync.'
-                        : 'No offers found'}
-                    </p>
+                    <p className="px-3 py-3 text-gray-400">No offers found</p>
                   )}
                 </>
               )}
@@ -1555,6 +1545,7 @@ export default function ExploreTab({
         setError(result.error);
         if (result.error.includes('Session expired')) onLogout();
       } else {
+        console.log('[ExploreTab] clients loaded:', JSON.stringify(result.clients));
         setClients(result.clients);
       }
     }
@@ -1563,6 +1554,8 @@ export default function ExploreTab({
       cancelled = true;
     };
   }, []);
+
+  console.log('[ExploreTab] selfMode render:', { selfMode, clientsLength: clients.length, client0: clients[0] });
 
   if (isLoading) {
     return (
@@ -1681,10 +1674,17 @@ export default function ExploreTab({
           </div>
         </div>
         {selfMode ? (
-          clients.length === 0 ? null : (
+          clients.length === 0 ? (
+            <div className="flex items-center justify-center py-6">
+              <svg className="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </div>
+          ) : (
             <ClientAccordion
+              key={clients[0].id}
               client={clients[0]}
-              selfMode
               activeTabId={activeTabId}
               currentUrl={currentUrl}
               sortBy={sortBy}
