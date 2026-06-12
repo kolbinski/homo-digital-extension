@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import KickstartScreen from './KickstartScreen';
 import WizardShell from './WizardShell';
 import { emptyProfile } from './emptyProfile';
-import type { Profile } from './types';
+import type { Profile, SkillEntry } from './types';
 
 interface Props {
   onLogout: () => void;
@@ -11,10 +11,22 @@ interface Props {
 
 type Step = 'kickstart' | 'wizard';
 
+function normalizeSkills(
+  raw: Record<string, (string | SkillEntry)[]>,
+): Record<string, SkillEntry[]> {
+  return Object.fromEntries(
+    Object.entries(raw).map(([cat, arr]) => [
+      cat,
+      arr.map(e => (typeof e === 'string' ? { name: e, since: null } : e)),
+    ]),
+  );
+}
+
 function mergeProfile(base: Profile, override: Partial<Profile>): Profile {
+  const mergedSkills = { ...base.skills, ...(override.skills ?? {}) };
   return {
     basic_info: { ...base.basic_info, ...(override.basic_info ?? {}) },
-    skills: { ...base.skills, ...(override.skills ?? {}) },
+    skills: normalizeSkills(mergedSkills as Record<string, (string | SkillEntry)[]>),
     work_experience: override.work_experience ?? base.work_experience,
     education: override.education ?? base.education,
     certifications: override.certifications ?? base.certifications,

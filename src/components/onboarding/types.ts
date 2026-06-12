@@ -97,9 +97,14 @@ export interface ProfilePreferences {
   office_location_cities: string[];
 }
 
+export interface SkillEntry {
+  name: string;
+  since: number | null;
+}
+
 export interface Profile {
   basic_info: ProfileBasicInfo;
-  skills: Record<string, string[]>;
+  skills: Record<string, SkillEntry[]>;
   work_experience: WorkExperienceEntry[];
   education: EducationEntry[];
   certifications: CertificationEntry[];

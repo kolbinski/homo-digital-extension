@@ -1,11 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CaretDown, CaretRight, XCircle } from '@phosphor-icons/react';
+import {
+  CaretDown,
+  CaretRight,
+  CheckCircle,
+  CircleDashed,
+  XCircle,
+} from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
+import type { SkillEntry } from '../types';
 
 interface Props {
-  skills: Record<string, string[]>;
-  onChange: (skills: Record<string, string[]>) => void;
+  skills: Record<string, SkillEntry[]>;
+  onChange: (skills: Record<string, SkillEntry[]>) => void;
+}
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: 41 }, (_, i) => CURRENT_YEAR - i);
+
+function yearLabel(year: number): string {
+  const n = CURRENT_YEAR - year;
+  if (n === 0) return `${year} (< 1 yr)`;
+  return `${year} (${n === 1 ? '1 yr' : `${n} yrs`})`;
 }
 
 const inputClass =
@@ -18,19 +34,23 @@ function CategorySection({
   onToggle,
   onAdd,
   onRemove,
+  onUpdate,
 }: {
   category: string;
-  skills: string[];
+  skills: SkillEntry[];
   isExpanded: boolean;
   onToggle: () => void;
   onAdd: (skill: string) => void;
   onRemove: (skill: string) => void;
+  onUpdate: (skill: string, since: number) => void;
 }) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const [suggOpen, setSuggOpen] = useState(false);
+  const [suggPos, setSuggPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pickerSkill, setPickerSkill] = useState<string | null>(null);
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,8 +72,9 @@ function CategorySection({
         if (!res.ok) throw new Error(`${res.status}`);
         const data = await res.json();
         if (!cancelled) {
+          const skillNames = skills.map(e => e.name);
           setSuggestions(
-            (data.skills ?? []).filter((s: string) => !skills.includes(s)),
+            (data.skills ?? []).filter((s: string) => !skillNames.includes(s)),
           );
           setLoading(false);
         }
@@ -70,19 +91,29 @@ function CategorySection({
     };
   }, [input, category, skills]);
 
-  function openDropdown() {
+  // Close year picker on any outside mousedown
+  useEffect(() => {
+    if (!pickerSkill) return;
+    function handler() {
+      setPickerSkill(null);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [pickerSkill]);
+
+  function openSuggDropdown() {
     if (wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
-      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      setSuggPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
-    setDropdownOpen(true);
+    setSuggOpen(true);
   }
 
   function addSkill(skill: string) {
     onAdd(skill);
     setInput('');
     setSuggestions([]);
-    setDropdownOpen(false);
+    setSuggOpen(false);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -91,8 +122,21 @@ function CategorySection({
       e.preventDefault();
       addSkill(val);
     }
-    if (e.key === 'Escape') setDropdownOpen(false);
+    if (e.key === 'Escape') setSuggOpen(false);
   }
+
+  function openYearPicker(
+    skill: string,
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPickerPos({ top: rect.bottom + 4, left: rect.left });
+    setPickerSkill(skill);
+  }
+
+  const missingCount = skills.filter(s => s.since === null).length;
+  const isEmpty = skills.length === 0;
+  const allFilled = !isEmpty && missingCount === 0;
 
   return (
     <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
@@ -112,11 +156,28 @@ function CategorySection({
         <span className="text-sm font-medium text-gray-900 flex-1 capitalize">
           {category.replace(/_/g, ' ')}
         </span>
-        {
-          <span className="text-xs text-gray-400 shrink-0">
-            {skills.length}
+        {isEmpty && (
+          <CircleDashed
+            size={16}
+            weight="fill"
+            className="text-gray-300 shrink-0"
+          />
+        )}
+        {allFilled && (
+          <CheckCircle
+            size={16}
+            weight="fill"
+            className="text-green-500 shrink-0"
+          />
+        )}
+        {!isEmpty && missingCount > 0 && (
+          <span
+            className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none shrink-0"
+            style={{ fontSize: 8, width: 16, height: 16 }}
+          >
+            {missingCount}
           </span>
-        }
+        )}
       </div>
 
       {/* Body */}
@@ -124,48 +185,97 @@ function CategorySection({
         <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col gap-2">
           {skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {skills.map(skill => (
+              {skills.map(entry => (
                 <span
-                  key={skill}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-600 text-white"
+                  key={entry.name}
+                  className="inline-flex items-center rounded-full text-xs font-medium bg-blue-600 text-white overflow-hidden"
                 >
-                  {skill}
+                  {/* Clickable body — opens year picker */}
                   <button
                     type="button"
-                    onClick={() => onRemove(skill)}
-                    className="hover:text-blue-200 transition-colors"
+                    onClick={e => openYearPicker(entry.name, e)}
+                    className="flex items-center gap-1 pl-2.5 py-1 hover:bg-blue-500 transition-colors"
                   >
-                    <XCircle size={13} weight="fill" />
+                    <span>{entry.name}</span>
+                    <span className="opacity-60">·</span>
+                    <span>{entry.since ?? '?'}</span>
+                    {entry.since === null && (
+                      <XCircle
+                        size={12}
+                        weight="fill"
+                        className="text-red-300"
+                      />
+                    )}
+                  </button>
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    onClick={() => onRemove(entry.name)}
+                    className="px-2 py-1 hover:bg-blue-500 transition-colors opacity-70 hover:opacity-100 text-sm leading-none"
+                  >
+                    ×
                   </button>
                 </span>
               ))}
             </div>
           )}
 
+          {/* Year picker portal */}
+          {pickerSkill !== null &&
+            createPortal(
+              <div
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  position: 'fixed',
+                  top: pickerPos.top,
+                  left: pickerPos.left,
+                  minWidth: 170,
+                  zIndex: 9999,
+                }}
+                className="bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto"
+              >
+                {YEARS.map(year => (
+                  <button
+                    key={year}
+                    type="button"
+                    onMouseDown={() => {
+                      onUpdate(pickerSkill, year);
+                      setPickerSkill(null);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                  >
+                    {yearLabel(year)}
+                  </button>
+                ))}
+              </div>,
+              document.body,
+            )}
+
+          {/* Autocomplete input */}
           <div ref={wrapperRef}>
             <input
               type="text"
               value={input}
               onChange={e => {
                 setInput(e.target.value);
-                openDropdown();
+                openSuggDropdown();
               }}
-              onFocus={openDropdown}
+              onFocus={openSuggDropdown}
               onKeyDown={handleKeyDown}
-              onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+              onBlur={() => setTimeout(() => setSuggOpen(false), 150)}
               placeholder="Type to search or add skill…"
               className={inputClass}
             />
-            {dropdownOpen &&
+            {suggOpen &&
               !!input.trim() &&
               (loading || suggestions.length > 0) &&
               createPortal(
                 <div
                   style={{
                     position: 'fixed',
-                    top: dropdownPos.top,
-                    left: dropdownPos.left,
-                    width: dropdownPos.width,
+                    top: suggPos.top,
+                    left: suggPos.left,
+                    width: suggPos.width,
                     zIndex: 9999,
                   }}
                   className="bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto"
@@ -237,14 +347,23 @@ export default function SkillsTab({ skills, onChange }: Props) {
 
   function addSkill(cat: string, skill: string) {
     const existing = skills[cat] ?? [];
-    if (existing.includes(skill)) return;
-    onChange({ ...skills, [cat]: [...existing, skill] });
+    if (existing.some(e => e.name === skill)) return;
+    onChange({ ...skills, [cat]: [...existing, { name: skill, since: null }] });
   }
 
   function removeSkill(cat: string, skill: string) {
     onChange({
       ...skills,
-      [cat]: (skills[cat] ?? []).filter(s => s !== skill),
+      [cat]: (skills[cat] ?? []).filter(e => e.name !== skill),
+    });
+  }
+
+  function updateSkillSince(cat: string, skill: string, since: number) {
+    onChange({
+      ...skills,
+      [cat]: (skills[cat] ?? []).map(e =>
+        e.name === skill ? { ...e, since } : e,
+      ),
     });
   }
 
@@ -267,6 +386,7 @@ export default function SkillsTab({ skills, onChange }: Props) {
           onToggle={() => toggleExpand(cat)}
           onAdd={skill => addSkill(cat, skill)}
           onRemove={skill => removeSkill(cat, skill)}
+          onUpdate={(skill, since) => updateSkillSince(cat, skill, since)}
         />
       ))}
     </div>
