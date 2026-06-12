@@ -53,7 +53,7 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
 
   if (profileState === 'loading') {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <Spinner size={20} className="text-blue-500" />
       </div>
     );
