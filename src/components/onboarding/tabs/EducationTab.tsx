@@ -23,7 +23,7 @@ function reorderIndex(i: number, from: number, to: number): number {
 }
 
 const fieldClass =
-  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
+  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blye-500 focus:border-transparent';
 
 function Field({
   label,
@@ -203,15 +203,20 @@ export default function EducationTab({ education, onChange }: Props) {
             {isOpen && (
               <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col gap-3">
                 <Field label="Institution" required>
-                  <textarea
-                    rows={2}
-                    value={entry.institution}
-                    onChange={e =>
-                      updateEntry(idx, { institution: e.target.value })
-                    }
-                    placeholder="e.g. Warsaw University of Technology"
-                    className={`${fieldClass} resize-y`}
-                  />
+                  <div className="flex items-start gap-1.5">
+                    <textarea
+                      rows={2}
+                      value={entry.institution}
+                      onChange={e =>
+                        updateEntry(idx, { institution: e.target.value })
+                      }
+                      placeholder="e.g. Warsaw University of Technology"
+                      className={`${fieldClass} resize-y flex-1`}
+                    />
+                    {!entry.institution?.trim() && (
+                      <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+                    )}
+                  </div>
                 </Field>
 
                 <Field label="Degree">

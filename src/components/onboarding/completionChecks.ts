@@ -30,6 +30,7 @@ function countMissingWorkExperience(p: Profile): number {
     if (!e.company?.trim()) missing++;
     if (!DATE_RE.test(e.date_from ?? '')) missing++;
     if (e.date_to !== null && !DATE_RE.test(e.date_to ?? '')) missing++;
+    if (!e.work_model) missing++;
     const projects = e.projects ?? [];
     if (projects.length > 1) {
       missing += projects.filter(proj => !proj.name?.trim()).length;
@@ -156,15 +157,35 @@ export function getTabCompletions(profile: Profile): TabCompletion[] {
         case 'own_projects': {
           const projects = profile.own_projects ?? [];
           hasEntry = projects.some(p => p.name?.trim());
-          missingCount = projects.filter(p => !p.name?.trim()).length;
+          let count = 0;
+          for (const p of projects) {
+            if (!p.name?.trim()) count++;
+            const achs = p.achievements ?? [];
+            if (achs.length === 0) count++;
+            else count += achs.filter(a => !a.trim()).length;
+          }
+          missingCount = count;
           break;
         }
         case 'certifications': {
           const certs = profile.certifications ?? [];
           hasEntry = certs.length > 0;
-          missingCount = certs.filter(
-            c => !c.name?.trim() || !c.issuer?.trim(),
-          ).length;
+          const CERT_DATE_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+          let count = 0;
+          for (const c of certs) {
+            if (!c.name?.trim()) count++;
+            if (!c.issuer?.trim()) count++;
+            if (c.date?.trim() && !CERT_DATE_RE.test(c.date)) count++;
+            if (c.url?.trim()) {
+              try {
+                const u = new URL(c.url);
+                if (u.protocol !== 'http:' && u.protocol !== 'https:') count++;
+              } catch {
+                count++;
+              }
+            }
+          }
+          missingCount = count;
           break;
         }
         case 'red_flags':

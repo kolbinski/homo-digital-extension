@@ -35,7 +35,13 @@ const TEAM_SIZE_OPTIONS = [
 ];
 
 function emptyProject(): ProjectEntry {
-  return { name: '', role: null, skills: [], team_size: null, achievements: [] };
+  return {
+    name: '',
+    role: null,
+    skills: [],
+    team_size: null,
+    achievements: [],
+  };
 }
 
 function emptyExperience(): WorkExperienceEntry {
@@ -58,6 +64,7 @@ function countExpInvalid(e: WorkExperienceEntry): number {
   if (!e.company?.trim()) count++;
   if (!DATE_RE.test(e.date_from ?? '')) count++;
   if (e.date_to !== null && !DATE_RE.test(e.date_to ?? '')) count++;
+  if (!e.work_model) count++;
   const projects = e.projects ?? [];
   for (const proj of projects) {
     if (projects.length > 1 && !proj.name?.trim()) count++;
@@ -337,6 +344,9 @@ function AchievementsList({
             placeholder="e.g. Reduced build time by 40%"
             className={`${fieldClass} resize-y flex-1`}
           />
+          {!ach.trim() && (
+            <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+          )}
           <button
             type="button"
             onClick={() => onChange(achievements.filter((_, j) => j !== i))}
@@ -443,15 +453,21 @@ function ProjectCard({
           {/* Name */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-600">
-              Project name{requireName && <span className="text-red-500 ml-0.5">*</span>}
+              Project name
+              {requireName && <span className="text-red-500 ml-0.5">*</span>}
             </label>
-            <textarea
-              rows={2}
-              value={project.name}
-              onChange={e => onChange({ name: e.target.value })}
-              placeholder="e.g. Customer portal redesign"
-              className={`${fieldClass} resize-y`}
-            />
+            <div className="flex items-start gap-1.5">
+              <textarea
+                rows={2}
+                value={project.name}
+                onChange={e => onChange({ name: e.target.value })}
+                placeholder="e.g. Customer portal redesign"
+                className={`${fieldClass} resize-y flex-1`}
+              />
+              {nameInvalid && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+              )}
+            </div>
           </div>
 
           {/* Role */}
@@ -463,14 +479,16 @@ function ProjectCard({
               <input
                 type="text"
                 value={project.role ?? ''}
-                onChange={e =>
-                  onChange({ role: e.target.value || null })
-                }
+                onChange={e => onChange({ role: e.target.value || null })}
                 placeholder="e.g. Tech Lead"
                 className={`${fieldClass} flex-1`}
               />
               {roleInvalid && (
-                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400"
+                />
               )}
             </div>
           </div>
@@ -482,9 +500,7 @@ function ProjectCard({
             </label>
             <select
               value={project.team_size ?? ''}
-              onChange={e =>
-                onChange({ team_size: e.target.value || null })
-              }
+              onChange={e => onChange({ team_size: e.target.value || null })}
               className="w-32 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
             >
               <option value="">—</option>
@@ -515,7 +531,11 @@ function ProjectCard({
                 Achievements <span className="text-red-500">*</span>
               </label>
               {achievementsInvalid && (
-                <XCircle size={14} weight="fill" className="shrink-0 text-red-400" />
+                <XCircle
+                  size={14}
+                  weight="fill"
+                  className="shrink-0 text-red-400"
+                />
               )}
             </div>
             <AchievementsList
@@ -555,10 +575,9 @@ function ExperienceCard({
   const invalidCount = countExpInvalid(entry);
   const projects = entry.projects ?? [emptyProject()];
 
-  const dateLabel =
-    entry.date_from
-      ? `${entry.date_from} → ${entry.date_to ?? 'present'}`
-      : '';
+  const dateLabel = entry.date_from
+    ? `${entry.date_from} → ${entry.date_to ?? 'present'}`
+    : '';
 
   function setIndustry(val: string | null) {
     onChange({ industry: val });
@@ -619,11 +638,11 @@ function ExperienceCard({
               {entry.title.trim() || 'Untitled experience'}
             </p>
             {entry.company.trim() && (
-              <p className="text-xs text-gray-400 truncate">{entry.company.trim()}</p>
+              <p className="text-xs text-gray-400 truncate">
+                {entry.company.trim()}
+              </p>
             )}
-            {dateLabel && (
-              <p className="text-xs text-gray-400">{dateLabel}</p>
-            )}
+            {dateLabel && <p className="text-xs text-gray-400">{dateLabel}</p>}
           </div>
         </div>
         <span className="shrink-0 p-0.5">
@@ -655,13 +674,18 @@ function ExperienceCard({
             <label className="text-xs font-medium text-gray-600">
               Title <span className="text-red-500">*</span>
             </label>
-            <textarea
-              rows={2}
-              value={entry.title}
-              onChange={e => onChange({ title: e.target.value })}
-              placeholder="e.g. Senior Frontend Engineer"
-              className={`${fieldClass} resize-y`}
-            />
+            <div className="flex items-start gap-1.5">
+              <textarea
+                rows={2}
+                value={entry.title}
+                onChange={e => onChange({ title: e.target.value })}
+                placeholder="e.g. Senior Frontend Engineer"
+                className={`${fieldClass} resize-y flex-1`}
+              />
+              {!entry.title.trim() && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+              )}
+            </div>
           </div>
 
           {/* Company */}
@@ -669,13 +693,18 @@ function ExperienceCard({
             <label className="text-xs font-medium text-gray-600">
               Company <span className="text-red-500">*</span>
             </label>
-            <textarea
-              rows={2}
-              value={entry.company}
-              onChange={e => onChange({ company: e.target.value })}
-              placeholder="e.g. Acme Corp"
-              className={`${fieldClass} resize-y`}
-            />
+            <div className="flex items-start gap-1.5">
+              <textarea
+                rows={2}
+                value={entry.company}
+                onChange={e => onChange({ company: e.target.value })}
+                placeholder="e.g. Acme Corp"
+                className={`${fieldClass} resize-y flex-1`}
+              />
+              {!entry.company.trim() && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+              )}
+            </div>
           </div>
 
           {/* Dates */}
@@ -692,7 +721,11 @@ function ExperienceCard({
                 className={`${fieldClass} flex-1`}
               />
               {!DATE_RE.test(entry.date_from) && (
-                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+                <XCircle
+                  size={16}
+                  weight="fill"
+                  className="shrink-0 text-red-400"
+                />
               )}
             </div>
           </div>
@@ -706,7 +739,9 @@ function ExperienceCard({
                 }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-xs text-gray-600">I currently work here</span>
+              <span className="text-xs text-gray-600">
+                I currently work here
+              </span>
             </label>
             {entry.date_to !== null && (
               <div className="flex flex-col gap-1">
@@ -722,7 +757,11 @@ function ExperienceCard({
                     className={`${fieldClass} flex-1`}
                   />
                   {!DATE_RE.test(entry.date_to) && (
-                    <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+                    <XCircle
+                      size={16}
+                      weight="fill"
+                      className="shrink-0 text-red-400"
+                    />
                   )}
                 </div>
               </div>
@@ -737,9 +776,7 @@ function ExperienceCard({
             <input
               type="text"
               value={entry.location ?? ''}
-              onChange={e =>
-                onChange({ location: e.target.value || null })
-              }
+              onChange={e => onChange({ location: e.target.value || null })}
               placeholder="e.g. Warsaw, PL"
               className={fieldClass}
             />
@@ -748,9 +785,9 @@ function ExperienceCard({
           {/* Work model */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-600">
-              Work model
+              Work model <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-1.5">
+            <div className="flex items-center gap-1.5">
               {(
                 [
                   ['remote', 'Remote'],
@@ -769,6 +806,9 @@ function ExperienceCard({
                   }
                 />
               ))}
+              {!entry.work_model && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              )}
             </div>
           </div>
 
@@ -811,13 +851,12 @@ function ExperienceCard({
                   }
                 />
               ))}
-              {entry.industry &&
-                !industryOptions.includes(entry.industry) && (
-                  <RemovableChip
-                    label={entry.industry}
-                    onRemove={() => onChange({ industry: null })}
-                  />
-                )}
+              {entry.industry && !industryOptions.includes(entry.industry) && (
+                <RemovableChip
+                  label={entry.industry}
+                  onRemove={() => onChange({ industry: null })}
+                />
+              )}
             </div>
             {!entry.industry && (
               <input
@@ -865,8 +904,13 @@ function ExperienceCard({
                     requireName={projects.length > 1}
                     onChange={patch => updateProject(pi, patch)}
                     onRemove={() => removeProject(pi)}
-                    onDragStart={() => { projDragFrom.current = pi; }}
-                    onDragEnd={() => { projDragFrom.current = null; setProjDragOver(null); }}
+                    onDragStart={() => {
+                      projDragFrom.current = pi;
+                    }}
+                    onDragEnd={() => {
+                      projDragFrom.current = null;
+                      setProjDragOver(null);
+                    }}
                   />
                 </div>
               ))}
@@ -887,10 +931,7 @@ function ExperienceCard({
 }
 
 // ── WorkExperienceTab ─────────────────────────────────────────────────────────
-export default function WorkExperienceTab({
-  workExperience,
-  onChange,
-}: Props) {
+export default function WorkExperienceTab({ workExperience, onChange }: Props) {
   const [dragOver, setDragOver] = useState<number | null>(null);
   const dragFrom = useRef<number | null>(null);
 
@@ -898,10 +939,7 @@ export default function WorkExperienceTab({
     onChange([...workExperience, emptyExperience()]);
   }
 
-  function updateExperience(
-    idx: number,
-    patch: Partial<WorkExperienceEntry>,
-  ) {
+  function updateExperience(idx: number, patch: Partial<WorkExperienceEntry>) {
     onChange(
       workExperience.map((e, i) => (i === idx ? { ...e, ...patch } : e)),
     );
@@ -948,8 +986,13 @@ export default function WorkExperienceTab({
             entry={entry}
             onChange={patch => updateExperience(idx, patch)}
             onRemove={() => removeExperience(idx)}
-            onDragStart={() => { dragFrom.current = idx; }}
-            onDragEnd={() => { dragFrom.current = null; setDragOver(null); }}
+            onDragStart={() => {
+              dragFrom.current = idx;
+            }}
+            onDragEnd={() => {
+              dragFrom.current = null;
+              setDragOver(null);
+            }}
           />
         </div>
       ))}

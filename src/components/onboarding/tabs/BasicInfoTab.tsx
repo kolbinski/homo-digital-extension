@@ -460,22 +460,32 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
       <Section title="Name">
         <div className="grid grid-cols-2 gap-3">
           <Field label="First name" required>
-            <input
-              type="text"
-              value={b.first_name}
-              onChange={e => update({ first_name: e.target.value })}
-              placeholder="e.g. Anna"
-              className={fieldClass}
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={b.first_name}
+                onChange={e => update({ first_name: e.target.value })}
+                placeholder="e.g. Anna"
+                className={`${fieldClass} flex-1`}
+              />
+              {!b.first_name.trim() && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              )}
+            </div>
           </Field>
           <Field label="Last name" required>
-            <input
-              type="text"
-              value={b.last_name}
-              onChange={e => update({ last_name: e.target.value })}
-              placeholder="e.g. Kowalski"
-              className={fieldClass}
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={b.last_name}
+                onChange={e => update({ last_name: e.target.value })}
+                placeholder="e.g. Kowalski"
+                className={`${fieldClass} flex-1`}
+              />
+              {!b.last_name.trim() && (
+                <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+              )}
+            </div>
           </Field>
         </div>
       </Section>

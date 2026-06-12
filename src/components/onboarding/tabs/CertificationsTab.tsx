@@ -10,6 +10,21 @@ import {
 } from '@phosphor-icons/react';
 import type { CertificationEntry } from '../types';
 
+const CERT_DATE_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+function isUrlInvalid(value: string): boolean {
+  if (!value.trim()) return false;
+  try {
+    const u = new URL(value.startsWith('http') ? value : `https://${value}`);
+    return (
+      (u.protocol !== 'http:' && u.protocol !== 'https:') ||
+      !u.hostname.includes('.')
+    );
+  } catch {
+    return true;
+  }
+}
+
 interface Props {
   certifications: CertificationEntry[];
   onChange: (certifications: CertificationEntry[]) => void;
@@ -109,7 +124,11 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
       {certifications.map((cert, idx) => {
         const isOpen = expanded.has(idx);
         const isDragTarget = dragOverIdx === idx;
-        const isComplete = !!cert.name?.trim() && !!cert.issuer?.trim();
+        const invalidCount =
+          (!cert.name?.trim() ? 1 : 0) +
+          (!cert.issuer?.trim() ? 1 : 0) +
+          (cert.date?.trim() && !CERT_DATE_RE.test(cert.date) ? 1 : 0) +
+          (isUrlInvalid(cert.url ?? '') ? 1 : 0);
 
         return (
           <div
@@ -160,14 +179,19 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
 
               {/* Completion status */}
               <span className="shrink-0 p-0.5">
-                {isComplete ? (
+                {invalidCount === 0 ? (
                   <CheckCircle
                     size={20}
                     weight="fill"
                     className="text-green-500"
                   />
                 ) : (
-                  <XCircle size={20} weight="fill" className="text-red-400" />
+                  <span
+                    className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none"
+                    style={{ fontSize: 9, width: 18, height: 18 }}
+                  >
+                    {invalidCount}
+                  </span>
                 )}
               </span>
 
@@ -192,6 +216,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                   placeholder="e.g. AWS Solutions Architect"
                   required
                   multiline
+                  invalid={!cert.name?.trim()}
                 />
                 <Field
                   label="Issuer"
@@ -200,18 +225,24 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
                   placeholder="e.g. Amazon Web Services"
                   required
                   multiline
+                  invalid={!cert.issuer?.trim()}
                 />
                 <Field
                   label="Date"
                   value={cert.date ?? ''}
                   onChange={v => updateEntry(idx, 'date', v)}
                   placeholder="YYYY-MM"
+                  invalid={
+                    !!cert.date?.trim() &&
+                    !/^\d{4}-(0[1-9]|1[0-2])$/.test(cert.date)
+                  }
                 />
                 <Field
                   label="URL"
                   value={cert.url ?? ''}
                   onChange={v => updateEntry(idx, 'url', v)}
                   placeholder="https://..."
+                  invalid={isUrlInvalid(cert.url ?? '')}
                 />
               </div>
             )}
@@ -232,8 +263,7 @@ export default function CertificationsTab({ certifications, onChange }: Props) {
 }
 
 const fieldClass =
-  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent';
-const ringStyle = { ['--tw-ring-color' as string]: '#16a34a' };
+  'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
 function Field({
   label,
@@ -242,6 +272,7 @@ function Field({
   placeholder,
   required,
   multiline,
+  invalid,
 }: {
   label: string;
   value: string;
@@ -249,6 +280,7 @@ function Field({
   placeholder?: string;
   required?: boolean;
   multiline?: boolean;
+  invalid?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -256,25 +288,32 @@ function Field({
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
-      {multiline ? (
-        <textarea
-          rows={2}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={`${fieldClass} resize-y`}
-          style={ringStyle}
-        />
-      ) : (
-        <input
-          type="text"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={fieldClass}
-          style={ringStyle}
-        />
-      )}
+      <div className="flex items-start gap-1.5">
+        {multiline ? (
+          <textarea
+            rows={2}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${fieldClass} resize-y flex-1`}
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${fieldClass} flex-1`}
+          />
+        )}
+        {invalid && (
+          <XCircle
+            size={16}
+            weight="fill"
+            className="shrink-0 text-red-400 mt-1.5"
+          />
+        )}
+      </div>
     </div>
   );
 }

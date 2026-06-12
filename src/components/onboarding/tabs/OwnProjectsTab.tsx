@@ -288,9 +288,13 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
       {projects.map((project, idx) => {
         const isOpen = expanded.has(idx);
         const isDragTarget = dragOverIdx === idx;
-        const isComplete = !!project.name?.trim();
         const achievements = project.achievements ?? [];
         const skills = project.skills ?? [];
+        const invalidCount =
+          (!project.name?.trim() ? 1 : 0) +
+          (achievements.length === 0
+            ? 1
+            : achievements.filter(a => !a.trim()).length);
 
         return (
           <div
@@ -343,14 +347,19 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
 
               {/* Completion status */}
               <span className="shrink-0 p-0.5">
-                {isComplete ? (
+                {invalidCount === 0 ? (
                   <CheckCircle
                     size={20}
                     weight="fill"
                     className="text-green-500"
                   />
                 ) : (
-                  <XCircle size={20} weight="fill" className="text-red-400" />
+                  <span
+                    className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none"
+                    style={{ fontSize: 9, width: 18, height: 18 }}
+                  >
+                    {invalidCount}
+                  </span>
                 )}
               </span>
 
@@ -373,13 +382,18 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
                   <label className="text-xs font-medium text-gray-600">
                     Name <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    rows={2}
-                    value={project.name}
-                    onChange={e => updateProject(idx, { name: e.target.value })}
-                    placeholder="e.g. Open Source CLI Tool"
-                    className={`${fieldClass} resize-y`}
-                  />
+                  <div className="flex items-start gap-1.5">
+                    <textarea
+                      rows={2}
+                      value={project.name}
+                      onChange={e => updateProject(idx, { name: e.target.value })}
+                      placeholder="e.g. Open Source CLI Tool"
+                      className={`${fieldClass} resize-y flex-1`}
+                    />
+                    {!project.name?.trim() && (
+                      <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+                    )}
+                  </div>
                 </div>
 
                 {/* URL */}
@@ -414,9 +428,14 @@ export default function OwnProjectsTab({ projects, onChange }: Props) {
 
                 {/* Achievements */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">
-                    Achievements
-                  </label>
+                  <div className="flex items-center gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Achievements <span className="text-red-500">*</span>
+                    </label>
+                    {achievements.length === 0 && (
+                      <XCircle size={14} weight="fill" className="text-red-400" />
+                    )}
+                  </div>
                   <AchievementsList
                     achievements={achievements}
                     onChange={next =>
@@ -510,8 +529,11 @@ function AchievementsList({
               onChange(next);
             }}
             placeholder="e.g. Reduced build time by 40%"
-            className={`${fieldClass} resize-y`}
+            className={`${fieldClass} resize-y flex-1`}
           />
+          {!ach.trim() && (
+            <XCircle size={16} weight="fill" className="shrink-0 text-red-400 mt-1.5" />
+          )}
           <button
             type="button"
             onClick={() => onChange(achievements.filter((_, i) => i !== aIdx))}
