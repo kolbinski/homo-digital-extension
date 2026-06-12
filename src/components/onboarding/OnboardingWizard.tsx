@@ -44,14 +44,16 @@ export default function OnboardingWizard({
   onSubmitted,
 }: Props) {
   const { getOAuthData } = useAuth();
-  const [step, setStep] = useState<Step>(initialProfile ? 'wizard' : 'kickstart');
-  const [profile, setProfile] = useState<Profile>(
-    initialProfile ? mergeProfile(emptyProfile, initialProfile) : emptyProfile,
-  );
+  const [step, setStep] = useState<Step>('kickstart');
+  const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Step is determined solely by whether a DB profile exists.
+    // OAuth pre-fill is only applied in the null (new user) branch.
     if (initialProfile) {
+      setProfile(mergeProfile(emptyProfile, initialProfile));
+      setStep('wizard');
       setReady(true);
       return;
     }
@@ -78,7 +80,7 @@ export default function OnboardingWizard({
   if (!ready) return null;
 
   function handlePrepared(prepared: Partial<Profile>) {
-    setProfile(prev => mergeProfile(prev, prepared));
+    setProfile(mergeProfile(emptyProfile, prepared));
     setStep('wizard');
   }
 
