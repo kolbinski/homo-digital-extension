@@ -30,6 +30,7 @@ interface Props {
   onSubmitted: () => void;
   clientId?: string;
   onClose?: () => void;
+  onSaved?: (profile: Profile) => void;
 }
 
 export default function WizardShell({
@@ -39,6 +40,7 @@ export default function WizardShell({
   onSubmitted,
   clientId,
   onClose,
+  onSaved,
 }: Props) {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
@@ -46,9 +48,10 @@ export default function WizardShell({
   const [submitting, setSubmitting] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
-  const getAuthToken = getToken;
-  const getAuthTokenRef = useRef(getAuthToken);
-  getAuthTokenRef.current = getAuthToken;
+  const getAuthTokenRef = useRef(getToken);
+  getAuthTokenRef.current = getToken;
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
 
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
@@ -80,6 +83,7 @@ export default function WizardShell({
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         setAutoSaveStatus('saved');
+        onSavedRef.current?.(profile);
       } catch {
         setAutoSaveStatus('error');
       }
@@ -99,7 +103,7 @@ export default function WizardShell({
     }
     setSubmitting(true);
     try {
-      const token = await getAuthToken();
+      const token = await getAuthTokenRef.current();
       console.log('[patchProfile] token:', token?.slice(0, 20));
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',

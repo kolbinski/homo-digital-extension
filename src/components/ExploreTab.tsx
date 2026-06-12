@@ -6,6 +6,7 @@ import {
   ArrowUp,
   CurrencyCircleDollar,
   FilePlusIcon,
+  X,
 } from '@phosphor-icons/react';
 import WizardShell from './onboarding/WizardShell';
 import { emptyProfile } from './onboarding/emptyProfile';
@@ -143,6 +144,7 @@ interface ClientAccordionProps {
   minScore: number;
   cvGenerated: boolean;
   clGenerated: boolean;
+  onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
 }
 
 interface OfferCardProps {
@@ -849,6 +851,7 @@ function ClientAccordion({
   minScore,
   cvGenerated,
   clGenerated,
+  onClientUpdate,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
@@ -856,6 +859,7 @@ function ClientAccordion({
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
+  const [wizardProfileLoading, setWizardProfileLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
@@ -1134,11 +1138,27 @@ function ClientAccordion({
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={e => {
+            onClick={async e => {
               console.log('address book clicked', client.id);
               e.stopPropagation();
-              setWizardProfile(clientToProfile(client.profile));
-              setProfileOpen(v => !v);
+              setWizardProfile(null);
+              setWizardProfileLoading(true);
+              setProfileOpen(true);
+              try {
+                const token = await getToken();
+                const params = new URLSearchParams({ client_id: client.id });
+                const res = await fetch(`${API_BASE_URL}/v1/profile?${params}`, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                const fetched = res.ok
+                  ? ((await res.json()) as { profile: Record<string, unknown> | null }).profile
+                  : null;
+                setWizardProfile(clientToProfile(fetched ?? client.profile));
+              } catch {
+                setWizardProfile(clientToProfile(client.profile));
+              } finally {
+                setWizardProfileLoading(false);
+              }
             }}
             title="Edit profile"
             className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
@@ -1454,16 +1474,50 @@ function ClientAccordion({
           )}
         </div>
       )}
-      {profileOpen && wizardProfile &&
+      {profileOpen &&
         createPortal(
           <div className="fixed inset-0 z-50">
-            <WizardShell
-              profile={wizardProfile}
-              onChange={setWizardProfile}
-              clientId={client.id}
-              onClose={() => setProfileOpen(false)}
-              onSubmitted={() => setProfileOpen(false)}
-            />
+            {wizardProfileLoading || !wizardProfile ? (
+              <div className="flex flex-col h-screen bg-gray-50">
+                <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+                  <span className="text-sm font-semibold text-gray-900">
+                    Great jobs start with a great profile
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setProfileOpen(false)}
+                    aria-label="Close"
+                    className="text-gray-800 hover:text-gray-700 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </header>
+                <div className="flex-1 flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-6 w-6 text-indigo-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                </div>
+              </div>
+            ) : (
+              <WizardShell
+                profile={wizardProfile}
+                onChange={setWizardProfile}
+                clientId={client.id}
+                onClose={() => setProfileOpen(false)}
+                onSubmitted={() => setProfileOpen(false)}
+                onSaved={saved => {
+                  const fn = saved.basic_info?.first_name ?? '';
+                  const ln = saved.basic_info?.last_name ?? '';
+                  onClientUpdate?.(client.id, fn, ln);
+                }}
+              />
+            )}
           </div>,
           document.body,
         )}
@@ -1533,6 +1587,12 @@ export default function ExploreTab({
     el.addEventListener('scroll', handleScroll);
     return () => el.removeEventListener('scroll', handleScroll);
   }, []);
+
+  function handleClientUpdate(id: string, firstName: string, lastName: string) {
+    setClients(prev =>
+      prev.map(c => c.id === id ? { ...c, first_name: firstName, last_name: lastName } : c),
+    );
+  }
 
   function handleSortChange(value: string) {
     setSortBy(value);
@@ -1743,6 +1803,7 @@ export default function ExploreTab({
               minScore={minScore}
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
+              onClientUpdate={handleClientUpdate}
             />
           )
         ) : clients.length === 0 ? (
@@ -1766,6 +1827,7 @@ export default function ExploreTab({
                 minScore={minScore}
                 cvGenerated={cvGenerated}
                 clGenerated={clGenerated}
+                onClientUpdate={handleClientUpdate}
               />
             ))
         )}
