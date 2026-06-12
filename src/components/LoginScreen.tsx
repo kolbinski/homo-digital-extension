@@ -117,7 +117,7 @@ function LoginView({
   onLogin: (role: 'agent' | 'client') => void;
   onJoin: () => void;
 }) {
-  const { login, setToken, setRole, setOAuthData } = useAuth();
+  const { login, setToken, setSupabaseToken, setRole, setOAuthData } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [socialError, setSocialError] = useState('');
@@ -179,6 +179,7 @@ function LoginView({
       }
       const token = sessionData.session.access_token;
       const userMeta = (sessionData.session.user?.user_metadata ?? {}) as UserMeta;
+      await setSupabaseToken(token);
       await setRole('client');
       await setOAuthData(extractOAuthData(userMeta));
       try {
@@ -215,6 +216,7 @@ function LoginView({
       });
       userMeta = (sessionResult.user?.user_metadata ?? {}) as UserMeta;
     }
+    await setSupabaseToken(accessToken);
     await setRole('client');
     await setOAuthData(extractOAuthData(userMeta));
     try {

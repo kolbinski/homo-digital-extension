@@ -51,7 +51,7 @@ export default function KickstartScreen({
   onSkip,
   onLogout,
 }: Props) {
-  const { getToken } = useAuth();
+  const { getSupabaseToken } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -108,7 +108,7 @@ export default function KickstartScreen({
     profile: Partial<Profile>,
   ): Promise<Partial<Profile> | null> {
     try {
-      const token = await getToken();
+      const token = await getSupabaseToken();
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {
@@ -139,7 +139,7 @@ export default function KickstartScreen({
     setDisplayStep(0);
     scheduleNext(4000);
     try {
-      const token = await getToken();
+      const token = await getSupabaseToken();
       const body = new FormData();
       body.append('cv', file);
       const res = await fetch(`${API_BASE_URL}/v1/onboarding/prepare-profile`, {

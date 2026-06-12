@@ -35,14 +35,14 @@ export default function WizardShell({
   onLogout,
   onSubmitted,
 }: Props) {
-  const { getToken } = useAuth();
+  const { getSupabaseToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
   const [submitting, setSubmitting] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
-  const getTokenRef = useRef(getToken);
-  getTokenRef.current = getToken;
+  const getSupabaseTokenRef = useRef(getSupabaseToken);
+  getSupabaseTokenRef.current = getSupabaseToken;
 
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
@@ -59,7 +59,7 @@ export default function WizardShell({
     autoSaveTimerRef.current = setTimeout(async () => {
       autoSaveTimerRef.current = null;
       try {
-        const token = await getTokenRef.current();
+        const token = await getSupabaseTokenRef.current();
         const res = await fetch(`${API_BASE_URL}/v1/profile`, {
           method: 'PATCH',
           headers: {
@@ -89,7 +89,7 @@ export default function WizardShell({
     }
     setSubmitting(true);
     try {
-      const token = await getToken();
+      const token = await getSupabaseToken();
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {
