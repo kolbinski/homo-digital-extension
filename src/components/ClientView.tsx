@@ -28,7 +28,10 @@ export default function ClientView({ onLogout }: Props) {
         const data = (await res.json()) as
           | (Profile & { profile_ready?: boolean })
           | null;
-        if (!data || !data.profile_ready) {
+        if (!data) {
+          setProfileState('onboarding');
+        } else if (!data.profile_ready) {
+          setProfile(data);
           setProfileState('onboarding');
         } else {
           setProfile(data);
@@ -45,6 +48,7 @@ export default function ClientView({ onLogout }: Props) {
   if (profileState === 'onboarding') {
     return (
       <OnboardingWizard
+        initialProfile={profile}
         onLogout={onLogout}
         onSubmitted={() => setProfileState('loaded')}
       />

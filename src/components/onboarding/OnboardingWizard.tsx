@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { API_BASE_URL } from '../../config';
 import KickstartScreen from './KickstartScreen';
 import WizardShell from './WizardShell';
 import { emptyProfile } from './emptyProfile';
 import type { Profile, SkillEntry } from './types';
 
 interface Props {
+  initialProfile: Profile | null;
   onLogout: () => void;
   onSubmitted: () => void;
 }
@@ -38,32 +38,25 @@ function mergeProfile(base: Profile, override: Partial<Profile>): Profile {
   };
 }
 
-export default function OnboardingWizard({ onLogout, onSubmitted }: Props) {
-  const { getOAuthData, getToken } = useAuth();
-  const [step, setStep] = useState<Step>('kickstart');
-  const [profile, setProfile] = useState<Profile>(emptyProfile);
+export default function OnboardingWizard({
+  initialProfile,
+  onLogout,
+  onSubmitted,
+}: Props) {
+  const { getOAuthData } = useAuth();
+  const [step, setStep] = useState<Step>(initialProfile ? 'wizard' : 'kickstart');
+  const [profile, setProfile] = useState<Profile>(
+    initialProfile ? mergeProfile(emptyProfile, initialProfile) : emptyProfile,
+  );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    async function init() {
-      const [token, oauth] = await Promise.all([getToken(), getOAuthData()]);
-
-      let dbProfile: Profile | null = null;
-      try {
-        const res = await fetch(`${API_BASE_URL}/v1/profile`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          dbProfile = (await res.json()) as Profile | null;
-        }
-      } catch {
-        // ignore — proceed with empty profile
-      }
-
-      if (dbProfile) {
-        setProfile(mergeProfile(emptyProfile, dbProfile));
-        setStep('wizard');
-      } else if (oauth) {
+    if (initialProfile) {
+      setReady(true);
+      return;
+    }
+    getOAuthData().then(oauth => {
+      if (oauth) {
         setProfile(prev => ({
           ...prev,
           basic_info: {
@@ -78,10 +71,8 @@ export default function OnboardingWizard({ onLogout, onSubmitted }: Props) {
           },
         }));
       }
-
       setReady(true);
-    }
-    init();
+    });
   }, []);
 
   if (!ready) return null;
