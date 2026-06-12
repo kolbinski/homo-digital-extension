@@ -101,7 +101,10 @@ function BulletList({ items }: { items: string[] }) {
           >
             ✦
           </span>
-          <span className="text-gray-700" style={{ fontSize: 12, lineHeight: '18px' }}>
+          <span
+            className="text-gray-700"
+            style={{ fontSize: 12, lineHeight: '18px' }}
+          >
             {item}
           </span>
         </div>
@@ -133,7 +136,9 @@ function LoginView({
     try {
       await handleOAuthLogin(provider);
     } catch (err) {
-      setSocialError(typeof err === 'string' ? err : 'Sign-in failed. Please try again.');
+      setSocialError(
+        typeof err === 'string' ? err : 'Sign-in failed. Please try again.',
+      );
     } finally {
       setSocialLoading(null);
     }
@@ -141,7 +146,10 @@ function LoginView({
 
   async function handleOAuthLogin(provider: Provider) {
     const redirectTo = chrome.identity.getRedirectURL();
-    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string).replace(/\/$/, '');
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string).replace(
+      /\/$/,
+      '',
+    );
     const authUrl =
       `${supabaseUrl}/auth/v1/authorize` +
       `?provider=${provider}` +
@@ -156,7 +164,10 @@ function LoginView({
       chrome.identity.launchWebAuthFlow(
         { url: authUrl, interactive: true },
         url => {
-          console.log('launchWebAuthFlow callback', { url, lastError: chrome.runtime.lastError?.message });
+          console.log('launchWebAuthFlow callback', {
+            url,
+            lastError: chrome.runtime.lastError?.message,
+          });
           if (chrome.runtime.lastError || !url) {
             reject(chrome.runtime.lastError?.message ?? 'Auth flow cancelled.');
           } else {
@@ -178,7 +189,8 @@ function LoginView({
         throw exchangeError?.message ?? 'Failed to complete sign-in.';
       }
       const token = sessionData.session.access_token;
-      const userMeta = (sessionData.session.user?.user_metadata ?? {}) as UserMeta;
+      const userMeta = (sessionData.session.user?.user_metadata ??
+        {}) as UserMeta;
       await setRole('client');
       await setOAuthData(extractOAuthData(userMeta));
       try {
@@ -187,7 +199,9 @@ function LoginView({
           headers: { Authorization: `Bearer ${token}` },
         });
         if (socialRes.ok) {
-          const { token: internalToken } = (await socialRes.json()) as { token: string };
+          const { token: internalToken } = (await socialRes.json()) as {
+            token: string;
+          };
           await setToken(internalToken);
         } else {
           await setToken(token);
@@ -223,7 +237,9 @@ function LoginView({
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (socialRes.ok) {
-        const { token: internalToken } = (await socialRes.json()) as { token: string };
+        const { token: internalToken } = (await socialRes.json()) as {
+          token: string;
+        };
         await setToken(internalToken);
       } else {
         await setToken(accessToken);
@@ -292,27 +308,51 @@ function LoginView({
 
         <div className="w-full flex flex-col gap-3" style={{ marginBottom: 4 }}>
           <p className="text-sm font-medium text-gray-700">Sign in</p>
-          {([
-            { name: 'Google',    logo: '/icons/social-login-logos/google.png',    provider: 'google'   as Provider, enabled: CONFIG.auth.google },
-            { name: 'Facebook',  logo: '/icons/social-login-logos/facebook.png',  provider: 'facebook' as Provider, enabled: CONFIG.auth.facebook },
-            { name: 'Microsoft', logo: '/icons/social-login-logos/microsoft.png', provider: 'azure'    as Provider, enabled: CONFIG.auth.microsoft },
-            { name: 'GitHub',    logo: '/icons/social-login-logos/github.png',    provider: 'github'   as Provider, enabled: CONFIG.auth.github },
-          ]).filter(({ enabled }) => enabled).map(({ name, logo, provider }) => (
-            <button
-              key={name}
-              type="button"
-              disabled={!!socialLoading}
-              onClick={() => handleSocialLogin(provider, name)}
-              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {socialLoading === name ? (
-                <Spinner dark />
-              ) : (
-                <img src={logo} alt={name} width={20} height={20} />
-              )}
-              {socialLoading === name ? `Connecting…` : `Continue with ${name}`}
-            </button>
-          ))}
+          {[
+            {
+              name: 'Google',
+              logo: '/icons/social-login-logos/google.png',
+              provider: 'google' as Provider,
+              enabled: CONFIG.auth.google,
+            },
+            {
+              name: 'Facebook',
+              logo: '/icons/social-login-logos/facebook.png',
+              provider: 'facebook' as Provider,
+              enabled: CONFIG.auth.facebook,
+            },
+            {
+              name: 'Microsoft',
+              logo: '/icons/social-login-logos/microsoft.png',
+              provider: 'azure' as Provider,
+              enabled: CONFIG.auth.microsoft,
+            },
+            {
+              name: 'GitHub',
+              logo: '/icons/social-login-logos/github.png',
+              provider: 'github' as Provider,
+              enabled: CONFIG.auth.github,
+            },
+          ]
+            .filter(({ enabled }) => enabled)
+            .map(({ name, logo, provider }) => (
+              <button
+                key={name}
+                type="button"
+                disabled={!!socialLoading}
+                onClick={() => handleSocialLogin(provider, name)}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {socialLoading === name ? (
+                  <Spinner dark />
+                ) : (
+                  <img src={logo} alt={name} width={20} height={20} />
+                )}
+                {socialLoading === name
+                  ? `Connecting…`
+                  : `Continue with ${name}`}
+              </button>
+            ))}
           {socialError && <p className="text-sm text-red-600">{socialError}</p>}
         </div>
 
@@ -352,7 +392,7 @@ function LoginView({
               placeholder="agent@homodigital.io"
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
-              style={{ ['--tw-ring-color' as string]: '#16a34a' }}
+              style={{ ['--tw-ring-color' as string]: '#2563eb' }}
             />
             {emailError && <p className="text-xs text-red-600">{emailError}</p>}
           </div>
@@ -463,7 +503,10 @@ function JoinView({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="text-green-600" style={{ fontSize: 40, lineHeight: 1 }}>
+          <span
+            className="text-green-600"
+            style={{ fontSize: 40, lineHeight: 1 }}
+          >
             ✦
           </span>
           <h2 className="text-xl font-semibold text-gray-900">Thank you!</h2>
@@ -585,4 +628,3 @@ export default function LoginScreen({ onLogin }: Props) {
 
   return <LoginView onLogin={onLogin} onJoin={() => setView('join')} />;
 }
-
