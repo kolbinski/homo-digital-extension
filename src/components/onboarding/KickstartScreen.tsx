@@ -146,7 +146,8 @@ export default function KickstartScreen({
         body,
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const data = (await res.json()) as Partial<Profile>;
+      const json = await res.json();
+      const data = (json.profile ?? json) as Partial<Profile>;
       const fromDb = await patchProfile(data);
       handleApiDone(fromDb ?? data);
     } catch (err) {
