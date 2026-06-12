@@ -194,7 +194,7 @@ export default function WizardShell({
           <button
             type="button"
             onClick={onClose}
-            disabled={autoSaveStatus === 'saving' || isReviewing}
+            disabled={autoSaveStatus === 'saving' || isReviewing || submitting}
             aria-label="Close"
             className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -266,7 +266,7 @@ export default function WizardShell({
 
       {/* Tab body */}
       <div
-        className={`flex-1 overflow-y-auto py-4 px-2 ${isReviewing ? 'pointer-events-none opacity-50' : ''}`}
+        className={`flex-1 overflow-y-auto py-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
         <h2 className="text-base font-semibold text-gray-900 mb-3">
@@ -372,7 +372,7 @@ export default function WizardShell({
             <button
               type="button"
               onClick={handleReview}
-              disabled={isReviewing || totalErrors > 0}
+              disabled={isReviewing || submitting || totalErrors > 0}
               title={totalErrors > 0 ? 'Fix all errors first' : undefined}
               className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
             >
@@ -420,8 +420,30 @@ export default function WizardShell({
             title={
               !allComplete ? 'Complete all required tabs first' : undefined
             }
-            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
+            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 flex items-center gap-1.5"
           >
+            {submitting && (
+              <svg
+                className="animate-spin h-3.5 w-3.5 text-white shrink-0"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+            )}
             {submitting ? 'Submitting' : 'Submit'}
           </button>
         </div>
