@@ -12,7 +12,6 @@ export interface GeneralSettings {
   countries: { code: string; name: string }[];
   languages: string[];
   language_levels: string[];
-  skills_suggestions: string[];
   experience_levels: string[];
 }
 
