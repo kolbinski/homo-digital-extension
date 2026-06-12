@@ -144,7 +144,30 @@ export default function WizardShell({
       const html = await res.text();
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
-      await chrome.tabs.create({ url });
+
+      const stored = await chrome.storage.local.get('review_tab_id');
+      const storedId = stored.review_tab_id as number | undefined;
+      let reused = false;
+
+      if (storedId !== undefined) {
+        try {
+          const existing = await chrome.tabs.get(storedId);
+          await chrome.tabs.update(storedId, { url, active: true });
+          if (existing.windowId !== undefined) {
+            await chrome.windows.update(existing.windowId, { focused: true });
+          }
+          reused = true;
+        } catch {
+          // tab was closed — fall through to create a new one
+        }
+      }
+
+      if (!reused) {
+        const tab = await chrome.tabs.create({ url });
+        if (tab.id !== undefined) {
+          await chrome.storage.local.set({ review_tab_id: tab.id });
+        }
+      }
     } catch {
       setReviewError('Review failed. Please try again.');
     } finally {
