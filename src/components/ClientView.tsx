@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Gear } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
+import { getSupabaseJwt } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import { API_BASE_URL } from '../config';
 import OnboardingWizard from './onboarding/OnboardingWizard';
 import ExploreTab from './ExploreTab';
@@ -21,6 +23,14 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
   const [profileState, setProfileState] = useState<ProfileState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    getSupabaseJwt().then(async jwt => {
+      if (jwt) {
+        await supabase.auth.setSession({ access_token: jwt, refresh_token: '' });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     getToken().then(async token => {

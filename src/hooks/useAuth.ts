@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '../config'
 
 const JWT_KEY = 'jwt'
+const SUPABASE_JWT_KEY = 'supabase_jwt'
 const ROLE_KEY = 'role'
 const OAUTH_DATA_KEY = 'oauth_data'
 
@@ -120,6 +121,32 @@ function getOAuthData(): Promise<OAuthData | null> {
   })
 }
 
+function setSupabaseJwt(token: string): Promise<void> {
+  return new Promise((resolve) => {
+    if (!storageAvailable()) { resolve(); return }
+    chrome.storage.local.set({ [SUPABASE_JWT_KEY]: token }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('[useAuth] setSupabaseJwt:', chrome.runtime.lastError.message)
+      }
+      resolve()
+    })
+  })
+}
+
+export function getSupabaseJwt(): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (!storageAvailable()) { resolve(null); return }
+    chrome.storage.local.get(SUPABASE_JWT_KEY, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('[useAuth] getSupabaseJwt:', chrome.runtime.lastError.message)
+        resolve(null)
+        return
+      }
+      resolve((result[SUPABASE_JWT_KEY] as string | undefined) ?? null)
+    })
+  })
+}
+
 function removeOAuthData(): Promise<void> {
   return new Promise((resolve) => {
     if (!storageAvailable()) { resolve(); return }
@@ -151,9 +178,17 @@ async function login(email: string, password: string): Promise<LoginResult> {
 }
 
 async function logout(): Promise<void> {
-  await Promise.all([removeToken(), removeRole(), removeOAuthData()])
+  await Promise.all([
+    removeToken(),
+    removeRole(),
+    removeOAuthData(),
+    new Promise<void>(resolve => {
+      if (!storageAvailable()) { resolve(); return }
+      chrome.storage.local.remove(SUPABASE_JWT_KEY, () => resolve())
+    }),
+  ])
 }
 
 export function useAuth() {
-  return { login, logout, getToken, setToken, getRole, setRole, getOAuthData, setOAuthData }
+  return { login, logout, getToken, setToken, getRole, setRole, getOAuthData, setOAuthData, setSupabaseJwt }
 }
