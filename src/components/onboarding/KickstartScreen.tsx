@@ -40,10 +40,12 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
     setFile(f);
   }
 
-  async function patchProfile(profile: Partial<Profile>): Promise<void> {
+  async function patchProfile(
+    profile: Partial<Profile>,
+  ): Promise<Partial<Profile> | null> {
     try {
       const token = await getToken();
-      await fetch(`${API_BASE_URL}/v1/profile`, {
+      const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -51,8 +53,10 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
         },
         body: JSON.stringify({ profile }),
       });
+      if (!res.ok) return null;
+      return (await res.json()) as Partial<Profile>;
     } catch {
-      // non-blocking — auto-save will persist on first edit
+      return null;
     }
   }
 
@@ -60,8 +64,8 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
     if (CONFIG.use_template_cv && !file) {
       setLoading(true);
       const prepared = exampleCv as unknown as Partial<Profile>;
-      await patchProfile(prepared);
-      onPrepared(prepared);
+      const fromDb = await patchProfile(prepared);
+      onPrepared(fromDb ?? prepared);
       return;
     }
     if (!file) {
@@ -81,8 +85,8 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = (await res.json()) as Partial<Profile>;
-      await patchProfile(data);
-      onPrepared(data);
+      const fromDb = await patchProfile(data);
+      onPrepared(fromDb ?? data);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Something went wrong. Please try again.',

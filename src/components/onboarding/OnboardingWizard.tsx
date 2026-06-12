@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { API_BASE_URL } from '../../config';
 import KickstartScreen from './KickstartScreen';
 import WizardShell from './WizardShell';
 import { emptyProfile } from './emptyProfile';
@@ -38,26 +39,49 @@ function mergeProfile(base: Profile, override: Partial<Profile>): Profile {
 }
 
 export default function OnboardingWizard({ onLogout, onSubmitted }: Props) {
-  const { getOAuthData } = useAuth();
+  const { getOAuthData, getToken } = useAuth();
   const [step, setStep] = useState<Step>('kickstart');
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    getOAuthData().then(oauth => {
-      if (oauth) {
+    async function init() {
+      const [token, oauth] = await Promise.all([getToken(), getOAuthData()]);
+
+      let dbProfile: Profile | null = null;
+      try {
+        const res = await fetch(`${API_BASE_URL}/v1/profile`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          dbProfile = (await res.json()) as Profile | null;
+        }
+      } catch {
+        // ignore — proceed with empty profile
+      }
+
+      if (dbProfile) {
+        setProfile(mergeProfile(emptyProfile, dbProfile));
+        setStep('wizard');
+      } else if (oauth) {
         setProfile(prev => ({
           ...prev,
           basic_info: {
             ...prev.basic_info,
-            ...(oauth.oauth_first_name != null ? { first_name: oauth.oauth_first_name } : {}),
-            ...(oauth.oauth_last_name != null ? { last_name: oauth.oauth_last_name } : {}),
+            ...(oauth.oauth_first_name != null
+              ? { first_name: oauth.oauth_first_name }
+              : {}),
+            ...(oauth.oauth_last_name != null
+              ? { last_name: oauth.oauth_last_name }
+              : {}),
             ...(oauth.oauth_email ? { email: oauth.oauth_email } : {}),
           },
         }));
       }
+
       setReady(true);
-    });
+    }
+    init();
   }, []);
 
   if (!ready) return null;

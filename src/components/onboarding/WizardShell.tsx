@@ -244,7 +244,12 @@ export default function WizardShell({
           {totalErrors > 0 ? (
             <span
               className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none font-medium"
-              style={{ fontSize: 11, minWidth: 20, height: 20, padding: '0 4px' }}
+              style={{
+                fontSize: 11,
+                minWidth: 20,
+                height: 20,
+                padding: '0 4px',
+              }}
             >
               {totalErrors}
             </span>
@@ -257,14 +262,14 @@ export default function WizardShell({
         <div className="flex-1 flex items-center justify-center gap-1">
           {autoSaveStatus === 'saving' && (
             <>
-              <CloudArrowUp size={15} className="text-gray-400" />
-              <span className="text-xs text-gray-400">Saving...</span>
+              <CloudArrowUp size={20} className="text-gray-400" />
+              <span className="text-sm text-gray-400">Saving...</span>
             </>
           )}
           {autoSaveStatus === 'saved' && (
             <>
-              <CloudCheck size={15} className="text-gray-400" />
-              <span className="text-xs text-gray-400">Saved</span>
+              <CloudCheck size={20} className="text-gray-400" />
+              <span className="text-sm text-gray-400">Saved</span>
             </>
           )}
           {autoSaveStatus === 'error' && (
