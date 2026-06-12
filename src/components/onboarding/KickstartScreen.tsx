@@ -40,9 +40,28 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
     setFile(f);
   }
 
+  async function patchProfile(profile: Partial<Profile>): Promise<void> {
+    try {
+      const token = await getToken();
+      await fetch(`${API_BASE_URL}/v1/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ profile }),
+      });
+    } catch {
+      // non-blocking — auto-save will persist on first edit
+    }
+  }
+
   async function handlePrepare() {
     if (CONFIG.use_template_cv && !file) {
-      onPrepared(exampleCv as unknown as Partial<Profile>);
+      setLoading(true);
+      const prepared = exampleCv as unknown as Partial<Profile>;
+      await patchProfile(prepared);
+      onPrepared(prepared);
       return;
     }
     if (!file) {
@@ -62,6 +81,7 @@ export default function KickstartScreen({ onPrepared, onSkip }: Props) {
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = (await res.json()) as Partial<Profile>;
+      await patchProfile(data);
       onPrepared(data);
     } catch (err) {
       setError(

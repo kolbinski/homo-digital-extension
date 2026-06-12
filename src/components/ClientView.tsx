@@ -41,7 +41,12 @@ export default function ClientView({ onLogout }: Props) {
   if (profileState === 'loading') return null;
 
   if (profileState === 'onboarding') {
-    return <OnboardingWizard onLogout={onLogout} />;
+    return (
+      <OnboardingWizard
+        onLogout={onLogout}
+        onSubmitted={() => setProfileState('loaded')}
+      />
+    );
   }
 
   return (

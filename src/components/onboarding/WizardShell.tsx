@@ -1,5 +1,12 @@
-import { useState } from 'react';
-import { CheckCircle, QuestionIcon, SignOut } from '@phosphor-icons/react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  CheckCircle,
+  CloudArrowUp,
+  CloudCheck,
+  CloudLightning,
+  QuestionIcon,
+  SignOut,
+} from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
 import type { Profile, WizardTabId } from './types';
@@ -13,28 +20,74 @@ import RedFlagsTab from './tabs/RedFlagsTab';
 import SkillsTab from './tabs/SkillsTab';
 import WorkExperienceTab from './tabs/WorkExperienceTab';
 
+type AutoSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 interface Props {
   profile: Profile;
   onChange: (profile: Profile) => void;
   onLogout: () => void;
+  onSubmitted: () => void;
 }
 
-export default function WizardShell({ profile, onChange, onLogout }: Props) {
+export default function WizardShell({
+  profile,
+  onChange,
+  onLogout,
+  onSubmitted,
+}: Props) {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
-  const [saveError, setSaveError] = useState('');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
+  const [submitting, setSubmitting] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
   const activeCompletion = completions.find(t => t.id === activeTab)!;
   const totalErrors = completions.reduce((sum, t) => sum + t.missingCount, 0);
 
-  async function saveProfile() {
-    setSaving(true);
-    setSaveMessage('');
-    setSaveError('');
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setAutoSaveStatus('saving');
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      autoSaveTimerRef.current = null;
+      try {
+        const token = await getTokenRef.current();
+        const res = await fetch(`${API_BASE_URL}/v1/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ profile }),
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        setAutoSaveStatus('saved');
+      } catch {
+        setAutoSaveStatus('error');
+      }
+    }, 2000);
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [profile]);
+
+  async function handleSubmit() {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    setSubmitting(true);
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
@@ -43,18 +96,14 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ ...profile, submitted: true }),
+        body: JSON.stringify({ profile, profile_ready: true }),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
-      setSaveMessage('Profile submitted!');
-      setTimeout(() => setSaveMessage(''), 3000);
-    } catch (err) {
-      setSaveError(
-        err instanceof Error ? err.message : 'Save failed. Please try again.',
-      );
-      setTimeout(() => setSaveError(''), 4000);
+      onSubmitted();
+    } catch {
+      setAutoSaveStatus('error');
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   }
 
@@ -108,11 +157,7 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
                 {showRed && (
                   <span
                     className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none shrink-0"
-                    style={{
-                      fontSize: 8,
-                      width: 16,
-                      height: 16,
-                    }}
+                    style={{ fontSize: 8, width: 16, height: 16 }}
                   >
                     {tab.missingCount}
                   </span>
@@ -193,29 +238,52 @@ export default function WizardShell({ profile, onChange, onLogout }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-between">
-        {saveMessage ? (
-          <p className="text-xs text-green-700">{saveMessage}</p>
-        ) : saveError ? (
-          <p className="text-xs text-red-600">{saveError}</p>
-        ) : totalErrors > 0 ? (
-          <span
-            className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none font-medium"
-            style={{ fontSize: 11, minWidth: 20, height: 20, padding: '0 4px' }}
-          >
-            {totalErrors}
-          </span>
-        ) : (
-          <CheckCircle size={20} weight="fill" className="text-green-500" />
-        )}
+      <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-2">
+        {/* Left: error / all-clear indicator */}
+        <div className="flex items-center">
+          {totalErrors > 0 ? (
+            <span
+              className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none font-medium"
+              style={{ fontSize: 11, minWidth: 20, height: 20, padding: '0 4px' }}
+            >
+              {totalErrors}
+            </span>
+          ) : (
+            <CheckCircle size={20} weight="fill" className="text-green-500" />
+          )}
+        </div>
+
+        {/* Center: auto-save status */}
+        <div className="flex-1 flex items-center justify-center gap-1">
+          {autoSaveStatus === 'saving' && (
+            <>
+              <CloudArrowUp size={15} className="text-gray-400" />
+              <span className="text-xs text-gray-400">Saving...</span>
+            </>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <>
+              <CloudCheck size={15} className="text-gray-400" />
+              <span className="text-xs text-gray-400">Saved</span>
+            </>
+          )}
+          {autoSaveStatus === 'error' && (
+            <>
+              <CloudLightning size={15} className="text-red-400" />
+              <span className="text-xs text-red-400">Save failed</span>
+            </>
+          )}
+        </div>
+
+        {/* Right: Submit button */}
         <button
           type="button"
-          onClick={() => saveProfile()}
-          disabled={saving || !allComplete}
+          onClick={handleSubmit}
+          disabled={submitting || !allComplete}
           title={!allComplete ? 'Complete all required tabs first' : undefined}
           className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600"
         >
-          Submit
+          {submitting ? 'Submitting…' : 'Submit'}
         </button>
       </div>
     </div>

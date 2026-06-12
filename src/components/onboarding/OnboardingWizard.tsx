@@ -7,6 +7,7 @@ import type { Profile, SkillEntry } from './types';
 
 interface Props {
   onLogout: () => void;
+  onSubmitted: () => void;
 }
 
 type Step = 'kickstart' | 'wizard';
@@ -36,7 +37,7 @@ function mergeProfile(base: Profile, override: Partial<Profile>): Profile {
   };
 }
 
-export default function OnboardingWizard({ onLogout }: Props) {
+export default function OnboardingWizard({ onLogout, onSubmitted }: Props) {
   const { getOAuthData } = useAuth();
   const [step, setStep] = useState<Step>('kickstart');
   const [profile, setProfile] = useState<Profile>(emptyProfile);
@@ -80,6 +81,7 @@ export default function OnboardingWizard({ onLogout }: Props) {
       profile={profile}
       onChange={setProfile}
       onLogout={onLogout}
+      onSubmitted={onSubmitted}
     />
   );
 }
