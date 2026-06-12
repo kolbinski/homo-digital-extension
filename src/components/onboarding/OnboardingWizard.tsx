@@ -89,6 +89,7 @@ export default function OnboardingWizard({
       <KickstartScreen
         onPrepared={handlePrepared}
         onSkip={() => setStep('wizard')}
+        onLogout={onLogout}
       />
     );
   }
