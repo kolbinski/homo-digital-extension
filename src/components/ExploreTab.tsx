@@ -1570,7 +1570,11 @@ function ClientAccordion({
                 }}
                 onCloseComplete={(ready, syncTriggered) => {
                   setProfileReady(ready);
-                  if (syncTriggered) void handleRefresh();
+                  if (syncTriggered) {
+                    knownCountRef.current = 0;
+                    console.log('[poll] baseline reset to 0 after trigger-sync');
+                    void handleRefresh();
+                  }
                 }}
               />
             )}
