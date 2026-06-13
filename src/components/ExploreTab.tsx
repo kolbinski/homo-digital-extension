@@ -898,7 +898,13 @@ async function openOfferUrl(url: string) {
   await chrome.tabs.create({ url });
 }
 
-function UpgradeDrawer({ onClose }: { onClose: () => void }) {
+function UpgradeDrawer({
+  onClose,
+  isPro,
+}: {
+  onClose: () => void;
+  isPro: boolean;
+}) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
   const [visible, setVisible] = useState(false);
@@ -919,7 +925,7 @@ function UpgradeDrawer({ onClose }: { onClose: () => void }) {
     setError(null);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/v1/subscriptions/checkout`, {
+      const res = await fetch(`${API_BASE_URL}/v1/subscription/checkout`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -943,7 +949,9 @@ function UpgradeDrawer({ onClose }: { onClose: () => void }) {
         className={`absolute inset-y-0 right-0 w-full bg-white flex flex-col shadow-xl transition-transform duration-200 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-          <span className="text-sm font-semibold text-gray-900">Choose your plan</span>
+          <span className="text-sm font-semibold text-gray-900">
+            Choose your plan
+          </span>
           <button
             type="button"
             onClick={handleClose}
@@ -959,9 +967,15 @@ function UpgradeDrawer({ onClose }: { onClose: () => void }) {
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2 opacity-60">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700">Free</span>
-              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Current plan</span>
+              {!isPro && (
+                <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                  Current plan
+                </span>
+              )}
             </div>
-            <p className="text-xs text-gray-500">Limited matches per sync cycle</p>
+            <p className="text-xs text-gray-500">
+              Limited matches per sync cycle
+            </p>
           </div>
 
           {/* Pro */}
@@ -978,31 +992,50 @@ function UpgradeDrawer({ onClose }: { onClose: () => void }) {
                 'Push notifications via mobile app',
                 'Priority sync',
               ].map(f => (
-                <li key={f} className="flex items-start gap-1.5 text-xs text-gray-700">
+                <li
+                  key={f}
+                  className="flex items-start gap-1.5 text-xs text-gray-700"
+                >
                   <span className="text-green-500 shrink-0 mt-px">✓</span>
                   {f}
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              onClick={handleUpgrade}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading && <Spinner size={14} className="text-white" />}
-              {isLoading ? 'Redirecting…' : 'Upgrade to Pro'}
-            </button>
-            {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+            {isPro ? (
+              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full self-center">
+                Current plan
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleUpgrade}
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading && <Spinner size={14} className="text-white" />}
+                  {isLoading ? 'Redirecting…' : 'Upgrade to Pro'}
+                </button>
+                {error && (
+                  <p className="text-xs text-red-600 text-center">{error}</p>
+                )}
+              </>
+            )}
           </div>
 
           {/* Premium */}
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2 opacity-60">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Premium</span>
-              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Coming soon</span>
+              <span className="text-sm font-semibold text-gray-700">
+                Premium
+              </span>
+              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                Coming soon
+              </span>
             </div>
-            <p className="text-xs text-gray-500">Advanced features coming later</p>
+            <p className="text-xs text-gray-500">
+              Advanced features coming soon
+            </p>
           </div>
         </div>
       </div>
@@ -1045,6 +1078,46 @@ function ClientAccordion({
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+
+  useEffect(() => {
+    async function checkSubscription() {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          subscribed_to: string | null;
+          expires_at?: string | null;
+        };
+        const active =
+          data.subscribed_to !== null &&
+          (!data.expires_at ||
+            new Date(data.expires_at).getTime() > Date.now());
+        setIsPro(active);
+      } catch {
+        // ignore
+      }
+    }
+
+    void checkSubscription();
+
+    function handleMessage(msg: { type?: string }) {
+      if (msg.type === 'UPGRADE_SUCCESS') void checkSubscription();
+    }
+
+    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener(handleMessage);
+    }
+    return () => {
+      if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleMessage);
+      }
+    };
+  }, []);
 
   const candidateSkills = useMemo(() => {
     const raw = (client.profile?.skills ?? {}) as Record<
@@ -1567,7 +1640,8 @@ function ClientAccordion({
                               />
                             ),
                           )}
-                          {applyNowCount !== null &&
+                          {!isPro &&
+                            applyNowCount !== null &&
                             applyOffers.length < applyNowCount && (
                               <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
                                 <Lock size={18} className="text-gray-400" />
@@ -1657,7 +1731,8 @@ function ClientAccordion({
                               />
                             ),
                           )}
-                          {levelUpCount !== null &&
+                          {!isPro &&
+                            levelUpCount !== null &&
                             levelUpOffers.length < levelUpCount && (
                               <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
                                 <Lock size={18} className="text-gray-400" />
@@ -1821,7 +1896,10 @@ function ClientAccordion({
           document.body,
         )}
       {upgradeDrawerOpen && (
-        <UpgradeDrawer onClose={() => setUpgradeDrawerOpen(false)} />
+        <UpgradeDrawer
+          onClose={() => setUpgradeDrawerOpen(false)}
+          isPro={isPro}
+        />
       )}
     </div>
   );
