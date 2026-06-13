@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { Gear } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
-import { getSupabaseJwt } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
 import { API_BASE_URL } from '../config';
 import OnboardingWizard from './onboarding/OnboardingWizard';
 import ExploreTab from './ExploreTab';
@@ -23,16 +21,6 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
   const [profileState, setProfileState] = useState<ProfileState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
-
-  useEffect(() => {
-    getSupabaseJwt().then(async jwt => {
-      if (jwt) {
-        await supabase.auth.setSession({ access_token: jwt, refresh_token: '' });
-      }
-      setSessionReady(true);
-    });
-  }, []);
 
   useEffect(() => {
     getToken().then(async token => {
@@ -99,7 +87,6 @@ export default function ClientView({ onLogout, activeTabId, currentUrl }: Props)
       <div id="main-scroll" className="flex-1 overflow-y-auto">
         <ExploreTab
           selfMode
-          sessionReady={sessionReady}
           onLogout={onLogout}
           activeTabId={activeTabId}
           currentUrl={currentUrl}

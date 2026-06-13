@@ -18,7 +18,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
 import { useCvGenerate } from '../hooks/useCvGenerate';
 import Spinner from './Spinner';
-import { supabase } from '../lib/supabase';
 
 interface OfferSalary {
   min: number;
@@ -137,7 +136,6 @@ interface Props {
   activeTabId?: number;
   currentUrl?: string;
   selfMode?: boolean;
-  sessionReady?: boolean;
 }
 
 interface ClientAccordionProps {
@@ -153,7 +151,6 @@ interface ClientAccordionProps {
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
   defaultExpanded?: boolean;
   selfMode?: boolean;
-  sessionReady?: boolean;
 }
 
 interface OfferCardProps {
@@ -843,13 +840,11 @@ function ClientAccordion({
   onClientUpdate,
   defaultExpanded = false,
   selfMode = false,
-  sessionReady = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
 
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [hasNewOffers, setHasNewOffers] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
   const [wizardProfileLoading, setWizardProfileLoading] = useState(false);
@@ -1002,6 +997,7 @@ function ClientAccordion({
   }
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasNewOffers, setHasNewOffers] = useState(false);
 
   const hasOffersRef = useRef(false);
   useEffect(() => {
@@ -1029,35 +1025,44 @@ function ClientAccordion({
   handleRefreshRef.current = handleRefresh;
 
   useEffect(() => {
-    if (!sessionReady || !selfMode) return;
-    console.log('[Realtime] setting up channel for user:', client.id);
-    const channel = supabase
-      .channel('user_offers_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'user_offers',
-          filter: `user_id=eq.${client.id}`,
-        },
-        payload => {
-          console.log('[Realtime] INSERT received:', payload.new);
-          if ((payload.new as { status?: string }).status === 'pending_apply') {
-            setHasNewOffers(true);
-            if (!hasOffersRef.current) {
-              void handleRefreshRef.current();
-            }
+    if (!selfMode) return;
+    let es: EventSource | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    function connect() {
+      getToken().then(token => {
+        if (!token) return;
+        const url = `${API_BASE_URL}/v1/user-offers/subscribe?token=${encodeURIComponent(token)}`;
+        console.log('[SSE] connecting to:', url);
+        es = new EventSource(url);
+        es.onopen = () => {
+          console.log('[SSE] connected');
+        };
+        es.addEventListener('new_offer', (event) => {
+          console.log('[SSE] new_offer received:', event.data);
+          setHasNewOffers(true);
+          if (!hasOffersRef.current) {
+            void handleRefreshRef.current();
           }
-        },
-      )
-      .subscribe(status => {
-        console.log('[Realtime] subscription status:', status);
+        });
+        es.addEventListener('heartbeat', (event) => {
+          console.log('[SSE] heartbeat', event.data);
+        });
+        es.onerror = (event) => {
+          console.log('[SSE] error:', event);
+          es?.close();
+          es = null;
+          retryTimeout = setTimeout(connect, 5000);
+        };
       });
+    }
+
+    connect();
     return () => {
-      void supabase.removeChannel(channel);
+      es?.close();
+      if (retryTimeout !== null) clearTimeout(retryTimeout);
     };
-  }, [sessionReady, selfMode, client.id]);
+  }, [selfMode]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
@@ -1507,7 +1512,6 @@ export default function ExploreTab({
   activeTabId,
   currentUrl,
   selfMode,
-  sessionReady,
 }: Props) {
   const { fetchClients } = useClients();
   const [clients, setClients] = useState<Client[]>([]);
@@ -1618,12 +1622,6 @@ export default function ExploreTab({
       cancelled = true;
     };
   }, []);
-
-  console.log('[ExploreTab] selfMode render:', {
-    selfMode,
-    clientsLength: clients.length,
-    client0: clients[0],
-  });
 
   if (isLoading) {
     return (
@@ -1742,7 +1740,6 @@ export default function ExploreTab({
               onClientUpdate={handleClientUpdate}
               defaultExpanded={true}
               selfMode={true}
-              sessionReady={sessionReady}
             />
           )
         ) : clients.length === 0 ? (

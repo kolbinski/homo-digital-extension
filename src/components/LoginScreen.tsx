@@ -96,7 +96,7 @@ function LoginView({
   onLogin: (role: 'agent' | 'client') => void;
   onJoin: () => void;
 }) {
-  const { login, setToken, setRole, setOAuthData, setSupabaseJwt } = useAuth();
+  const { login, setToken, setRole, setOAuthData } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [socialError, setSocialError] = useState('');
@@ -169,7 +169,6 @@ function LoginView({
         {}) as UserMeta;
       await setRole('client');
       await setOAuthData(extractOAuthData(userMeta));
-      await setSupabaseJwt(token);
       try {
         const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
           method: 'POST',
@@ -208,7 +207,6 @@ function LoginView({
     }
     await setRole('client');
     await setOAuthData(extractOAuthData(userMeta));
-    await setSupabaseJwt(accessToken);
     try {
       const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
         method: 'POST',
