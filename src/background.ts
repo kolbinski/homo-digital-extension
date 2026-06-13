@@ -8,4 +8,5 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab.url?.includes('upgrade=success')) return
   chrome.tabs.remove(tabId)
   chrome.storage.local.set({ upgrade_success: Date.now() })
+  console.log('background: upgrade_success set')
 })

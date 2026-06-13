@@ -1108,6 +1108,7 @@ function ClientAccordion({
     function handleStorageChange(
       changes: Record<string, chrome.storage.StorageChange>,
     ) {
+      console.log('ExploreTab: storage changed', changes);
       if (
         'upgrade_success' in changes &&
         changes.upgrade_success.newValue !== undefined
@@ -1116,12 +1117,12 @@ function ClientAccordion({
       }
     }
 
-    if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
-      chrome.storage.onChanged.addListener(handleStorageChange);
+    if (typeof chrome !== 'undefined' && chrome.storage?.local?.onChanged) {
+      chrome.storage.local.onChanged.addListener(handleStorageChange);
     }
     return () => {
-      if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
+      if (typeof chrome !== 'undefined' && chrome.storage?.local?.onChanged) {
+        chrome.storage.local.onChanged.removeListener(handleStorageChange);
       }
     };
   }, []);
