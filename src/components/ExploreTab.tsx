@@ -964,7 +964,7 @@ function UpgradeDrawer({
 
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
           {/* Free */}
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2 opacity-60">
+          <div className="rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700">Free</span>
               {!isPro && (
@@ -1024,7 +1024,7 @@ function UpgradeDrawer({
           </div>
 
           {/* Premium */}
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2 opacity-60">
+          <div className="rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700">
                 Premium
@@ -1105,16 +1105,23 @@ function ClientAccordion({
 
     void checkSubscription();
 
-    function handleMessage(msg: { type?: string }) {
-      if (msg.type === 'UPGRADE_SUCCESS') void checkSubscription();
+    function handleStorageChange(
+      changes: Record<string, chrome.storage.StorageChange>,
+    ) {
+      if (
+        'upgrade_success' in changes &&
+        changes.upgrade_success.newValue !== undefined
+      ) {
+        void checkSubscription();
+      }
     }
 
-    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-      chrome.runtime.onMessage.addListener(handleMessage);
+    if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
     }
     return () => {
-      if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-        chrome.runtime.onMessage.removeListener(handleMessage);
+      if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
       }
     };
   }, []);
