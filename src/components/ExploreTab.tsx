@@ -1301,16 +1301,16 @@ function ClientAccordion({
               e.stopPropagation();
               handleRefresh();
             }}
-            disabled={isRefreshing}
+            disabled={isRefreshing || !hasLoaded}
             title="Refresh"
             className="relative text-gray-800 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
           >
-            {isRefreshing ? (
+            {isRefreshing || !hasLoaded ? (
               <Spinner size={14} />
             ) : (
               <ArrowsClockwise size={14} />
             )}
-            {hasNewOffers && !isRefreshing && (
+            {hasNewOffers && hasLoaded && !isRefreshing && (
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
             )}
           </button>
