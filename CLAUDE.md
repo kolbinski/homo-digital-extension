@@ -143,7 +143,7 @@ When moving to a new feature or phase:
 - NEVER put persona content in this file
 - NEVER add chrome.* API calls without first checking manifest.json permissions
 - NEVER use V2 patterns (persistent background pages, XMLHttpRequest in service workers)
-- When the user writes "commit": ALWAYS run `git status` first to catch any manually changed files (icons, assets, config) not touched by the current task, then commit ALL changes with an appropriate message AND push to git immediately after
+- When the user writes "commit": ALWAYS run `git status` first, then stage and commit ALL modified files shown — including any manually changed files (icons, assets, config, linter-reformatted files) not touched by the current task. Never selectively stage only the files from the current task. Push immediately after.
 - When the user writes "build" or "rebuild": ALWAYS run `npm run build` and report the result
 - NEVER commit or push automatically after making code changes — only commit when the user explicitly says "commit"
 - This includes after `npm run build`, after a bug fix, after any task marked complete — none of these trigger a commit. Only the word "commit" does.

@@ -67,8 +67,8 @@ function formatNum(n: number): string {
 }
 
 function formatSalaryType(type: string): string {
-  if (type === 'contract') return 'contr.';
-  if (type === 'permanent') return 'perm.';
+  if (type === 'contract') return 'Contr.';
+  if (type === 'permanent') return 'Perm.';
   return '';
 }
 
