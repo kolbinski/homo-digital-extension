@@ -899,6 +899,7 @@ function ClientAccordion({
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
   const [wizardProfileLoading, setWizardProfileLoading] = useState(false);
+  const [profileReady, setProfileReady] = useState(client.profile_ready ?? true);
   const [isLoading, setIsLoading] = useState(false);
   const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
@@ -1075,6 +1076,36 @@ function ClientAccordion({
   const handleRefreshRef = useRef(handleRefresh);
   handleRefreshRef.current = handleRefresh;
 
+  async function openWizard() {
+    setWizardProfile(null);
+    setWizardProfileLoading(true);
+    setProfileOpen(true);
+    try {
+      const token = await getToken();
+      const params = new URLSearchParams({ client_id: client.id });
+      const res = await fetch(`${API_BASE_URL}/v1/profile?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const fetched = res.ok
+        ? ((await res.json()) as { profile: Record<string, unknown> | null }).profile
+        : null;
+      setWizardProfile(clientToProfile(fetched ?? client.profile));
+      await fetch(`${API_BASE_URL}/v1/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ profile_ready: false, client_id: client.id }),
+      });
+      setProfileReady(false);
+    } catch {
+      setWizardProfile(clientToProfile(client.profile));
+    } finally {
+      setWizardProfileLoading(false);
+    }
+  }
+
   const knownCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -1191,33 +1222,8 @@ function ClientAccordion({
           <button
             type="button"
             onClick={async e => {
-              console.log('address book clicked', client.id);
               e.stopPropagation();
-              setWizardProfile(null);
-              setWizardProfileLoading(true);
-              setProfileOpen(true);
-              try {
-                const token = await getToken();
-                const params = new URLSearchParams({ client_id: client.id });
-                const res = await fetch(
-                  `${API_BASE_URL}/v1/profile?${params}`,
-                  {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                  },
-                );
-                const fetched = res.ok
-                  ? (
-                      (await res.json()) as {
-                        profile: Record<string, unknown> | null;
-                      }
-                    ).profile
-                  : null;
-                setWizardProfile(clientToProfile(fetched ?? client.profile));
-              } catch {
-                setWizardProfile(clientToProfile(client.profile));
-              } finally {
-                setWizardProfileLoading(false);
-              }
+              void openWizard();
             }}
             title="Edit profile"
             className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
@@ -1276,6 +1282,17 @@ function ClientAccordion({
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
               <Spinner className="text-indigo-600" />
+            </div>
+          ) : selfMode && !profileReady ? (
+            <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+              <p className="text-sm text-gray-600">Your profile edit is not finished.</p>
+              <button
+                type="button"
+                onClick={() => void openWizard()}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              >
+                Continue editing
+              </button>
             </div>
           ) : (
             <>
@@ -1538,6 +1555,7 @@ function ClientAccordion({
                   const ln = saved.basic_info?.last_name ?? '';
                   onClientUpdate?.(client.id, fn, ln);
                 }}
+                onCloseComplete={ready => setProfileReady(ready)}
               />
             )}
           </div>,

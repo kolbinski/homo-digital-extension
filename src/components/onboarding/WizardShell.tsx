@@ -33,6 +33,8 @@ interface Props {
   clientId?: string;
   onClose?: () => void;
   onSaved?: (profile: Profile) => void;
+  isOnboarding?: boolean;
+  onCloseComplete?: (profileReady: boolean) => void;
 }
 
 export default function WizardShell({
@@ -43,6 +45,8 @@ export default function WizardShell({
   clientId,
   onClose,
   onSaved,
+  isOnboarding = false,
+  onCloseComplete,
 }: Props) {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
@@ -51,6 +55,7 @@ export default function WizardShell({
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
   const tabBodyRef = useRef<HTMLDivElement>(null);
@@ -105,6 +110,44 @@ export default function WizardShell({
       }
     };
   }, [profile]);
+
+  async function handleClose() {
+    if (isOnboarding) {
+      onClose?.();
+      return;
+    }
+    setIsClosing(true);
+    try {
+      const token = await getAuthTokenRef.current();
+      const profileReady = totalErrors === 0;
+      const res = await fetch(`${API_BASE_URL}/v1/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          profile_ready: profileReady,
+          ...(clientId ? { client_id: clientId } : {}),
+        }),
+      });
+      if (res.ok && profileReady) {
+        const data = (await res.json()) as { matching_relevant_change?: boolean };
+        if (data.matching_relevant_change) {
+          void fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+        }
+      }
+      onCloseComplete?.(profileReady);
+    } catch {
+      onCloseComplete?.(false);
+    } finally {
+      setIsClosing(false);
+      onClose?.();
+    }
+  }
 
   async function handleSubmit() {
     if (autoSaveTimerRef.current) {
@@ -201,12 +244,12 @@ export default function WizardShell({
         {onClose ? (
           <button
             type="button"
-            onClick={onClose}
-            disabled={autoSaveStatus === 'saving' || isReviewing || submitting}
+            onClick={handleClose}
+            disabled={autoSaveStatus === 'saving' || isReviewing || submitting || isClosing}
             aria-label="Close"
             className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <X size={16} />
+            {isClosing ? <Spinner size={14} className="text-gray-500" /> : <X size={16} />}
           </button>
         ) : onLogout ? (
           <button
@@ -405,22 +448,24 @@ export default function WizardShell({
               <span className="text-xs text-red-500">{reviewError}</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={
-              submitting ||
-              !allComplete ||
-              autoSaveStatus === 'saving' ||
-              isReviewing
-            }
-            title={
-              !allComplete ? 'Complete all required tabs first' : undefined
-            }
-            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 flex items-center gap-1.5"
-          >
-            {submitting ? 'Submitting' : 'Submit'}
-          </button>
+          {isOnboarding && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                submitting ||
+                !allComplete ||
+                autoSaveStatus === 'saving' ||
+                isReviewing
+              }
+              title={
+                !allComplete ? 'Complete all required tabs first' : undefined
+              }
+              className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 flex items-center gap-1.5"
+            >
+              {submitting ? 'Submitting' : 'Submit'}
+            </button>
+          )}
         </div>
       </div>
     </div>

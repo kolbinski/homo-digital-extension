@@ -8,6 +8,7 @@ export interface Client {
   email: string
   photo_url?: string | null
   profile?: Record<string, unknown>
+  profile_ready?: boolean
 }
 
 type FetchClientsResult = { clients: Client[] } | { error: string }

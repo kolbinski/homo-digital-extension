@@ -100,6 +100,7 @@ export default function OnboardingWizard({
       onChange={setProfile}
       onLogout={onLogout}
       onSubmitted={onSubmitted}
+      isOnboarding={true}
     />
   );
 }
