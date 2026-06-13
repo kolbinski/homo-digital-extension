@@ -610,9 +610,9 @@ function ExperienceCard({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
       {/* Card header */}
-      <div className="flex items-center gap-1 px-2 py-2.5">
+      <div className="flex items-center gap-1 px-2 py-2.5 sticky top-0 z-10 bg-white rounded-t-lg">
         {/* Drag handle */}
         <div
           draggable
