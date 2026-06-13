@@ -9,6 +9,7 @@ import PlanDrawer from './PlanDrawer';
 interface SubscriptionStatus {
   plan_name: string;
   current_period_end: string | null;
+  status: 'active' | 'cancelling' | 'free';
 }
 
 interface Props {
@@ -293,6 +294,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           zIndex={60}
           currentPeriodEnd={subscription?.current_period_end}
           onCancelSuccess={() => void fetchSubscription()}
+          status={subscription?.status ?? 'free'}
         />
       )}
     </div>,
