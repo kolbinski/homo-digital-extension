@@ -5,6 +5,67 @@ import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 
+interface SubscriptionStatus {
+  plan_name: string;
+  current_period_end: string | null;
+}
+
+function ManagePlanDrawer({
+  plan_name,
+  current_period_end,
+  onClose,
+}: {
+  plan_name: string;
+  current_period_end: string | null;
+  onClose: () => void;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 200);
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-60">
+      <div
+        className={`absolute inset-0 bg-black/20 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+      />
+      <div
+        className={`absolute inset-y-0 right-0 w-full bg-white flex flex-col shadow-xl transition-transform duration-200 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+          <span className="text-sm font-semibold text-gray-900">Manage plan</span>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </header>
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+          <p className="text-sm font-medium text-gray-900">
+            {plan_name.charAt(0).toUpperCase() + plan_name.slice(1)}
+          </p>
+          {current_period_end && (
+            <p className="text-xs text-gray-500">
+              Ends at {current_period_end.slice(0, 10)}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 interface Props {
   onClose: () => void;
   onLogout: () => void;
@@ -13,6 +74,10 @@ interface Props {
 export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const { getToken } = useAuth();
   const [visible, setVisible] = useState(false);
+
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [managePlanOpen, setManagePlanOpen] = useState(false);
 
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -25,6 +90,25 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  useEffect(() => {
+    async function fetchSubscription() {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as SubscriptionStatus;
+        setSubscription(data);
+      } catch {
+        // ignore
+      } finally {
+        setSubscriptionLoading(false);
+      }
+    }
+    void fetchSubscription();
   }, []);
 
   function handleClose() {
@@ -110,6 +194,40 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
             </header>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+              {/* Your plan */}
+              <section className="flex flex-col gap-3">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Your plan
+                </h2>
+                {subscriptionLoading ? (
+                  <div className="flex items-center justify-center py-3">
+                    <Spinner size={16} className="text-gray-400" />
+                  </div>
+                ) : subscription ? (
+                  <div className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium text-gray-900">
+                        {subscription.plan_name.charAt(0).toUpperCase() +
+                          subscription.plan_name.slice(1)}
+                      </span>
+                      {subscription.current_period_end && (
+                        <span className="text-xs text-gray-500">
+                          Ends at {subscription.current_period_end.slice(0, 10)}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setManagePlanOpen(true)}
+                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Manage your plan
+                    </button>
+                  </div>
+                ) : null}
+              </section>
+
+              {/* Feedback */}
               <section className="flex flex-col gap-3">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Feedback
@@ -147,6 +265,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                 )}
               </section>
 
+              {/* Account */}
               <section className="flex flex-col gap-3">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Account
@@ -197,6 +316,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           </>
         )}
       </div>
+      {managePlanOpen && subscription && (
+        <ManagePlanDrawer
+          plan_name={subscription.plan_name}
+          current_period_end={subscription.current_period_end}
+          onClose={() => setManagePlanOpen(false)}
+        />
+      )}
     </div>,
     document.body,
   );
