@@ -1271,13 +1271,13 @@ function ClientAccordion({
                       : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {filteredApplyOffers.length}
+                  {applyNowCount ?? filteredApplyOffers.length}
                 </span>
               )}
               {statusFilter === 'pending_apply' &&
                 filteredLevelUpOffers.length > 0 && (
                   <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                    {filteredLevelUpOffers.length}
+                    {levelUpCount ?? filteredLevelUpOffers.length}
                   </span>
                 )}
             </>
@@ -1382,7 +1382,7 @@ function ClientAccordion({
                             Apply now
                           </span>
                           <span className="text-xs font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                            {filteredApplyOffers.length}
+                            {applyNowCount ?? filteredApplyOffers.length}
                           </span>
                         </div>
                         <svg
@@ -1468,7 +1468,7 @@ function ClientAccordion({
                             Level up & earn more
                           </span>
                           <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                            {filteredLevelUpOffers.length}
+                            {levelUpCount ?? filteredLevelUpOffers.length}
                           </span>
                         </div>
                         <svg
