@@ -1113,25 +1113,25 @@ function ClientAccordion({
 
   useEffect(() => {
     if (!selfMode) return;
+    let interval: ReturnType<typeof setInterval> | null = null;
     fetchOffers('pending_apply').then(offers => {
       knownCountRef.current = offers.length;
       console.log('[poll] baseline set to:', offers.length);
-    });
-    const interval = setInterval(async () => {
-      const offers = await fetchOffers('pending_apply');
-      const count = offers.length;
-      console.log('[poll] count:', count, 'known:', knownCountRef.current);
-      if (knownCountRef.current === null) return;
-      if (count > knownCountRef.current) {
-        knownCountRef.current = count;
-        console.log('[poll] new offers detected, showing blue dot');
-        setHasNewOffers(true);
-        if (!hasOffersRef.current) {
-          void handleRefreshRef.current();
+      interval = setInterval(async () => {
+        const polled = await fetchOffers('pending_apply');
+        const count = polled.length;
+        console.log('[poll] count:', count, 'known:', knownCountRef.current);
+        if (count > knownCountRef.current!) {
+          knownCountRef.current = count;
+          console.log('[poll] new offers detected, showing blue dot');
+          setHasNewOffers(true);
+          if (!hasOffersRef.current) {
+            void handleRefreshRef.current();
+          }
         }
-      }
-    }, 30000);
-    return () => clearInterval(interval);
+      }, 30000);
+    });
+    return () => { if (interval) clearInterval(interval); };
   }, [selfMode]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
