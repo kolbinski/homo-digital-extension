@@ -53,6 +53,7 @@ export default function WizardShell({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
+  const tabBodyRef = useRef<HTMLDivElement>(null);
   const getAuthTokenRef = useRef(getToken);
   getAuthTokenRef.current = getToken;
   const onSavedRef = useRef(onSaved);
@@ -62,6 +63,10 @@ export default function WizardShell({
   const allComplete = allRequiredComplete(completions);
   const activeCompletion = completions.find(t => t.id === activeTab)!;
   const totalErrors = completions.reduce((sum, t) => sum + t.missingCount, 0);
+
+  useEffect(() => {
+    if (tabBodyRef.current) tabBodyRef.current.scrollTop = 0;
+  }, [activeTab]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -269,6 +274,7 @@ export default function WizardShell({
 
       {/* Tab body */}
       <div
+        ref={tabBodyRef}
         className={`flex-1 overflow-y-auto py-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
