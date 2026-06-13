@@ -140,7 +140,7 @@ function App() {
 
   if (authState === 'checking') {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="fixed inset-0 flex items-center justify-center">
         <Spinner size={20} className="text-blue-500" />
       </div>
     );
@@ -195,6 +195,7 @@ function App() {
         {SHOW_TABS ? (
           <>
             <div
+              className="h-full"
               style={{ display: activeTab === 'explore' ? 'block' : 'none' }}
             >
               <ExploreTab

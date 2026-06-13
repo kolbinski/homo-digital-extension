@@ -899,7 +899,9 @@ function ClientAccordion({
   const [profileOpen, setProfileOpen] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
   const [wizardProfileLoading, setWizardProfileLoading] = useState(false);
-  const [profileReady, setProfileReady] = useState(client.profile_ready ?? true);
+  const [profileReady, setProfileReady] = useState(
+    client.profile_ready ?? true,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
@@ -1087,7 +1089,8 @@ function ClientAccordion({
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const fetched = res.ok
-        ? ((await res.json()) as { profile: Record<string, unknown> | null }).profile
+        ? ((await res.json()) as { profile: Record<string, unknown> | null })
+            .profile
         : null;
       setWizardProfile(clientToProfile(fetched ?? client.profile));
       await fetch(`${API_BASE_URL}/v1/profile`, {
@@ -1170,13 +1173,13 @@ function ClientAccordion({
   return (
     <div className="border border-gray-200 rounded-md overflow-hidden">
       <div
-        role="button"
-        tabIndex={0}
-        onClick={handleToggle}
-        onKeyDown={e => {
+        role={selfMode ? undefined : 'button'}
+        tabIndex={selfMode ? undefined : 0}
+        onClick={selfMode ? undefined : handleToggle}
+        onKeyDown={selfMode ? undefined : e => {
           if (e.key === 'Enter' || e.key === ' ') handleToggle();
         }}
-        className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+        className={`w-full flex items-center justify-between px-3 py-2.5 bg-white transition-colors ${selfMode ? '' : 'hover:bg-gray-50 cursor-pointer'}`}
       >
         <div className="flex items-center gap-2">
           {client.photo_url ? (
@@ -1249,23 +1252,25 @@ function ClientAccordion({
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
             )}
           </button>
-          <svg
-            className={`w-4 h-4 text-gray-800 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          {!selfMode && (
+            <svg
+              className={`w-4 h-4 text-gray-800 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          )}
         </div>
       </div>
 
-      {isOpen && (
+      {(isOpen || selfMode) && (
         <div className="border-t border-gray-200">
           {statusError && (
             <div className="mx-3 mt-2 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
@@ -1285,7 +1290,12 @@ function ClientAccordion({
             </div>
           ) : selfMode && !profileReady ? (
             <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
-              <p className="text-sm text-gray-600">Your profile edit is not finished.</p>
+              <p className="text-sm text-gray-600">
+                You left your profile mid-edit.
+                <br />
+                <br />
+                Complete it to start receiving matches.
+              </p>
               <button
                 type="button"
                 onClick={() => void openWizard()}
@@ -1685,7 +1695,7 @@ export default function ExploreTab({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="h-full flex items-center justify-center">
         <Spinner size={20} className="text-indigo-600" />
       </div>
     );
