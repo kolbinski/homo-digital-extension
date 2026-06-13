@@ -34,7 +34,7 @@ interface Props {
   onClose?: () => void;
   onSaved?: (profile: Profile) => void;
   isOnboarding?: boolean;
-  onCloseComplete?: (profileReady: boolean) => void;
+  onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
 }
 
 export default function WizardShell({
@@ -131,21 +131,23 @@ export default function WizardShell({
           ...(clientId ? { client_id: clientId } : {}),
         }),
       });
+      let syncTriggered = false;
       if (res.ok && profileReady) {
         const data = (await res.json()) as { matching_relevant_change?: boolean };
         console.log('[wizard close] profile patch response:', JSON.stringify(data));
         console.log('[wizard close] matching_relevant_change:', data.matching_relevant_change);
         console.log('[wizard close] will trigger sync:', data.matching_relevant_change === true);
         if (data.matching_relevant_change) {
+          syncTriggered = true;
           void fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
         }
       }
-      onCloseComplete?.(profileReady);
+      onCloseComplete?.(profileReady, syncTriggered);
     } catch {
-      onCloseComplete?.(false);
+      onCloseComplete?.(false, false);
     } finally {
       setIsClosing(false);
       onClose?.();

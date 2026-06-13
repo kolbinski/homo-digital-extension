@@ -1565,7 +1565,10 @@ function ClientAccordion({
                   const ln = saved.basic_info?.last_name ?? '';
                   onClientUpdate?.(client.id, fn, ln);
                 }}
-                onCloseComplete={ready => setProfileReady(ready)}
+                onCloseComplete={(ready, syncTriggered) => {
+                  setProfileReady(ready);
+                  if (syncTriggered) void handleRefresh();
+                }}
               />
             )}
           </div>,
