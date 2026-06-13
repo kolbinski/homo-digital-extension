@@ -166,6 +166,7 @@ interface OfferCardProps {
   clientId: string;
   clientFirstName: string;
   clientLastName: string;
+  candidateSkills: string[];
   isOpen: boolean;
   onToggle: () => void;
   activeTabId?: number;
@@ -182,6 +183,7 @@ function OfferCard({
   clientId,
   clientFirstName,
   clientLastName,
+  candidateSkills,
   isOpen,
   onToggle,
   activeTabId,
@@ -460,6 +462,56 @@ function OfferCard({
             )}
           </div>
         )}
+        {offer.required_skills && offer.required_skills.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-500">Required skills:</span>
+            {[
+              ...offer.required_skills.filter(s => candidateSkills.includes(s.toLowerCase())),
+              ...offer.required_skills.filter(s => !candidateSkills.includes(s.toLowerCase())),
+            ].map(skill => {
+              const has = candidateSkills.length === 0 || candidateSkills.includes(skill.toLowerCase());
+              return (
+                <span
+                  key={skill}
+                  className="text-xs px-1.5 py-px"
+                  style={{
+                    backgroundColor: has ? '#f0fdf4' : '#fef2f2',
+                    color: has ? '#15803d' : '#dc2626',
+                    border: `0.5px solid ${has ? '#bbf7d0' : '#fecaca'}`,
+                    borderRadius: '3px',
+                  }}
+                >
+                  {skill}
+                </span>
+              );
+            })}
+          </div>
+        )}
+        {offer.nice_to_have_skills && offer.nice_to_have_skills.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-500">Nice to have skills:</span>
+            {[
+              ...offer.nice_to_have_skills.filter(s => candidateSkills.includes(s.toLowerCase())),
+              ...offer.nice_to_have_skills.filter(s => !candidateSkills.includes(s.toLowerCase())),
+            ].map(skill => {
+              const has = candidateSkills.length === 0 || candidateSkills.includes(skill.toLowerCase());
+              return (
+                <span
+                  key={skill}
+                  className="text-xs px-1.5 py-px"
+                  style={{
+                    backgroundColor: has ? '#f0fdf4' : '#fef2f2',
+                    color: has ? '#15803d' : '#dc2626',
+                    border: `0.5px solid ${has ? '#bbf7d0' : '#fecaca'}`,
+                    borderRadius: '3px',
+                  }}
+                >
+                  {skill}
+                </span>
+              );
+            })}
+          </div>
+        )}
         {offer.claude_role_fit && (
           <p className="text-xs text-gray-600 leading-relaxed">
             {offer.claude_role_fit}
@@ -493,52 +545,6 @@ function OfferCard({
                     className="text-orange-500 shrink-0 mt-px"
                   />
                   {item}
-                </span>
-              ))}
-            </div>
-          )}
-        {offer.required_skills && offer.required_skills.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            <span className="text-xs text-gray-500">Required:</span>
-            {offer.required_skills.map(skill => (
-              <span
-                key={skill}
-                className="text-xs px-1.5 py-px bg-green-50 text-green-700"
-                style={{ border: '0.5px solid #bbf7d0', borderRadius: '3px' }}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        )}
-        {offer.nice_to_have_skills && offer.nice_to_have_skills.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            <span className="text-xs text-gray-500">Nice to have:</span>
-            {offer.nice_to_have_skills.map(skill => (
-              <span
-                key={skill}
-                className="text-xs px-1.5 py-px bg-blue-50 text-blue-700"
-                style={{ border: '0.5px solid #bfdbfe', borderRadius: '3px' }}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        )}
-        {offer.claude_missing_skills &&
-          offer.claude_missing_skills.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              <span className="text-xs text-gray-500">Missing:</span>
-              {offer.claude_missing_skills.map(skill => (
-                <span
-                  key={skill}
-                  className="text-xs px-1.5 py-px rounded bg-red-50 text-red-600"
-                  style={{
-                    border: '0.5px solid #fecaca',
-                    borderRadius: '3px',
-                  }}
-                >
-                  {skill}
                 </span>
               ))}
             </div>
@@ -910,6 +916,11 @@ function ClientAccordion({
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
 
+  const candidateSkills = useMemo(() => {
+    const raw = (client.profile?.skills ?? {}) as Record<string, { name: string }[]>;
+    return Object.values(raw).flat().map(s => s.name.toLowerCase());
+  }, [client.profile]);
+
   async function handleCardToggle(offerId: string, offerUrl?: string) {
     if (expandedOfferId === offerId) {
       setExpandedOfferId(null);
@@ -1131,7 +1142,9 @@ function ClientAccordion({
         }
       }, 30000);
     });
-    return () => { if (interval) clearInterval(interval); };
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [selfMode]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
@@ -1179,9 +1192,13 @@ function ClientAccordion({
         role={selfMode ? undefined : 'button'}
         tabIndex={selfMode ? undefined : 0}
         onClick={selfMode ? undefined : handleToggle}
-        onKeyDown={selfMode ? undefined : e => {
-          if (e.key === 'Enter' || e.key === ' ') handleToggle();
-        }}
+        onKeyDown={
+          selfMode
+            ? undefined
+            : e => {
+                if (e.key === 'Enter' || e.key === ' ') handleToggle();
+              }
+        }
         className={`w-full flex items-center justify-between px-3 py-2.5 bg-white transition-colors ${selfMode ? '' : 'hover:bg-gray-50 cursor-pointer'}`}
       >
         <div className="flex items-center gap-2">
@@ -1296,7 +1313,6 @@ function ClientAccordion({
               <p className="text-sm text-gray-600">
                 You left your profile mid-edit.
                 <br />
-                <br />
                 Complete it to start receiving matches.
               </p>
               <button
@@ -1370,6 +1386,7 @@ function ClientAccordion({
                                 onError={setStatusError}
                                 onCvUpdate={handleCvUpdate}
                                 onClUpdate={handleClUpdate}
+                                candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
                               />
                             ),
@@ -1438,6 +1455,7 @@ function ClientAccordion({
                                 onError={setStatusError}
                                 onCvUpdate={handleCvUpdate}
                                 onClUpdate={handleClUpdate}
+                                candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
                               />
                             ),
@@ -1516,6 +1534,7 @@ function ClientAccordion({
                                 onError={setStatusError}
                                 onCvUpdate={handleCvUpdate}
                                 onClUpdate={handleClUpdate}
+                                candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
                               />
                             ),
@@ -1572,7 +1591,9 @@ function ClientAccordion({
                   setProfileReady(ready);
                   if (syncTriggered) {
                     knownCountRef.current = 0;
-                    console.log('[poll] baseline reset to 0 after trigger-sync');
+                    console.log(
+                      '[poll] baseline reset to 0 after trigger-sync',
+                    );
                     void handleRefresh();
                   }
                 }}
