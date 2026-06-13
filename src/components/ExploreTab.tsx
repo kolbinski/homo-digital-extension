@@ -1024,44 +1024,27 @@ function ClientAccordion({
   const handleRefreshRef = useRef(handleRefresh);
   handleRefreshRef.current = handleRefresh;
 
+  const knownCountRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!selfMode) return;
-    let es: EventSource | null = null;
-    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    function connect() {
-      getToken().then(token => {
-        if (!token) return;
-        const url = `${API_BASE_URL}/v1/user-offers/subscribe?token=${encodeURIComponent(token)}`;
-        console.log('[SSE] connecting to:', url);
-        es = new EventSource(url);
-        es.onopen = () => {
-          console.log('[SSE] connected');
-        };
-        es.addEventListener('new_offer', (event) => {
-          console.log('[SSE] new_offer received:', event.data);
-          setHasNewOffers(true);
-          if (!hasOffersRef.current) {
-            void handleRefreshRef.current();
-          }
-        });
-        es.addEventListener('heartbeat', (event) => {
-          console.log('[SSE] heartbeat', event.data);
-        });
-        es.onerror = (event) => {
-          console.log('[SSE] error:', event);
-          es?.close();
-          es = null;
-          retryTimeout = setTimeout(connect, 5000);
-        };
-      });
-    }
-
-    connect();
-    return () => {
-      es?.close();
-      if (retryTimeout !== null) clearTimeout(retryTimeout);
-    };
+    const interval = setInterval(async () => {
+      const offers = await fetchOffers('pending_apply');
+      const count = offers.length;
+      console.log('[poll] pending_apply count:', count, 'known:', knownCountRef.current);
+      if (knownCountRef.current === null) {
+        knownCountRef.current = count;
+        return;
+      }
+      if (count > knownCountRef.current) {
+        knownCountRef.current = count;
+        setHasNewOffers(true);
+        if (!hasOffersRef.current) {
+          void handleRefreshRef.current();
+        }
+      }
+    }, 30000);
+    return () => clearInterval(interval);
   }, [selfMode]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
