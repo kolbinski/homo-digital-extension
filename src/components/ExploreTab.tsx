@@ -37,6 +37,8 @@ interface UserOffer {
   claude_role_fit?: string;
   claude_missing_skills?: string[];
   claude_matched_reasons?: { pros: string[]; cons: string[] };
+  required_skills?: string[];
+  nice_to_have_skills?: string[];
   salary?: OfferSalary[];
   source?: string;
   cv_language?: string | null;
@@ -62,6 +64,12 @@ function formatNum(n: number): string {
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
   );
+}
+
+function formatSalaryType(type: string): string {
+  if (type === 'contract') return 'contr.';
+  if (type === 'permanent') return 'perm.';
+  return '';
 }
 
 function offerScoreBadgeClass(score: number): string {
@@ -489,6 +497,34 @@ function OfferCard({
               ))}
             </div>
           )}
+        {offer.required_skills && offer.required_skills.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-500">Required:</span>
+            {offer.required_skills.map(skill => (
+              <span
+                key={skill}
+                className="text-xs px-1.5 py-px bg-green-50 text-green-700"
+                style={{ border: '0.5px solid #bbf7d0', borderRadius: '3px' }}
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        )}
+        {offer.nice_to_have_skills && offer.nice_to_have_skills.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-500">Nice to have:</span>
+            {offer.nice_to_have_skills.map(skill => (
+              <span
+                key={skill}
+                className="text-xs px-1.5 py-px bg-blue-50 text-blue-700"
+                style={{ border: '0.5px solid #bfdbfe', borderRadius: '3px' }}
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        )}
         {offer.claude_missing_skills &&
           offer.claude_missing_skills.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -520,7 +556,8 @@ function OfferCard({
                   className="text-xs text-gray-500 flex items-center gap-0.5"
                 >
                   <CurrencyCircleDollar size={16} className="shrink-0" />{' '}
-                  {s.currency} {s.type} {formatNum(s.min)} – {formatNum(s.max)}{' '}
+                  {s.currency} {formatSalaryType(s.type)} {formatNum(s.min)} –{' '}
+                  {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
                   {s.currency !== 'PLN' && s.delta_normalized != null && (
                     <span className={deltaColor}>
