@@ -7,6 +7,7 @@ import {
   CheckFatIcon,
   CurrencyCircleDollar,
   FilePlusIcon,
+  Lock,
   WarningIcon,
   X,
 } from '@phosphor-icons/react';
@@ -912,6 +913,8 @@ function ClientAccordion({
   const [isLoading, setIsLoading] = useState(false);
   const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
+  const [applyNowCount, setApplyNowCount] = useState<number | null>(null);
+  const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
   const [applyOpen, setApplyOpen] = useState(true);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
@@ -967,12 +970,17 @@ function ClientAccordion({
     const url = currentUrl;
     let cancelled = false;
     async function eagerLoad() {
-      const [pending, levelUp] = await Promise.all([
-        fetchOffers(statusFilter),
-        statusFilter === 'pending_apply'
-          ? fetchOffers('ai_rejected', true)
-          : Promise.resolve([]),
-      ]);
+      let pending: UserOffer[] = [];
+      let levelUp: UserOffer[] = [];
+      if (statusFilter === 'pending_apply') {
+        const result = await fetchCombinedOffers();
+        pending = result.pending_apply.offers;
+        levelUp = result.ai_rejected.offers;
+        setApplyNowCount(result.pending_apply.count);
+        setLevelUpCount(result.ai_rejected.count);
+      } else {
+        pending = await fetchOffers(statusFilter);
+      }
       if (cancelled) return;
       setApplyOffers(pending);
       setLevelUpOffers(levelUp);
@@ -1004,15 +1012,19 @@ function ClientAccordion({
     let cancelled = false;
     async function refetchOffers() {
       if (isOpen) setIsLoading(true);
-      const [pending, levelUp] = await Promise.all([
-        fetchOffers(statusFilter),
-        statusFilter === 'pending_apply'
-          ? fetchOffers('ai_rejected', true)
-          : Promise.resolve([]),
-      ]);
-      if (cancelled) return;
-      setApplyOffers(pending);
-      setLevelUpOffers(levelUp);
+      if (statusFilter === 'pending_apply') {
+        const result = await fetchCombinedOffers();
+        if (cancelled) return;
+        setApplyOffers(result.pending_apply.offers);
+        setLevelUpOffers(result.ai_rejected.offers);
+        setApplyNowCount(result.pending_apply.count);
+        setLevelUpCount(result.ai_rejected.count);
+      } else {
+        const pending = await fetchOffers(statusFilter);
+        if (cancelled) return;
+        setApplyOffers(pending);
+        setLevelUpOffers([]);
+      }
       if (isOpen) setIsLoading(false);
       setHasLoaded(true);
     }
@@ -1022,15 +1034,40 @@ function ClientAccordion({
     };
   }, [statusFilter, sourceFilter]);
 
-  async function fetchOffers(
-    status: string,
-    hasLearningGoals = false,
-  ): Promise<UserOffer[]> {
+  interface CombinedBucket { offers: UserOffer[]; count: number }
+  interface CombinedOffersResponse {
+    pending_apply: CombinedBucket;
+    ai_rejected: CombinedBucket;
+    count: number;
+  }
+  const EMPTY_COMBINED: CombinedOffersResponse = {
+    pending_apply: { offers: [], count: 0 },
+    ai_rejected: { offers: [], count: 0 },
+    count: 0,
+  };
+
+  async function fetchCombinedOffers(): Promise<CombinedOffersResponse> {
+    const token = await getToken();
+    if (!token) return EMPTY_COMBINED;
+    const params = new URLSearchParams({ status: 'pending_apply|ai_rejected' });
+    if (!selfMode) params.append('client_id', client.id);
+    if (sourceFilter !== 'all') params.append('source', sourceFilter);
+    try {
+      const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return EMPTY_COMBINED;
+      return (await res.json()) as CombinedOffersResponse;
+    } catch {
+      return EMPTY_COMBINED;
+    }
+  }
+
+  async function fetchOffers(status: string): Promise<UserOffer[]> {
     const token = await getToken();
     if (!token) return [];
     const params = new URLSearchParams({ status });
-    params.append('client_id', client.id);
-    if (hasLearningGoals) params.append('has_learning_goals', 'true');
+    if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
@@ -1049,14 +1086,16 @@ function ClientAccordion({
     setIsOpen(opening);
     if (opening && !hasLoaded) {
       setIsLoading(true);
-      const [pending, levelUp] = await Promise.all([
-        fetchOffers(statusFilter),
-        statusFilter === 'pending_apply'
-          ? fetchOffers('ai_rejected', true)
-          : Promise.resolve([]),
-      ]);
-      setApplyOffers(pending);
-      setLevelUpOffers(levelUp);
+      if (statusFilter === 'pending_apply') {
+        const result = await fetchCombinedOffers();
+        setApplyOffers(result.pending_apply.offers);
+        setLevelUpOffers(result.ai_rejected.offers);
+        setApplyNowCount(result.pending_apply.count);
+        setLevelUpCount(result.ai_rejected.count);
+      } else {
+        setApplyOffers(await fetchOffers(statusFilter));
+        setLevelUpOffers([]);
+      }
       setIsLoading(false);
       setHasLoaded(true);
     }
@@ -1074,14 +1113,16 @@ function ClientAccordion({
     setIsRefreshing(true);
     setIsLoading(true);
     setHasNewOffers(false);
-    const [pending, levelUp] = await Promise.all([
-      fetchOffers(statusFilter),
-      statusFilter === 'pending_apply'
-        ? fetchOffers('ai_rejected', true)
-        : Promise.resolve([]),
-    ]);
-    setApplyOffers(pending);
-    setLevelUpOffers(levelUp);
+    if (statusFilter === 'pending_apply') {
+      const result = await fetchCombinedOffers();
+      setApplyOffers(result.pending_apply.offers);
+      setLevelUpOffers(result.ai_rejected.offers);
+      setApplyNowCount(result.pending_apply.count);
+      setLevelUpCount(result.ai_rejected.count);
+    } else {
+      setApplyOffers(await fetchOffers(statusFilter));
+      setLevelUpOffers([]);
+    }
     setIsLoading(false);
     setHasLoaded(true);
     setIsRefreshing(false);
@@ -1126,12 +1167,12 @@ function ClientAccordion({
   useEffect(() => {
     if (!selfMode) return;
     let interval: ReturnType<typeof setInterval> | null = null;
-    fetchOffers('pending_apply').then(offers => {
-      knownCountRef.current = offers.length;
-      console.log('[poll] baseline set to:', offers.length);
+    fetchCombinedOffers().then(result => {
+      knownCountRef.current = result.count;
+      console.log('[poll] baseline set to:', result.count);
       interval = setInterval(async () => {
-        const polled = await fetchOffers('pending_apply');
-        const count = polled.length;
+        const polled = await fetchCombinedOffers();
+        const count = polled.count;
         console.log('[poll] count:', count, 'known:', knownCountRef.current);
         if (count > knownCountRef.current!) {
           knownCountRef.current = count;
@@ -1392,6 +1433,23 @@ function ClientAccordion({
                               />
                             ),
                           )}
+                          {applyNowCount !== null && applyOffers.length < applyNowCount && (
+                            <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                              <Lock size={18} className="text-gray-400" />
+                              <p className="text-xs text-gray-500">
+                                You've reached your free plan limit. Upgrade to unlock{' '}
+                                <span className="font-medium text-gray-700">{applyNowCount - applyOffers.length} more</span>{' '}
+                                matches.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => console.log('upgrade clicked')}
+                                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                              >
+                                Upgrade to Pro
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1460,6 +1518,23 @@ function ClientAccordion({
                                 isOfferLoading={isLoading}
                               />
                             ),
+                          )}
+                          {levelUpCount !== null && levelUpOffers.length < levelUpCount && (
+                            <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                              <Lock size={18} className="text-gray-400" />
+                              <p className="text-xs text-gray-500">
+                                You've reached your free plan limit. Upgrade to unlock{' '}
+                                <span className="font-medium text-gray-700">{levelUpCount - levelUpOffers.length} more</span>{' '}
+                                matches.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => console.log('upgrade clicked')}
+                                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                              >
+                                Upgrade to Pro
+                              </button>
+                            </div>
                           )}
                         </div>
                       )}
