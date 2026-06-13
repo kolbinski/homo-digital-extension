@@ -898,6 +898,116 @@ async function openOfferUrl(url: string) {
   await chrome.tabs.create({ url });
 }
 
+function UpgradeDrawer({ onClose }: { onClose: () => void }) {
+  const { getToken } = useAuth();
+  const [visible, setVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 200);
+  }
+
+  async function handleUpgrade() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/subscriptions/checkout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = (await res.json()) as { url: string };
+      await chrome.tabs.create({ url: data.url });
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-50">
+      <div
+        className={`absolute inset-0 bg-black/20 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+      />
+      <div
+        className={`absolute inset-y-0 right-0 w-full bg-white flex flex-col shadow-xl transition-transform duration-200 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+          <span className="text-sm font-semibold text-gray-900">Choose your plan</span>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+          {/* Free */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2 opacity-60">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Free</span>
+              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Current plan</span>
+            </div>
+            <p className="text-xs text-gray-500">Limited matches per sync cycle</p>
+          </div>
+
+          {/* Pro */}
+          <div className="rounded-lg border-2 border-green-500 bg-white px-4 py-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-900">Pro</span>
+              <span className="text-xs font-medium text-green-700">~69 PLN/month</span>
+            </div>
+            <ul className="flex flex-col gap-1.5">
+              {[
+                'Unlimited matches',
+                'Push notifications via mobile app',
+                'Priority sync',
+              ].map(f => (
+                <li key={f} className="flex items-start gap-1.5 text-xs text-gray-700">
+                  <span className="text-green-500 shrink-0 mt-px">✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={handleUpgrade}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading && <Spinner size={14} className="text-white" />}
+              {isLoading ? 'Redirecting…' : 'Upgrade to Pro'}
+            </button>
+            {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+          </div>
+
+          {/* Premium */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2 opacity-60">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Premium</span>
+              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Coming soon</span>
+            </div>
+            <p className="text-xs text-gray-500">Advanced features coming later</p>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function ClientAccordion({
   client,
   activeTabId,
@@ -931,6 +1041,7 @@ function ClientAccordion({
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
 
   const candidateSkills = useMemo(() => {
     const raw = (client.profile?.skills ?? {}) as Record<
@@ -1467,7 +1578,7 @@ function ClientAccordion({
                                 </p>
                                 <button
                                   type="button"
-                                  onClick={() => console.log('upgrade clicked')}
+                                  onClick={() => setUpgradeDrawerOpen(true)}
                                   className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
                                 >
                                   Upgrade to Pro
@@ -1557,7 +1668,7 @@ function ClientAccordion({
                                 </p>
                                 <button
                                   type="button"
-                                  onClick={() => console.log('upgrade clicked')}
+                                  onClick={() => setUpgradeDrawerOpen(true)}
                                   className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
                                 >
                                   Upgrade to Pro
@@ -1706,6 +1817,9 @@ function ClientAccordion({
           </div>,
           document.body,
         )}
+      {upgradeDrawerOpen && (
+        <UpgradeDrawer onClose={() => setUpgradeDrawerOpen(false)} />
+      )}
     </div>
   );
 }
