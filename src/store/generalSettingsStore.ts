@@ -14,6 +14,7 @@ export interface GeneralSettings {
   language_levels: string[];
   experience_levels: string[];
   show_source_filter?: boolean;
+  pro_price?: { formatted: string };
 }
 
 interface StoreState {

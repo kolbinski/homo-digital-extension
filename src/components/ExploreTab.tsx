@@ -900,6 +900,7 @@ async function openOfferUrl(url: string) {
 
 function UpgradeDrawer({ onClose }: { onClose: () => void }) {
   const { getToken } = useAuth();
+  const { settings: generalSettings } = useGeneralSettings();
   const [visible, setVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -967,7 +968,9 @@ function UpgradeDrawer({ onClose }: { onClose: () => void }) {
           <div className="rounded-lg border-2 border-green-500 bg-white px-4 py-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-900">Pro</span>
-              <span className="text-xs font-medium text-green-700">~69 PLN/month</span>
+              <span className="text-xs font-medium text-green-700">
+                {generalSettings?.pro_price?.formatted ?? '$100,01'}/month
+              </span>
             </div>
             <ul className="flex flex-col gap-1.5">
               {[
