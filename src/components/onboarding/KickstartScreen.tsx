@@ -21,7 +21,6 @@ interface Props {
   onLogout: () => void;
 }
 
-
 export default function KickstartScreen({
   onPrepared,
   onSkip,
@@ -54,7 +53,7 @@ export default function KickstartScreen({
       currentStepRef.current = next;
       setDisplayStep(next);
       if (next < PROGRESS_ITEMS.length) {
-        scheduleNext(apiResultRef.current !== 'pending' ? 200 : 4000);
+        scheduleNext(apiResultRef.current !== 'pending' ? 200 : 5000);
       } else if (apiResultRef.current !== 'pending') {
         onPreparedRef.current(apiResultRef.current as Partial<Profile>);
       }
@@ -114,7 +113,7 @@ export default function KickstartScreen({
     apiResultRef.current = 'pending';
     currentStepRef.current = 0;
     setDisplayStep(0);
-    scheduleNext(4000);
+    scheduleNext(5000);
     try {
       const token = await getToken();
       const body = new FormData();

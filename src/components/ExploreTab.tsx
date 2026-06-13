@@ -4,10 +4,10 @@ import {
   AddressBook,
   ArrowsClockwise,
   ArrowUp,
-  CheckCircle,
+  CheckFatIcon,
   CurrencyCircleDollar,
   FilePlusIcon,
-  WarningCircle,
+  WarningIcon,
   X,
 } from '@phosphor-icons/react';
 import WizardShell from './onboarding/WizardShell';
@@ -128,7 +128,7 @@ function getPageText(tabId: number): Promise<string> {
 }
 
 function clientToProfile(raw: Record<string, unknown> | undefined): Profile {
-  return { ...emptyProfile, ...(raw as Partial<Profile> ?? {}) } as Profile;
+  return { ...emptyProfile, ...((raw as Partial<Profile>) ?? {}) } as Profile;
 }
 
 interface Props {
@@ -457,6 +457,38 @@ function OfferCard({
             {offer.claude_role_fit}
           </p>
         )}
+        {offer.claude_matched_reasons &&
+          (offer.claude_matched_reasons.cons.length > 0 ||
+            offer.claude_matched_reasons.pros.length > 0) && (
+            <div className="flex flex-col gap-0.5">
+              {offer.claude_matched_reasons.pros.map((item, i) => (
+                <span
+                  key={i}
+                  className="flex items-start gap-1 text-xs text-gray-700"
+                >
+                  <CheckFatIcon
+                    size={16}
+                    weight="fill"
+                    className="text-green-500 shrink-0 mt-px"
+                  />
+                  {item}
+                </span>
+              ))}
+              {offer.claude_matched_reasons.cons.map((item, i) => (
+                <span
+                  key={i}
+                  className="flex items-start gap-1 text-xs text-gray-700"
+                >
+                  <WarningIcon
+                    size={16}
+                    weight="fill"
+                    className="text-orange-500 shrink-0 mt-px"
+                  />
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
         {offer.claude_missing_skills &&
           offer.claude_missing_skills.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -475,24 +507,6 @@ function OfferCard({
               ))}
             </div>
           )}
-        {offer.claude_matched_reasons && (
-          (offer.claude_matched_reasons.cons.length > 0 || offer.claude_matched_reasons.pros.length > 0)
-        ) && (
-          <div className="flex flex-col gap-0.5">
-            {offer.claude_matched_reasons.cons.map((item, i) => (
-              <span key={i} className="flex items-start gap-1 text-xs text-gray-700">
-                <WarningCircle size={13} weight="fill" className="text-orange-500 shrink-0 mt-px" />
-                {item}
-              </span>
-            ))}
-            {offer.claude_matched_reasons.pros.map((item, i) => (
-              <span key={i} className="flex items-start gap-1 text-xs text-gray-700">
-                <CheckCircle size={13} weight="fill" className="text-green-500 shrink-0 mt-px" />
-                {item}
-              </span>
-            ))}
-          </div>
-        )}
         {offer.salary && offer.salary.length > 0 ? (
           <div className="flex flex-col gap-0.5">
             {offer.salary.map((s, i) => {
@@ -505,7 +519,7 @@ function OfferCard({
                   key={i}
                   className="text-xs text-gray-500 flex items-center gap-0.5"
                 >
-                  <CurrencyCircleDollar size={13} className="shrink-0" />{' '}
+                  <CurrencyCircleDollar size={16} className="shrink-0" />{' '}
                   {s.currency} {s.type} {formatNum(s.min)} – {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
                   {s.currency !== 'PLN' && s.delta_normalized != null && (
@@ -520,7 +534,7 @@ function OfferCard({
           </div>
         ) : (
           <span className="text-gray-500 text-xs flex items-center gap-0.5">
-            <CurrencyCircleDollar size={13} className="shrink-0" /> Salary not
+            <CurrencyCircleDollar size={16} className="shrink-0" /> Salary not
             disclosed
           </span>
         )}
@@ -1148,11 +1162,18 @@ function ClientAccordion({
               try {
                 const token = await getToken();
                 const params = new URLSearchParams({ client_id: client.id });
-                const res = await fetch(`${API_BASE_URL}/v1/profile?${params}`, {
-                  headers: token ? { Authorization: `Bearer ${token}` } : {},
-                });
+                const res = await fetch(
+                  `${API_BASE_URL}/v1/profile?${params}`,
+                  {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                  },
+                );
                 const fetched = res.ok
-                  ? ((await res.json()) as { profile: Record<string, unknown> | null }).profile
+                  ? (
+                      (await res.json()) as {
+                        profile: Record<string, unknown> | null;
+                      }
+                    ).profile
                   : null;
                 setWizardProfile(clientToProfile(fetched ?? client.profile));
               } catch {
@@ -1554,7 +1575,9 @@ export default function ExploreTab({
 
   function handleClientUpdate(id: string, firstName: string, lastName: string) {
     setClients(prev =>
-      prev.map(c => c.id === id ? { ...c, first_name: firstName, last_name: lastName } : c),
+      prev.map(c =>
+        c.id === id ? { ...c, first_name: firstName, last_name: lastName } : c,
+      ),
     );
   }
 
