@@ -1030,12 +1030,10 @@ function ClientAccordion({
     if (!selfMode) return;
     fetchOffers('pending_apply').then(offers => {
       knownCountRef.current = offers.length;
-      console.log('[poll] baseline count:', knownCountRef.current);
     });
     const interval = setInterval(async () => {
       const offers = await fetchOffers('pending_apply');
       const count = offers.length;
-      console.log('[poll] pending_apply count:', count, 'known:', knownCountRef.current);
       if (knownCountRef.current === null) return;
       if (count > knownCountRef.current) {
         knownCountRef.current = count;
