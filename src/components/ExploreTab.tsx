@@ -910,9 +910,37 @@ function UpgradeDrawer({
   const [visible, setVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const stripeTabIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  useEffect(() => {
+    function onUpdated(tabId: number, changeInfo: { url?: string }) {
+      if (tabId !== stripeTabIdRef.current) return;
+      if (changeInfo.url?.includes('upgrade=success')) {
+        setIsLoading(false);
+        stripeTabIdRef.current = null;
+      }
+    }
+
+    function onRemoved(tabId: number) {
+      if (tabId !== stripeTabIdRef.current) return;
+      setIsLoading(false);
+      stripeTabIdRef.current = null;
+    }
+
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.onUpdated.addListener(onUpdated);
+      chrome.tabs.onRemoved.addListener(onRemoved);
+    }
+    return () => {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        chrome.tabs.onRemoved.removeListener(onRemoved);
+      }
+    };
   }, []);
 
   function handleClose() {
@@ -931,11 +959,12 @@ function UpgradeDrawer({
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = (await res.json()) as { url: string };
-      await chrome.tabs.create({ url: data.url });
+      const tab = await chrome.tabs.create({ url: data.url });
+      stripeTabIdRef.current = tab.id ?? null;
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (stripeTabIdRef.current === null) setIsLoading(false);
     }
   }
 
@@ -950,13 +979,14 @@ function UpgradeDrawer({
       >
         <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
           <span className="text-sm font-semibold text-gray-900">
-            Choose your plan
+            Manage your plan
           </span>
           <button
             type="button"
             onClick={handleClose}
+            disabled={isLoading}
             aria-label="Close"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
+            className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X size={16} />
           </button>
@@ -1014,7 +1044,7 @@ function UpgradeDrawer({
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading && <Spinner size={14} className="text-white" />}
-                  {isLoading ? 'Redirecting…' : 'Upgrade to Pro'}
+                  {isLoading ? 'Checkout in progress' : 'Upgrade to Pro'}
                 </button>
                 {error && (
                   <p className="text-xs text-red-600 text-center">{error}</p>
@@ -1088,16 +1118,20 @@ function ClientAccordion({
         const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log('[checkSubscription] res.status:', res.status);
         if (!res.ok) return;
         const data = (await res.json()) as {
           subscribed_to: string | null;
           expires_at?: string | null;
         };
+        console.log('[checkSubscription] data:', data);
         const active =
           data.subscribed_to !== null &&
           (!data.expires_at ||
             new Date(data.expires_at).getTime() > Date.now());
+        console.log('[checkSubscription] isPro active:', active);
         setIsPro(active);
+        console.log('[checkSubscription] setIsPro called with:', active);
       } catch {
         // ignore
       }
