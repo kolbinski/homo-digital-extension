@@ -133,6 +133,9 @@ export default function WizardShell({
       });
       if (res.ok && profileReady) {
         const data = (await res.json()) as { matching_relevant_change?: boolean };
+        console.log('[wizard close] profile patch response:', JSON.stringify(data));
+        console.log('[wizard close] matching_relevant_change:', data.matching_relevant_change);
+        console.log('[wizard close] will trigger sync:', data.matching_relevant_change === true);
         if (data.matching_relevant_change) {
           void fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
             method: 'POST',
