@@ -468,10 +468,16 @@ function OfferCard({
           <div className="flex flex-wrap gap-1">
             <span className="text-xs text-gray-500">Required skills:</span>
             {[
-              ...offer.required_skills.filter(s => candidateSkills.includes(s.toLowerCase())),
-              ...offer.required_skills.filter(s => !candidateSkills.includes(s.toLowerCase())),
+              ...offer.required_skills.filter(s =>
+                candidateSkills.includes(s.toLowerCase()),
+              ),
+              ...offer.required_skills.filter(
+                s => !candidateSkills.includes(s.toLowerCase()),
+              ),
             ].map(skill => {
-              const has = candidateSkills.length === 0 || candidateSkills.includes(skill.toLowerCase());
+              const has =
+                candidateSkills.length === 0 ||
+                candidateSkills.includes(skill.toLowerCase());
               return (
                 <span
                   key={skill}
@@ -493,10 +499,16 @@ function OfferCard({
           <div className="flex flex-wrap gap-1">
             <span className="text-xs text-gray-500">Nice to have skills:</span>
             {[
-              ...offer.nice_to_have_skills.filter(s => candidateSkills.includes(s.toLowerCase())),
-              ...offer.nice_to_have_skills.filter(s => !candidateSkills.includes(s.toLowerCase())),
+              ...offer.nice_to_have_skills.filter(s =>
+                candidateSkills.includes(s.toLowerCase()),
+              ),
+              ...offer.nice_to_have_skills.filter(
+                s => !candidateSkills.includes(s.toLowerCase()),
+              ),
             ].map(skill => {
-              const has = candidateSkills.length === 0 || candidateSkills.includes(skill.toLowerCase());
+              const has =
+                candidateSkills.length === 0 ||
+                candidateSkills.includes(skill.toLowerCase());
               return (
                 <span
                   key={skill}
@@ -921,8 +933,13 @@ function ClientAccordion({
   const [statusError, setStatusError] = useState<string | null>(null);
 
   const candidateSkills = useMemo(() => {
-    const raw = (client.profile?.skills ?? {}) as Record<string, { name: string }[]>;
-    return Object.values(raw).flat().map(s => s.name.toLowerCase());
+    const raw = (client.profile?.skills ?? {}) as Record<
+      string,
+      { name: string }[]
+    >;
+    return Object.values(raw)
+      .flat()
+      .map(s => s.name.toLowerCase());
   }, [client.profile]);
 
   async function handleCardToggle(offerId: string, offerUrl?: string) {
@@ -1034,7 +1051,10 @@ function ClientAccordion({
     };
   }, [statusFilter, sourceFilter]);
 
-  interface CombinedBucket { offers: UserOffer[]; count: number }
+  interface CombinedBucket {
+    offers: UserOffer[];
+    count: number;
+  }
   interface CombinedOffersResponse {
     pending_apply: CombinedBucket;
     ai_rejected: CombinedBucket;
@@ -1433,23 +1453,27 @@ function ClientAccordion({
                               />
                             ),
                           )}
-                          {applyNowCount !== null && applyOffers.length < applyNowCount && (
-                            <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
-                              <Lock size={18} className="text-gray-400" />
-                              <p className="text-xs text-gray-500">
-                                You've reached your free plan limit. Upgrade to unlock{' '}
-                                <span className="font-medium text-gray-700">{applyNowCount - applyOffers.length} more</span>{' '}
-                                matches.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => console.log('upgrade clicked')}
-                                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
-                              >
-                                Upgrade to Pro
-                              </button>
-                            </div>
-                          )}
+                          {applyNowCount !== null &&
+                            applyOffers.length < applyNowCount && (
+                              <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                                <Lock size={18} className="text-gray-400" />
+                                <p className="text-xs text-gray-500">
+                                  You've reached your free plan limit. Upgrade
+                                  to unlock{' '}
+                                  <span className="font-medium text-gray-700">
+                                    {applyNowCount - applyOffers.length} more
+                                  </span>{' '}
+                                  matches.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => console.log('upgrade clicked')}
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                                >
+                                  Upgrade to Pro
+                                </button>
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>
@@ -1519,23 +1543,27 @@ function ClientAccordion({
                               />
                             ),
                           )}
-                          {levelUpCount !== null && levelUpOffers.length < levelUpCount && (
-                            <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
-                              <Lock size={18} className="text-gray-400" />
-                              <p className="text-xs text-gray-500">
-                                You've reached your free plan limit. Upgrade to unlock{' '}
-                                <span className="font-medium text-gray-700">{levelUpCount - levelUpOffers.length} more</span>{' '}
-                                matches.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => console.log('upgrade clicked')}
-                                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
-                              >
-                                Upgrade to Pro
-                              </button>
-                            </div>
-                          )}
+                          {levelUpCount !== null &&
+                            levelUpOffers.length < levelUpCount && (
+                              <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                                <Lock size={18} className="text-gray-400" />
+                                <p className="text-xs text-gray-500">
+                                  You've reached your free plan limit. Upgrade
+                                  to unlock{' '}
+                                  <span className="font-medium text-gray-700">
+                                    {levelUpCount - levelUpOffers.length} more
+                                  </span>{' '}
+                                  matches.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => console.log('upgrade clicked')}
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                                >
+                                  Upgrade to Pro
+                                </button>
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>
@@ -1851,7 +1879,7 @@ export default function ExploreTab({
               <option value="accepted">Accepted</option>
             </select>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             {generalSettings?.show_source_filter && (
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-500">Source:</span>
@@ -1887,17 +1915,17 @@ export default function ExploreTab({
                 <span className="text-xs text-gray-700">CL</span>
               </label>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={e => handleSortChange(e.target.value)}
-              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value="score">Score</option>
-              <option value="salary_delta">Salary delta</option>
-            </select>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={e => handleSortChange(e.target.value)}
+                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="score">Score</option>
+                <option value="salary_delta">Salary delta</option>
+              </select>
+            </div>
           </div>
         </div>
         {selfMode ? (
