@@ -943,20 +943,16 @@ function ClientAccordion({
         const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log('[checkSubscription] res.status:', res.status);
         if (!res.ok) return;
         const data = (await res.json()) as {
           subscribed_to: string | null;
           expires_at?: string | null;
         };
-        console.log('[checkSubscription] data:', data);
         const active =
           data.subscribed_to !== null &&
           (!data.expires_at ||
             new Date(data.expires_at).getTime() > Date.now());
-        console.log('[checkSubscription] isPro active:', active);
         setIsPro(active);
-        console.log('[checkSubscription] setIsPro called with:', active);
       } catch {
         // ignore
       }
@@ -967,7 +963,6 @@ function ClientAccordion({
     function handleStorageChange(
       changes: Record<string, chrome.storage.StorageChange>,
     ) {
-      console.log('ExploreTab: storage changed', changes);
       if (
         'upgrade_success' in changes &&
         changes.upgrade_success.newValue !== undefined
@@ -1243,14 +1238,11 @@ function ClientAccordion({
     let interval: ReturnType<typeof setInterval> | null = null;
     fetchCombinedOffers().then(result => {
       knownCountRef.current = result.count;
-      console.log('[poll] baseline set to:', result.count);
       interval = setInterval(async () => {
         const polled = await fetchCombinedOffers();
         const count = polled.count;
-        console.log('[poll] count:', count, 'known:', knownCountRef.current);
         if (count > knownCountRef.current!) {
           knownCountRef.current = count;
-          console.log('[poll] new offers detected, showing blue dot');
           setHasNewOffers(true);
           if (!hasOffersRef.current) {
             void handleRefreshRef.current();
