@@ -275,7 +275,7 @@ export default function WizardShell({
       {/* Tab body */}
       <div
         ref={tabBodyRef}
-        className={`flex-1 overflow-y-auto py-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
+        className={`flex-1 overflow-y-auto pb-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
         <h2 className="text-base font-semibold text-gray-900 mb-3">
