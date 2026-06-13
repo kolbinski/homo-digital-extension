@@ -13,6 +13,7 @@ export interface GeneralSettings {
   languages: string[];
   language_levels: string[];
   experience_levels: string[];
+  show_source_filter?: boolean;
 }
 
 interface StoreState {

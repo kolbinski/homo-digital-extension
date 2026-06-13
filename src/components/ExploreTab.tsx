@@ -17,6 +17,7 @@ import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
 import { useCvGenerate } from '../hooks/useCvGenerate';
+import { useGeneralSettings } from '../store/generalSettingsStore';
 import Spinner from './Spinner';
 
 interface OfferSalary {
@@ -1613,6 +1614,7 @@ export default function ExploreTab({
   selfMode,
 }: Props) {
   const { fetchClients } = useClients();
+  const { settings: generalSettings } = useGeneralSettings();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1775,18 +1777,20 @@ export default function ExploreTab({
             </select>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">Source:</span>
-              <select
-                value={sourceFilter}
-                onChange={e => handleSourceFilterChange(e.target.value)}
-                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              >
-                <option value="all">All</option>
-                <option value="justjoin">JustJoin</option>
-                <option value="nofluffjobs">NoFluffJobs</option>
-              </select>
-            </div>
+            {generalSettings?.show_source_filter && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-500">Source:</span>
+                <select
+                  value={sourceFilter}
+                  onChange={e => handleSourceFilterChange(e.target.value)}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="all">All</option>
+                  <option value="justjoin">JustJoin</option>
+                  <option value="nofluffjobs">NoFluffJobs</option>
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Generated:</span>
               <label className="flex items-center gap-1 cursor-pointer">
