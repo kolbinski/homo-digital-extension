@@ -249,11 +249,13 @@ export default function WizardShell({
           <button
             type="button"
             onClick={handleClose}
-            disabled={autoSaveStatus === 'saving' || isReviewing || submitting || isClosing}
+            disabled={isReviewing || submitting || isClosing}
             aria-label="Close"
             className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isClosing ? <Spinner size={14} className="text-gray-500" /> : <X size={16} />}
+            {isClosing || autoSaveStatus === 'saving'
+              ? <Spinner size={14} className="text-gray-500" />
+              : <X size={16} />}
           </button>
         ) : onLogout ? (
           <button
