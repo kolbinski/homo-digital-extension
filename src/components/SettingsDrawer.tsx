@@ -1,73 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
+import PlanDrawer from './PlanDrawer';
 
 interface SubscriptionStatus {
   plan_name: string;
   current_period_end: string | null;
-}
-
-function ManagePlanDrawer({
-  plan_name,
-  current_period_end,
-  onClose,
-}: {
-  plan_name: string;
-  current_period_end: string | null;
-  onClose: () => void;
-}) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
-
-  function handleClose() {
-    setVisible(false);
-    setTimeout(onClose, 200);
-  }
-
-  return createPortal(
-    <div className="fixed inset-0 z-60">
-      <div
-        className={`absolute inset-0 bg-black/20 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
-        onClick={handleClose}
-      />
-      <div
-        className={`absolute inset-y-0 right-0 w-full bg-white flex flex-col shadow-xl transition-transform duration-200 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
-      >
-        <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-          <span className="text-sm font-semibold text-gray-900">
-            Manage plan
-          </span>
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="Close"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </header>
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-          <p className="text-sm font-medium text-gray-900">
-            {plan_name
-              ? plan_name.charAt(0).toUpperCase() + plan_name.slice(1)
-              : 'Free'}
-          </p>
-          {current_period_end && (
-            <p className="text-xs text-gray-500">
-              Ends at {current_period_end.slice(0, 10)}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
 }
 
 interface Props {
@@ -99,27 +40,30 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  useEffect(() => {
-    async function fetchSubscription() {
-      try {
-        const token = await getToken();
-        const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) {
-          setSubscriptionError(true);
-          return;
-        }
-        const data = (await res.json()) as SubscriptionStatus;
-        setSubscription(data);
-      } catch {
+  const fetchSubscription = useCallback(async () => {
+    setSubscriptionLoading(true);
+    setSubscriptionError(false);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
         setSubscriptionError(true);
-      } finally {
-        setSubscriptionLoading(false);
+        return;
       }
+      const data = (await res.json()) as SubscriptionStatus;
+      setSubscription(data);
+    } catch {
+      setSubscriptionError(true);
+    } finally {
+      setSubscriptionLoading(false);
     }
+  }, [getToken]);
+
+  useEffect(() => {
     void fetchSubscription();
-  }, []);
+  }, [fetchSubscription]);
 
   function handleClose() {
     setVisible(false);
@@ -169,6 +113,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       setIsDeleting(false);
     }
   }
+
+  const isPro =
+    subscription != null &&
+    subscription.plan_name.toLowerCase() !== 'free';
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -231,7 +179,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                             : 'Free'}
                         </span>
                         {subscription.current_period_end && (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-xs text-gray-500">
                             Ends at{' '}
                             {subscription.current_period_end.slice(0, 10)}
                           </span>
@@ -338,11 +286,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           </>
         )}
       </div>
-      {managePlanOpen && subscription && (
-        <ManagePlanDrawer
-          plan_name={subscription.plan_name}
-          current_period_end={subscription.current_period_end}
+      {managePlanOpen && (
+        <PlanDrawer
+          isPro={isPro}
           onClose={() => setManagePlanOpen(false)}
+          zIndex={60}
+          currentPeriodEnd={subscription?.current_period_end}
+          onCancelSuccess={() => void fetchSubscription()}
         />
       )}
     </div>,
