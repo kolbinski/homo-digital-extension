@@ -278,7 +278,7 @@ export default function WizardShell({
         className={`flex-1 overflow-y-auto pb-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
-        <h2 className="text-base font-semibold text-gray-900 mb-3">
+        <h2 className="text-base font-semibold text-gray-900 mb-3 pt-4">
           {activeCompletion.label}
         </h2>
         {activeTab === 'basic_info' ? (
