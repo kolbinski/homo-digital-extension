@@ -1163,7 +1163,7 @@ function ClientAccordion({
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
-          {!hasLoaded ? (
+          {!hasLoaded || isLoading ? (
             <Spinner size={12} className="text-gray-400" />
           ) : (
             <>
