@@ -2279,7 +2279,7 @@ function ClientAccordion({
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                            {STATUS_LABELS[statusFilter] ?? statusFilter}
+                            {selfMode && statusFilter === 'client_withdrawn' ? 'Withdrawn' : (STATUS_LABELS[statusFilter] ?? statusFilter)}
                           </span>
                           <span className="text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                             {filteredApplyOffers.length}
