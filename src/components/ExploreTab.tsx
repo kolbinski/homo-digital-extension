@@ -935,7 +935,8 @@ function ClientAccordion({
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [scanNotJobOffer, setScanNotJobOffer] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [scanLimitReached, setScanLimitReached] = useState(false);
 
   useEffect(() => {
@@ -1287,17 +1288,32 @@ function ClientAccordion({
 
   async function handleScanPage() {
     setIsScanning(true);
-    setScanNotJobOffer(false);
+    setScanMessage(null);
+    setScanError(null);
     setScanLimitReached(false);
     try {
       const [tab] = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       });
+      console.log('[scanPage] tab:', tab?.id, tab?.url);
+      const pageUrl = tab.url ?? '';
+      if (
+        !tab?.url ||
+        tab.url.startsWith('chrome://') ||
+        tab.url.startsWith('chrome-extension://')
+      ) {
+        setScanMessage(
+          'Please open a job posting page first, then click Scan.',
+        );
+        setTimeout(() => setScanMessage(null), 4000);
+        return;
+      }
       const [{ result: pageText }] = await chrome.scripting.executeScript({
         target: { tabId: tab.id! },
         func: () => document.body.innerText,
       });
+      console.log('[scanPage] pageText length:', pageText?.length);
       const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/v1/scan-page`, {
         method: 'POST',
@@ -1305,20 +1321,26 @@ function ClientAccordion({
           Authorization: `Bearer ${token ?? ''}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ page_text: pageText }),
+        body: JSON.stringify({ page_text: pageText, page_url: pageUrl }),
       });
       if (res.status === 402) {
         setScanLimitReached(true);
         return;
       }
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      if (!res.ok) {
+        setScanError('Something went wrong. Please try again.');
+        setTimeout(() => setScanError(null), 4000);
+        return;
+      }
       const data = (await res.json()) as {
         is_job_offer: boolean;
         user_offer?: UserOffer;
       };
       if (!data.is_job_offer) {
-        setScanNotJobOffer(true);
-        setTimeout(() => setScanNotJobOffer(false), 4000);
+        setScanMessage(
+          "This page doesn't look like a job offer. Try opening a job posting first.",
+        );
+        setTimeout(() => setScanMessage(null), 4000);
         return;
       }
       const newOffer = data.user_offer!;
@@ -1332,8 +1354,10 @@ function ClientAccordion({
           )
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 50);
-    } catch {
-      // silent — network/scripting errors don't need user-visible feedback
+    } catch (err) {
+      console.error('[scanPage] error:', err);
+      setScanError('Something went wrong. Please try again.');
+      setTimeout(() => setScanError(null), 4000);
     } finally {
       setIsScanning(false);
     }
@@ -1530,11 +1554,11 @@ function ClientAccordion({
                         )}
                         {isScanning ? 'Scanning...' : 'Scan this page'}
                       </button>
-                      {scanNotJobOffer && (
-                        <p className="text-xs text-gray-500">
-                          This page doesn't look like a job offer. Try opening
-                          a job posting first.
-                        </p>
+                      {scanMessage && (
+                        <p className="text-xs text-gray-500">{scanMessage}</p>
+                      )}
+                      {scanError && (
+                        <p className="text-xs text-red-500">{scanError}</p>
                       )}
                     </div>
                   )}
