@@ -7,6 +7,7 @@ import {
   CheckFatIcon,
   CurrencyCircleDollar,
   FilePlusIcon,
+  PencilSimple,
   WarningIcon,
   X,
 } from '@phosphor-icons/react';
@@ -26,6 +27,7 @@ interface OfferSalary {
   min: number;
   max: number;
   currency: string;
+  unit?: string;
   type: string;
   delta: number;
   delta_normalized?: number;
@@ -33,6 +35,7 @@ interface OfferSalary {
 
 interface UserOffer {
   user_offer_id: string;
+  offer_id?: string;
   offer_title: string;
   offer_company: string;
   offer_url?: string;
@@ -175,6 +178,7 @@ interface OfferCardProps {
   onError: (message: string) => void;
   onCvUpdate: (offerId: string, cvUrl: string, cvStatus: string) => void;
   onClUpdate: (offerId: string, clUrl: string, clStatus: string) => void;
+  onSalaryUpdate?: (userOfferId: string, salary: OfferSalary) => void;
   isOfferLoading: boolean;
 }
 
@@ -192,10 +196,24 @@ function OfferCard({
   onError,
   onCvUpdate,
   onClUpdate,
+  onSalaryUpdate,
   isOfferLoading,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
+  const { settings: generalSettings } = useGeneralSettings();
+  const FALLBACK_UNITS = ['hourly', 'monthly', 'annually'];
+  const unitOptions = generalSettings?.employment_type_units ?? FALLBACK_UNITS;
+  const currencyOptions = generalSettings?.currencies ?? [];
+
+  const [editSalaryOpen, setEditSalaryOpen] = useState(false);
+  const [salaryFrom, setSalaryFrom] = useState('');
+  const [salaryTo, setSalaryTo] = useState('');
+  const [salaryCurrency, setSalaryCurrency] = useState('');
+  const [salaryUnit, setSalaryUnit] = useState('');
+  const [salaryType, setSalaryType] = useState<'contract' | 'permanent'>('contract');
+  const [salaryLoading, setSalaryLoading] = useState(false);
+  const [salaryError, setSalaryError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [status, setStatus] = useState<{
@@ -387,6 +405,52 @@ function OfferCard({
       onError('Failed to update status. Please try again.');
     } finally {
       setStatusLoading(null);
+    }
+  }
+
+  async function handleSalarySubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!offer.offer_id) return;
+    setSalaryLoading(true);
+    setSalaryError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${API_BASE_URL}/v1/offers/${offer.offer_id}/employment-types`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token ?? ''}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: Number(salaryFrom),
+            to: Number(salaryTo),
+            currency: salaryCurrency,
+            unit: salaryUnit,
+            type: salaryType,
+          }),
+        },
+      );
+      if (!res.ok) {
+        setSalaryError('Failed to save salary. Please try again.');
+        return;
+      }
+      const newSalary: OfferSalary = {
+        min: Number(salaryFrom),
+        max: Number(salaryTo),
+        currency: salaryCurrency,
+        unit: salaryUnit,
+        type: salaryType,
+        delta: 0,
+        delta_normalized: 0,
+      };
+      onSalaryUpdate?.(offer.user_offer_id, newSalary);
+      setEditSalaryOpen(false);
+    } catch {
+      setSalaryError('Something went wrong. Please try again.');
+    } finally {
+      setSalaryLoading(false);
     }
   }
 
@@ -583,10 +647,121 @@ function OfferCard({
             })}
           </div>
         ) : (
-          <span className="text-gray-500 text-xs flex items-center gap-0.5">
-            <CurrencyCircleDollar size={16} className="shrink-0" /> Salary not
-            disclosed
-          </span>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-gray-500 text-xs flex items-center gap-0.5">
+              <CurrencyCircleDollar size={16} className="shrink-0" /> Salary not
+              disclosed
+              {offer.source === 'manual' && (
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setSalaryCurrency(currencyOptions[0] ?? '');
+                    setSalaryUnit(unitOptions[0] ?? '');
+                    setEditSalaryOpen(v => !v);
+                  }}
+                  className="ml-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Edit salary"
+                >
+                  <PencilSimple size={13} />
+                </button>
+              )}
+            </span>
+            {editSalaryOpen && (
+              <form
+                onSubmit={handleSalarySubmit}
+                onClick={e => e.stopPropagation()}
+                className="mt-1 p-2.5 rounded-md border border-gray-200 bg-gray-50 flex flex-col gap-2"
+              >
+                <span className="text-xs font-medium text-gray-700">Edit offer salary</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">From</label>
+                    <input
+                      type="number"
+                      min={0}
+                      required
+                      value={salaryFrom}
+                      onChange={e => setSalaryFrom(e.target.value)}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">To</label>
+                    <input
+                      type="number"
+                      min={0}
+                      required
+                      value={salaryTo}
+                      onChange={e => setSalaryTo(e.target.value)}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">Currency</label>
+                    <select
+                      required
+                      value={salaryCurrency}
+                      onChange={e => setSalaryCurrency(e.target.value)}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    >
+                      {currencyOptions.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">Unit</label>
+                    <select
+                      required
+                      value={salaryUnit}
+                      onChange={e => setSalaryUnit(e.target.value)}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    >
+                      {unitOptions.map(u => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">Type</label>
+                  <select
+                    required
+                    value={salaryType}
+                    onChange={e => setSalaryType(e.target.value as 'contract' | 'permanent')}
+                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                  >
+                    <option value="contract">Contract</option>
+                    <option value="permanent">Permanent</option>
+                  </select>
+                </div>
+                {salaryError && (
+                  <p className="text-xs text-red-600">{salaryError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditSalaryOpen(false)}
+                    disabled={salaryLoading}
+                    className="flex-1 py-1.5 text-xs font-medium border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={salaryLoading}
+                    className="flex-1 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    {salaryLoading && <Spinner size={11} className="text-white" />}
+                    Save
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         )}
       </div>
 
@@ -1037,8 +1212,8 @@ function ClientAccordion({
       let levelUp: UserOffer[] = [];
       if (statusFilter === 'pending_apply') {
         const result = await fetchCombinedOffers();
-        pending = result.apply_now.offers;
-        levelUp = result.level_up.offers;
+        pending = result.apply_now.offers ?? [];
+        levelUp = result.level_up.offers ?? [];
         setApplyNowCount(result.apply_now.count);
         setLevelUpCount(result.level_up.count);
       } else {
@@ -1078,8 +1253,8 @@ function ClientAccordion({
       if (statusFilter === 'pending_apply') {
         const result = await fetchCombinedOffers();
         if (cancelled) return;
-        setApplyOffers(result.apply_now.offers);
-        setLevelUpOffers(result.level_up.offers);
+        setApplyOffers(result.apply_now.offers ?? []);
+        setLevelUpOffers(result.level_up.offers ?? []);
         setApplyNowCount(result.apply_now.count);
         setLevelUpCount(result.level_up.count);
       } else {
@@ -1159,8 +1334,8 @@ function ClientAccordion({
       setIsLoading(true);
       if (statusFilter === 'pending_apply') {
         const result = await fetchCombinedOffers();
-        setApplyOffers(result.apply_now.offers);
-        setLevelUpOffers(result.level_up.offers);
+        setApplyOffers(result.apply_now.offers ?? []);
+        setLevelUpOffers(result.level_up.offers ?? []);
         setApplyNowCount(result.apply_now.count);
         setLevelUpCount(result.level_up.count);
       } else {
@@ -1186,8 +1361,8 @@ function ClientAccordion({
     setHasNewOffers(false);
     if (statusFilter === 'pending_apply') {
       const result = await fetchCombinedOffers();
-      setApplyOffers(result.apply_now.offers);
-      setLevelUpOffers(result.level_up.offers);
+      setApplyOffers(result.apply_now.offers ?? []);
+      setLevelUpOffers(result.level_up.offers ?? []);
       setApplyNowCount(result.apply_now.count);
       setLevelUpCount(result.level_up.count);
     } else {
@@ -1279,6 +1454,15 @@ function ClientAccordion({
     setLevelUpOffers(patch);
   }
 
+  function handleSalaryUpdate(userOfferId: string, salary: OfferSalary) {
+    const patch = (offers: UserOffer[]) =>
+      (offers ?? []).map(o =>
+        o.user_offer_id === userOfferId ? { ...o, salary: [salary] } : o,
+      );
+    setApplyOffers(patch);
+    setLevelUpOffers(patch);
+  }
+
   async function handleScanPage() {
     setIsScanning(true);
     setScanMessage(null);
@@ -1365,7 +1549,7 @@ function ClientAccordion({
 
   const filteredApplyOffers = useMemo(
     () =>
-      applyOffers
+      (applyOffers ?? [])
         .filter(o => (o.claude_score ?? 0) >= minScore)
         .filter(o => !cvGenerated || o.cv_status === 'done')
         .filter(o => !clGenerated || o.cl_status === 'done'),
@@ -1373,7 +1557,7 @@ function ClientAccordion({
   );
   const filteredLevelUpOffers = useMemo(
     () =>
-      levelUpOffers
+      (levelUpOffers ?? [])
         .filter(o => (o.claude_score ?? 0) >= minScore)
         .filter(o => !cvGenerated || o.cv_status === 'done')
         .filter(o => !clGenerated || o.cl_status === 'done'),
@@ -1621,6 +1805,7 @@ function ClientAccordion({
                                 onError={setStatusError}
                                 onCvUpdate={handleCvUpdate}
                                 onClUpdate={handleClUpdate}
+                                onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
                               />
@@ -1714,6 +1899,7 @@ function ClientAccordion({
                                 onError={setStatusError}
                                 onCvUpdate={handleCvUpdate}
                                 onClUpdate={handleClUpdate}
+                                onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
                               />
@@ -1811,6 +1997,7 @@ function ClientAccordion({
                                 onError={setStatusError}
                                 onCvUpdate={handleCvUpdate}
                                 onClUpdate={handleClUpdate}
+                                onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
                               />

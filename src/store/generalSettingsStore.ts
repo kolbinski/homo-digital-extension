@@ -6,6 +6,7 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface GeneralSettings {
   currencies: string[];
+  employment_type_units?: string[];
   industries: string[];
   markets: string[];
   company_types: string[];
