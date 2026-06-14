@@ -1765,11 +1765,7 @@ function ClientAccordion({
               {scanLimitReached ? (
                 <PlanLimitBanner
                   onUpgradeClick={() => void handleBuyScanPackage()}
-                  buttonLabel={
-                    generalSettings?.scan_package_price?.formatted
-                      ? `Buy ${generalSettings.package_page_scans_amount ?? 100} scans for ${generalSettings.scan_package_price.formatted}`
-                      : `Buy ${generalSettings?.package_page_scans_amount ?? 100} more scans`
-                  }
+                  buttonLabel={`Buy ${generalSettings?.package_page_scans_amount ?? 100} scans for ${generalSettings?.scan_package_price?.formatted ?? '...'}`}
                   isLoading={scanPackageLoading}
                   errorMessage={scanPackageError}
                 >
