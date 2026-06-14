@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [react()],
   esbuild: {},
   build: {
-    minify: 'esbuild',
+    minify: false,
+    sourcemap: true,
     rollupOptions: {
       input: {
         main: 'index.html',

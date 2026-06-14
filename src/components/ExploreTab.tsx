@@ -934,6 +934,9 @@ function ClientAccordion({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanNotJobOffer, setScanNotJobOffer] = useState(false);
+  const [scanLimitReached, setScanLimitReached] = useState(false);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1040,10 +1043,10 @@ function ClientAccordion({
       let levelUp: UserOffer[] = [];
       if (statusFilter === 'pending_apply') {
         const result = await fetchCombinedOffers();
-        pending = result.pending_apply.offers;
-        levelUp = result.ai_rejected.offers;
-        setApplyNowCount(result.pending_apply.count);
-        setLevelUpCount(result.ai_rejected.count);
+        pending = result.apply_now.offers;
+        levelUp = result.level_up.offers;
+        setApplyNowCount(result.apply_now.count);
+        setLevelUpCount(result.level_up.count);
       } else {
         pending = await fetchOffers(statusFilter);
       }
@@ -1081,10 +1084,10 @@ function ClientAccordion({
       if (statusFilter === 'pending_apply') {
         const result = await fetchCombinedOffers();
         if (cancelled) return;
-        setApplyOffers(result.pending_apply.offers);
-        setLevelUpOffers(result.ai_rejected.offers);
-        setApplyNowCount(result.pending_apply.count);
-        setLevelUpCount(result.ai_rejected.count);
+        setApplyOffers(result.apply_now.offers);
+        setLevelUpOffers(result.level_up.offers);
+        setApplyNowCount(result.apply_now.count);
+        setLevelUpCount(result.level_up.count);
       } else {
         const pending = await fetchOffers(statusFilter);
         if (cancelled) return;
@@ -1105,13 +1108,13 @@ function ClientAccordion({
     count: number;
   }
   interface CombinedOffersResponse {
-    pending_apply: CombinedBucket;
-    ai_rejected: CombinedBucket;
+    apply_now: CombinedBucket;
+    level_up: CombinedBucket;
     count: number;
   }
   const EMPTY_COMBINED: CombinedOffersResponse = {
-    pending_apply: { offers: [], count: 0 },
-    ai_rejected: { offers: [], count: 0 },
+    apply_now: { offers: [], count: 0 },
+    level_up: { offers: [], count: 0 },
     count: 0,
   };
 
@@ -1126,7 +1129,12 @@ function ClientAccordion({
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return EMPTY_COMBINED;
-      return (await res.json()) as CombinedOffersResponse;
+      const raw = (await res.json()) as Partial<CombinedOffersResponse>;
+      return {
+        apply_now: raw.apply_now ?? EMPTY_COMBINED.apply_now,
+        level_up: raw.level_up ?? EMPTY_COMBINED.level_up,
+        count: raw.count ?? 0,
+      };
     } catch {
       return EMPTY_COMBINED;
     }
@@ -1157,10 +1165,10 @@ function ClientAccordion({
       setIsLoading(true);
       if (statusFilter === 'pending_apply') {
         const result = await fetchCombinedOffers();
-        setApplyOffers(result.pending_apply.offers);
-        setLevelUpOffers(result.ai_rejected.offers);
-        setApplyNowCount(result.pending_apply.count);
-        setLevelUpCount(result.ai_rejected.count);
+        setApplyOffers(result.apply_now.offers);
+        setLevelUpOffers(result.level_up.offers);
+        setApplyNowCount(result.apply_now.count);
+        setLevelUpCount(result.level_up.count);
       } else {
         setApplyOffers(await fetchOffers(statusFilter));
         setLevelUpOffers([]);
@@ -1184,10 +1192,10 @@ function ClientAccordion({
     setHasNewOffers(false);
     if (statusFilter === 'pending_apply') {
       const result = await fetchCombinedOffers();
-      setApplyOffers(result.pending_apply.offers);
-      setLevelUpOffers(result.ai_rejected.offers);
-      setApplyNowCount(result.pending_apply.count);
-      setLevelUpCount(result.ai_rejected.count);
+      setApplyOffers(result.apply_now.offers);
+      setLevelUpOffers(result.level_up.offers);
+      setApplyNowCount(result.apply_now.count);
+      setLevelUpCount(result.level_up.count);
     } else {
       setApplyOffers(await fetchOffers(statusFilter));
       setLevelUpOffers([]);
@@ -1275,6 +1283,60 @@ function ClientAccordion({
       );
     setApplyOffers(patch);
     setLevelUpOffers(patch);
+  }
+
+  async function handleScanPage() {
+    setIsScanning(true);
+    setScanNotJobOffer(false);
+    setScanLimitReached(false);
+    try {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      const [{ result: pageText }] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id! },
+        func: () => document.body.innerText,
+      });
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/scan-page`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token ?? ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ page_text: pageText }),
+      });
+      if (res.status === 402) {
+        setScanLimitReached(true);
+        return;
+      }
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = (await res.json()) as {
+        is_job_offer: boolean;
+        user_offer?: UserOffer;
+      };
+      if (!data.is_job_offer) {
+        setScanNotJobOffer(true);
+        setTimeout(() => setScanNotJobOffer(false), 4000);
+        return;
+      }
+      const newOffer = data.user_offer!;
+      setApplyOffers(prev => [newOffer, ...prev]);
+      setApplyOpen(true);
+      setExpandedOfferId(newOffer.user_offer_id);
+      setTimeout(() => {
+        document
+          .querySelector(
+            `[data-user-offer-id="${newOffer.user_offer_id}"]`,
+          )
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    } catch {
+      // silent — network/scripting errors don't need user-visible feedback
+    } finally {
+      setIsScanning(false);
+    }
   }
 
   const filteredApplyOffers = useMemo(
@@ -1435,6 +1497,47 @@ function ClientAccordion({
             <>
               {statusFilter === 'pending_apply' ? (
                 <>
+                  {/* Scan box */}
+                  {scanLimitReached ? (
+                    <PlanLimitBanner
+                      onUpgradeClick={() =>
+                        console.log('Buy 100 scans clicked')
+                      }
+                      buttonLabel="Buy 100 scans"
+                    >
+                      <p className="text-xs text-gray-500">
+                        You've reached your scan limit. Buy a package for 100
+                        more scans.
+                      </p>
+                    </PlanLimitBanner>
+                  ) : (
+                    <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                      <p className="text-xs font-medium text-gray-700">
+                        Scan this page for a job offer
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Open any job posting and click Scan to instantly match
+                        it with your profile.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void handleScanPage()}
+                        disabled={isScanning}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isScanning && (
+                          <Spinner size={12} className="text-white" />
+                        )}
+                        {isScanning ? 'Scanning...' : 'Scan this page'}
+                      </button>
+                      {scanNotJobOffer && (
+                        <p className="text-xs text-gray-500">
+                          This page doesn't look like a job offer. Try opening
+                          a job posting first.
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {/* Apply now sub-section */}
                   {filteredApplyOffers.length > 0 && (
                     <div className="border-b border-gray-100">
