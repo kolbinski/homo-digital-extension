@@ -1142,6 +1142,7 @@ function ClientAccordion({
   const [scanPackageError, setScanPackageError] = useState<string | null>(null);
   const [pageOffer, setPageOffer] = useState<UserOffer | null>(null);
   const manualPageOfferRef = useRef(false);
+  const manualPageOfferUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1214,6 +1215,7 @@ function ClientAccordion({
     }
     setExpandedOfferId(offerId);
     manualPageOfferRef.current = true;
+    manualPageOfferUrlRef.current = offerUrl ?? null;
     setPageOffer(offer);
     setPageOfferOpen(true);
     if (offerUrl && typeof chrome !== 'undefined') {
@@ -1283,7 +1285,16 @@ function ClientAccordion({
   }, [currentUrl, client.id]);
 
   useEffect(() => {
+    // If currentUrl is the URL of the manually clicked offer, keep it — skip fetch
+    if (
+      manualPageOfferRef.current &&
+      manualPageOfferUrlRef.current &&
+      currentUrl?.startsWith(manualPageOfferUrlRef.current.split('?')[0])
+    ) {
+      return;
+    }
     manualPageOfferRef.current = false;
+    manualPageOfferUrlRef.current = null;
     if (
       !currentUrl ||
       currentUrl.startsWith('chrome://') ||
@@ -1306,9 +1317,7 @@ function ClientAccordion({
         );
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { user_offer: UserOffer | null };
-        if (!cancelled && !manualPageOfferRef.current) {
-          setPageOffer(data.user_offer ?? null);
-        }
+        if (!cancelled) setPageOffer(data.user_offer ?? null);
       } catch {
         // silently ignore
       }
