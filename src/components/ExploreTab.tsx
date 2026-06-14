@@ -1347,9 +1347,9 @@ function ClientAccordion({
       setApplyOffers(prev => [newOffer, ...prev]);
       setApplyOpen(true);
       onResetFilters?.();
-      setExpandedOfferId(newOffer.user_offer_id);
-      console.log('[scanPage] expandedOfferId set to:', newOffer.user_offer_id);
+      setExpandedOfferId(null);
       setTimeout(() => {
+        setExpandedOfferId(newOffer.user_offer_id);
         document
           .querySelector(`[data-user-offer-id="${newOffer.user_offer_id}"]`)
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
