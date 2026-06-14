@@ -1125,6 +1125,7 @@ function ClientAccordion({
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
   const [applyOpen, setApplyOpen] = useState(true);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
+  const [pageOfferOpen, setPageOfferOpen] = useState(true);
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
@@ -1314,6 +1315,10 @@ function ClientAccordion({
       cancelled = true;
     };
   }, [currentUrl]);
+
+  useEffect(() => {
+    setPageOfferOpen(true);
+  }, [pageOffer]);
 
   useEffect(() => {
     setHasLoaded(false);
@@ -1807,29 +1812,48 @@ function ClientAccordion({
               {/* Offer on this page sub-section */}
               {pageOffer && (
                 <div className="border-b border-gray-100">
-                  <div className="w-full flex items-center px-3 py-2 bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => setPageOfferOpen(v => !v)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                  >
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Offer on this page
                     </span>
-                  </div>
-                  <OfferCard
-                    key={pageOffer.user_offer_id}
-                    offer={pageOffer}
-                    clientId={client.id}
-                    clientFirstName={client.first_name}
-                    clientLastName={client.last_name}
-                    isOpen={true}
-                    onToggle={() => {}}
-                    activeTabId={activeTabId}
-                    onRemove={() => setPageOffer(null)}
-                    onRollback={() => {}}
-                    onError={setStatusError}
-                    onCvUpdate={handleCvUpdate}
-                    onClUpdate={handleClUpdate}
-                    onSalaryUpdate={handleSalaryUpdate}
-                    candidateSkills={candidateSkills}
-                    isOfferLoading={false}
-                  />
+                    <svg
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${pageOfferOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {pageOfferOpen && (
+                    <OfferCard
+                      key={pageOffer.user_offer_id}
+                      offer={pageOffer}
+                      clientId={client.id}
+                      clientFirstName={client.first_name}
+                      clientLastName={client.last_name}
+                      isOpen={true}
+                      onToggle={() => {}}
+                      activeTabId={activeTabId}
+                      onRemove={() => setPageOffer(null)}
+                      onRollback={() => {}}
+                      onError={setStatusError}
+                      onCvUpdate={handleCvUpdate}
+                      onClUpdate={handleClUpdate}
+                      onSalaryUpdate={handleSalaryUpdate}
+                      candidateSkills={candidateSkills}
+                      isOfferLoading={false}
+                    />
+                  )}
                 </div>
               )}
             </>
