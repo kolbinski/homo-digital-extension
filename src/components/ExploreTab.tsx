@@ -201,8 +201,7 @@ function OfferCard({
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
   const { settings: generalSettings } = useGeneralSettings();
-  const FALLBACK_UNITS = ['hourly', 'monthly', 'annually'];
-  const unitOptions = generalSettings?.employment_type_units ?? FALLBACK_UNITS;
+  const unitOptions = ['month', 'day', 'hour', 'year'];
   const currencyOptions = generalSettings?.currencies ?? [];
 
   const [editSalaryOpen, setEditSalaryOpen] = useState(false);
@@ -426,7 +425,7 @@ function OfferCard({
     try {
       const token = await getToken();
       const res = await fetch(
-        `${API_BASE_URL}/v1/offers/${offer.offer_id}/employment-types`,
+        `${API_BASE_URL}/v1/offers/${offer.offer_id}/employment-types/client`,
         {
           method: 'PATCH',
           headers: {
@@ -434,11 +433,7 @@ function OfferCard({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from,
-            to,
-            currency: salaryCurrency,
-            unit: salaryUnit,
-            type: salaryType,
+            employment_types: [{ from, to, currency: salaryCurrency, unit: salaryUnit, type: salaryType }],
           }),
         },
       );
@@ -667,7 +662,7 @@ function OfferCard({
                   onClick={e => {
                     e.stopPropagation();
                     setSalaryCurrency(currencyOptions[0] ?? '');
-                    setSalaryUnit(unitOptions[0] ?? '');
+                    setSalaryUnit('month');
                     setEditSalaryOpen(v => !v);
                   }}
                   className="ml-1 text-gray-400 hover:text-gray-600 transition-colors"
