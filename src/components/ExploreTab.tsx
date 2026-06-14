@@ -1141,6 +1141,7 @@ function ClientAccordion({
   const [scanPackageLoading, setScanPackageLoading] = useState(false);
   const [scanPackageError, setScanPackageError] = useState<string | null>(null);
   const [pageOffer, setPageOffer] = useState<UserOffer | null>(null);
+  const manualPageOfferRef = useRef(false);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1205,13 +1206,16 @@ function ClientAccordion({
       .map(s => s.name.toLowerCase());
   }, [client.profile]);
 
-  async function handleCardToggle(offerId: string, offerUrl?: string) {
+  async function handleCardToggle(offer: UserOffer, offerUrl?: string) {
+    const offerId = offer.user_offer_id;
     if (expandedOfferId === offerId) {
       setExpandedOfferId(null);
       return;
     }
     setExpandedOfferId(offerId);
-    setPageOffer(null);
+    manualPageOfferRef.current = true;
+    setPageOffer(offer);
+    setPageOfferOpen(true);
     if (offerUrl && typeof chrome !== 'undefined') {
       await openOfferUrl(offerUrl);
     }
@@ -1279,6 +1283,7 @@ function ClientAccordion({
   }, [currentUrl, client.id]);
 
   useEffect(() => {
+    manualPageOfferRef.current = false;
     if (
       !currentUrl ||
       currentUrl.startsWith('chrome://') ||
@@ -1301,7 +1306,9 @@ function ClientAccordion({
         );
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { user_offer: UserOffer | null };
-        if (!cancelled) setPageOffer(data.user_offer ?? null);
+        if (!cancelled && !manualPageOfferRef.current) {
+          setPageOffer(data.user_offer ?? null);
+        }
       } catch {
         // silently ignore
       }
@@ -1930,7 +1937,7 @@ function ClientAccordion({
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
                                   handleCardToggle(
-                                    offer.user_offer_id,
+                                    offer,
                                     offer.offer_url,
                                   )
                                 }
@@ -2026,7 +2033,7 @@ function ClientAccordion({
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
                                   handleCardToggle(
-                                    offer.user_offer_id,
+                                    offer,
                                     offer.offer_url,
                                   )
                                 }
@@ -2126,7 +2133,7 @@ function ClientAccordion({
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
                                   handleCardToggle(
-                                    offer.user_offer_id,
+                                    offer,
                                     offer.offer_url,
                                   )
                                 }
