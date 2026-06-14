@@ -180,6 +180,7 @@ interface OfferCardProps {
   isOfferLoading: boolean;
   isPageOffer?: boolean;
   hideActions?: boolean;
+  selfMode?: boolean;
   onCvLimitReached?: () => void;
   onClLimitReached?: () => void;
   onCvGenerated?: () => void;
@@ -212,6 +213,7 @@ function OfferCard({
   isOfferLoading,
   isPageOffer = false,
   hideActions = false,
+  selfMode = false,
   onCvLimitReached,
   onClLimitReached,
   onCvGenerated,
@@ -1127,14 +1129,16 @@ function OfferCard({
                     style={portalStyle}
                     className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                   >
-                    {STATUS_OPTIONS.map(opt => (
+                    {STATUS_OPTIONS.filter(opt =>
+                      !selfMode || opt.value !== 'agent_withdrawn'
+                    ).map(opt => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => handleStatusChange(opt.value)}
                         className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                       >
-                        {opt.label}
+                        {selfMode && opt.value === 'client_withdrawn' ? 'Withdrawn' : opt.label}
                       </button>
                     ))}
                   </div>,
@@ -2027,6 +2031,7 @@ function ClientAccordion({
                       onSalaryUpdate={handleSalaryUpdate}
                       candidateSkills={candidateSkills}
                       isOfferLoading={false}
+                      selfMode={selfMode}
                       onCvLimitReached={() => void handleBuyCvPackage()}
                       onClLimitReached={() => void handleBuyClPackage()}
                       cvPackageBuyLoading={cvPackageBuyLoading}
@@ -2323,6 +2328,7 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
+                                selfMode={selfMode}
                                 isPageOffer={
                                   offer.user_offer_id ===
                                   pageOffer?.user_offer_id
@@ -2584,8 +2590,8 @@ export default function ExploreTab({
             >
               <option value="pending_apply">Pending apply</option>
               <option value="applied">Applied</option>
-              <option value="agent_withdrawn">Agent withdrawn</option>
-              <option value="client_withdrawn">Client withdrawn</option>
+              {!selfMode && <option value="agent_withdrawn">Agent withdrawn</option>}
+              <option value="client_withdrawn">{selfMode ? 'Withdrawn' : 'Client withdrawn'}</option>
               <option value="recruiter_rejected">Recruiter rejected</option>
               <option value="offer_received">Offer received</option>
               <option value="accepted">Accepted</option>
