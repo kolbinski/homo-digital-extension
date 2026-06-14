@@ -63,7 +63,12 @@ function App() {
         // Already injected or page not injectable — continue
       }
       setActiveTabId(tabId);
-      setCurrentUrl(tab.url?.split('?')[0] ?? '');
+      const rawUrl0 = tab.url ?? '';
+      setCurrentUrl(
+        rawUrl0.includes('justjoin.it') || rawUrl0.includes('nofluffjobs.com')
+          ? rawUrl0.split('?')[0]
+          : rawUrl0,
+      );
     });
   }, []);
 
@@ -79,8 +84,14 @@ function App() {
         })
         .catch(() => {});
       chrome.tabs.get(activeInfo.tabId, tab => {
-        if (!chrome.runtime.lastError)
-          setCurrentUrl(tab.url?.split('?')[0] ?? '');
+        if (!chrome.runtime.lastError) {
+          const rawUrl = tab.url ?? '';
+          setCurrentUrl(
+            rawUrl.includes('justjoin.it') || rawUrl.includes('nofluffjobs.com')
+              ? rawUrl.split('?')[0]
+              : rawUrl,
+          );
+        }
       });
     }
 
@@ -94,7 +105,12 @@ function App() {
         chrome.scripting
           .executeScript({ target: { tabId }, files: ['content.js'] })
           .catch(() => {});
-        setCurrentUrl(tab.url?.split('?')[0] ?? '');
+        const rawUrl = tab.url ?? '';
+        setCurrentUrl(
+          rawUrl.includes('justjoin.it') || rawUrl.includes('nofluffjobs.com')
+            ? rawUrl.split('?')[0]
+            : rawUrl,
+        );
       }
     }
 

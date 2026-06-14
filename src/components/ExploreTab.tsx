@@ -158,7 +158,6 @@ interface ClientAccordionProps {
   cvGenerated: boolean;
   clGenerated: boolean;
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
-  onResetFilters?: () => void;
   defaultExpanded?: boolean;
   selfMode?: boolean;
 }
@@ -1097,7 +1096,6 @@ function ClientAccordion({
   cvGenerated,
   clGenerated,
   onClientUpdate,
-  onResetFilters,
   defaultExpanded = false,
   selfMode = false,
 }: ClientAccordionProps) {
@@ -1572,17 +1570,7 @@ function ClientAccordion({
         setTimeout(() => setScanMessage(null), 4000);
         return;
       }
-      const newOffer = data.user_offer!;
-      setApplyOffers(prev => [newOffer, ...prev]);
-      setApplyOpen(true);
-      onResetFilters?.();
-      setExpandedOfferId(null);
-      setTimeout(() => {
-        setExpandedOfferId(newOffer.user_offer_id);
-        document
-          .querySelector(`[data-user-offer-id="${newOffer.user_offer_id}"]`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      setPageOffer(data.user_offer ?? null);
     } catch {
       setScanError('Something went wrong. Please try again.');
       setTimeout(() => setScanError(null), 4000);
@@ -1763,7 +1751,7 @@ function ClientAccordion({
                       </p>
                     </PlanLimitBanner>
                   ) : (
-                    <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                    !pageOffer && <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
                       <p className="text-xs font-medium text-gray-700">
                         Scan this page for a job offer
                       </p>
@@ -2381,10 +2369,6 @@ export default function ExploreTab({
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
-              onResetFilters={() => {
-                setMinScore(0);
-                setSortBy('score');
-              }}
               defaultExpanded={true}
               selfMode={true}
             />
@@ -2411,10 +2395,6 @@ export default function ExploreTab({
                 cvGenerated={cvGenerated}
                 clGenerated={clGenerated}
                 onClientUpdate={handleClientUpdate}
-                onResetFilters={() => {
-                  setMinScore(0);
-                  setSortBy('score');
-                }}
               />
             ))
         )}
