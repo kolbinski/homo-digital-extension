@@ -51,6 +51,7 @@ interface UserOffer {
   cl_url?: string | null;
   city?: string;
   work_model?: string;
+  claude_recommended?: boolean | null;
 }
 
 function providerIcon(source?: string): string | null {
@@ -160,6 +161,7 @@ interface ClientAccordionProps {
   cvGenerated: boolean;
   clGenerated: boolean;
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
+  onResetFilters?: () => void;
   defaultExpanded?: boolean;
   selfMode?: boolean;
 }
@@ -910,6 +912,7 @@ function ClientAccordion({
   cvGenerated,
   clGenerated,
   onClientUpdate,
+  onResetFilters,
   defaultExpanded = false,
   selfMode = false,
 }: ClientAccordionProps) {
@@ -1336,6 +1339,8 @@ function ClientAccordion({
         is_job_offer: boolean;
         user_offer?: UserOffer;
       };
+      console.log('[scanPage] response:', JSON.stringify(data));
+      console.log('[scanPage] is_job_offer:', data.is_job_offer, 'user_offer:', data.user_offer);
       if (!data.is_job_offer) {
         setScanMessage(
           "This page doesn't look like a job offer. Try opening a job posting first.",
@@ -1344,16 +1349,26 @@ function ClientAccordion({
         return;
       }
       const newOffer = data.user_offer!;
-      setApplyOffers(prev => [newOffer, ...prev]);
-      setApplyOpen(true);
+      console.log('[scanPage] claude_recommended:', newOffer.claude_recommended, 'user_offer_id:', newOffer.user_offer_id);
+      if (newOffer.claude_recommended) {
+        setApplyOffers(prev => [newOffer, ...prev]);
+        setApplyOpen(true);
+      } else {
+        console.log('[scanPage] existing levelUpOffers ids:', levelUpOffers.map(o => o.user_offer_id));
+        console.log('[scanPage] new offer id:', newOffer.user_offer_id);
+        console.log('[scanPage] already exists:', levelUpOffers.some(o => o.user_offer_id === newOffer.user_offer_id));
+        setLevelUpOffers(prev => [newOffer, ...prev]);
+        console.log('[scanPage] levelUpOffers after set:', levelUpOffers.length);
+        setLevelUpOpen(true);
+      }
+      onResetFilters?.();
       setExpandedOfferId(newOffer.user_offer_id);
+      console.log('[scanPage] expandedOfferId set to:', newOffer.user_offer_id);
       setTimeout(() => {
         document
-          .querySelector(
-            `[data-user-offer-id="${newOffer.user_offer_id}"]`,
-          )
+          .querySelector(`[data-user-offer-id="${newOffer.user_offer_id}"]`)
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
+      }, 100);
     } catch (err) {
       console.error('[scanPage] error:', err);
       setScanError('Something went wrong. Please try again.');
@@ -1681,6 +1696,7 @@ function ClientAccordion({
                       </button>
                       {levelUpOpen && (
                         <div>
+                          {(() => { console.log('[render] levelUpOffers:', levelUpOffers.map(o => o.user_offer_id)); })()}
                           {sortOffers(filteredLevelUpOffers, sortBy).map(
                             offer => (
                               <OfferCard
@@ -2119,6 +2135,7 @@ export default function ExploreTab({
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
+              onResetFilters={() => { setMinScore(0); setSortBy('score'); }}
               defaultExpanded={true}
               selfMode={true}
             />
@@ -2145,6 +2162,7 @@ export default function ExploreTab({
                 cvGenerated={cvGenerated}
                 clGenerated={clGenerated}
                 onClientUpdate={handleClientUpdate}
+                onResetFilters={() => { setMinScore(0); setSortBy('score'); }}
               />
             ))
         )}
