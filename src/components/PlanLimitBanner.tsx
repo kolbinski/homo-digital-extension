@@ -7,6 +7,7 @@ interface Props {
   buttonText: string;
   isLoading?: boolean;
   errorMessage?: string | null;
+  withMX?: boolean;
 }
 
 export default function PlanLimitBanner({
@@ -15,9 +16,12 @@ export default function PlanLimitBanner({
   buttonText,
   isLoading = false,
   errorMessage,
+  withMX = true,
 }: Props) {
   return (
-    <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+    <div
+      className={`${withMX ? 'mx-3' : ''} my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center`}
+    >
       <Lock size={18} className="text-gray-400" />
       {children}
       <button
@@ -29,9 +33,7 @@ export default function PlanLimitBanner({
         {isLoading && <Spinner size={11} className="text-white" />}
         {buttonText}
       </button>
-      {errorMessage && (
-        <p className="text-xs text-red-500">{errorMessage}</p>
-      )}
+      {errorMessage && <p className="text-xs text-red-500">{errorMessage}</p>}
     </div>
   );
 }

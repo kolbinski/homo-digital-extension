@@ -180,10 +180,6 @@ interface OfferCardProps {
   isOfferLoading: boolean;
   isPageOffer?: boolean;
   hideActions?: boolean;
-  cvCounter?: number;
-  cvCounterMax?: number;
-  clCounter?: number;
-  clCounterMax?: number;
   onCvLimitReached?: () => void;
   onClLimitReached?: () => void;
   onCvGenerated?: () => void;
@@ -216,10 +212,6 @@ function OfferCard({
   isOfferLoading,
   isPageOffer = false,
   hideActions = false,
-  cvCounter = 0,
-  cvCounterMax = 0,
-  clCounter = 0,
-  clCounterMax = 0,
   onCvLimitReached,
   onClLimitReached,
   onCvGenerated,
@@ -843,262 +835,244 @@ function OfferCard({
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
-          {!isPageOffer && !hideActions && statusLoading !== offer.user_offer_id && (
-            <div className="flex gap-2">
-              {/* CV section */}
-              {cvCounterMax > 0 && cvCounter >= cvCounterMax ? (
-                <div className="flex-1">
+          {!isPageOffer &&
+            !hideActions &&
+            statusLoading !== offer.user_offer_id && (
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-2">
+                  {/* CV section */}
+                  <div className="flex-1 flex gap-2 items-center">
+                    <div ref={cvDropdownRef} className="flex-1">
+                      {isGenerating ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
+                        >
+                          <Spinner size={14} className="text-white" />
+                          CV…
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isOfferLoading}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (!isCvDropdownOpen && cvDropdownRef.current) {
+                              const rect =
+                                cvDropdownRef.current.getBoundingClientRect();
+                              setCvPortalStyle({
+                                position: 'fixed',
+                                top: rect.bottom + 4,
+                                left: rect.left,
+                                width: rect.width,
+                                zIndex: 9999,
+                              });
+                            }
+                            setIsCvDropdownOpen(v => !v);
+                          }}
+                          className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {offer.cv_status === 'done' ? (
+                              <ArrowsClockwise size={15} />
+                            ) : (
+                              <FilePlusIcon size={15} />
+                            )}
+                            CV
+                          </span>
+                          <svg
+                            className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {isCvDropdownOpen &&
+                        createPortal(
+                          <div
+                            ref={cvPortalRef}
+                            style={cvPortalStyle}
+                            className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                          >
+                            {[
+                              { value: 'en', label: 'English' },
+                              { value: 'pl', label: 'Polish' },
+                            ].map(opt => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleCvSelect(opt.value);
+                                }}
+                                className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>,
+                          document.body,
+                        )}
+                    </div>
+                    {!isGenerating &&
+                      offer.cv_status === 'done' &&
+                      offer.cv_url && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            chrome.tabs.create({
+                              url: `${offer.cv_url}?t=${Date.now()}`,
+                            })
+                          }
+                          className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                        >
+                          CV
+                        </button>
+                      )}
+                  </div>
+                  {/* CL section */}
+                  <div className="flex-1 flex gap-2 items-center">
+                    <div ref={clDropdownRef} className="flex-1">
+                      {isClGenerating ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
+                        >
+                          <Spinner size={14} className="text-white" />
+                          CL…
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isOfferLoading}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (!isClDropdownOpen && clDropdownRef.current) {
+                              const rect =
+                                clDropdownRef.current.getBoundingClientRect();
+                              setClPortalStyle({
+                                position: 'fixed',
+                                top: rect.bottom + 4,
+                                left: rect.left,
+                                width: rect.width,
+                                zIndex: 9999,
+                              });
+                            }
+                            setIsClDropdownOpen(v => !v);
+                          }}
+                          className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {offer.cl_status === 'done' ? (
+                              <ArrowsClockwise size={15} />
+                            ) : (
+                              <FilePlusIcon size={15} />
+                            )}
+                            CL
+                          </span>
+                          <svg
+                            className={`w-4 h-4 text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {isClDropdownOpen &&
+                        createPortal(
+                          <div
+                            ref={clPortalRef}
+                            style={clPortalStyle}
+                            className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                          >
+                            {[
+                              { value: 'en', label: 'English' },
+                              { value: 'pl', label: 'Polish' },
+                            ].map(opt => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleClSelect(opt.value);
+                                }}
+                                className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>,
+                          document.body,
+                        )}
+                    </div>
+                    {!isClGenerating &&
+                      offer.cl_status === 'done' &&
+                      offer.cl_url && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            chrome.tabs.create({
+                              url: `${offer.cl_url}?t=${Date.now()}`,
+                            })
+                          }
+                          className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                        >
+                          CL
+                        </button>
+                      )}
+                  </div>
+                </div>
+                {cvLimitHit && (
                   <PlanLimitBanner
-                    onButtonClick={() => onCvLimitReached?.()}
+                    onButtonClick={() => {
+                      setCvLimitHit(false);
+                      onCvLimitReached?.();
+                    }}
                     buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
                     isLoading={cvPackageBuyLoading}
                     errorMessage={cvPackageBuyError}
+                    withMX={false}
                   >
                     <p className="text-xs text-gray-500">
                       You've reached your CV generation limit.
                     </p>
                   </PlanLimitBanner>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex gap-2 items-center">
-                  <div ref={cvDropdownRef} className="flex-1">
-                    {isGenerating ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
-                      >
-                        <Spinner size={14} className="text-white" />
-                        CV…
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isOfferLoading}
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (!isCvDropdownOpen && cvDropdownRef.current) {
-                            const rect =
-                              cvDropdownRef.current.getBoundingClientRect();
-                            setCvPortalStyle({
-                              position: 'fixed',
-                              top: rect.bottom + 4,
-                              left: rect.left,
-                              width: rect.width,
-                              zIndex: 9999,
-                            });
-                          }
-                          setIsCvDropdownOpen(v => !v);
-                        }}
-                        className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {offer.cv_status === 'done' ? (
-                            <ArrowsClockwise size={15} />
-                          ) : (
-                            <FilePlusIcon size={15} />
-                          )}
-                          CV
-                        </span>
-                        <svg
-                          className={`w-4 h-4 text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                    {isCvDropdownOpen &&
-                      createPortal(
-                        <div
-                          ref={cvPortalRef}
-                          style={cvPortalStyle}
-                          className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
-                        >
-                          {[
-                            { value: 'en', label: 'English' },
-                            { value: 'pl', label: 'Polish' },
-                          ].map(opt => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleCvSelect(opt.value);
-                              }}
-                              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>,
-                        document.body,
-                      )}
-                  </div>
-                  {!isGenerating && offer.cv_status === 'done' && offer.cv_url && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        chrome.tabs.create({
-                          url: `${offer.cv_url}?t=${Date.now()}`,
-                        })
-                      }
-                      className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                    >
-                      CV
-                    </button>
-                  )}
-                  </div>
-                  {cvLimitHit && (
-                    <PlanLimitBanner
-                      onButtonClick={() => { setCvLimitHit(false); onCvLimitReached?.(); }}
-                      buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
-                      isLoading={cvPackageBuyLoading}
-                      errorMessage={cvPackageBuyError}
-                    >
-                      <p className="text-xs text-gray-500">
-                        You've reached your CV generation limit.
-                      </p>
-                    </PlanLimitBanner>
-                  )}
-                </div>
-              )}
-              {/* CL section */}
-              {clCounterMax > 0 && clCounter >= clCounterMax ? (
-                <div className="flex-1">
+                )}
+                {clLimitHit && (
                   <PlanLimitBanner
-                    onButtonClick={() => onClLimitReached?.()}
+                    onButtonClick={() => {
+                      setClLimitHit(false);
+                      onClLimitReached?.();
+                    }}
                     buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
                     isLoading={clPackageBuyLoading}
                     errorMessage={clPackageBuyError}
+                    withMX={false}
                   >
                     <p className="text-xs text-gray-500">
                       You've reached your cover letter generation limit.
                     </p>
                   </PlanLimitBanner>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex gap-2 items-center">
-                  <div ref={clDropdownRef} className="flex-1">
-                    {isClGenerating ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
-                      >
-                        <Spinner size={14} className="text-white" />
-                        CL…
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isOfferLoading}
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (!isClDropdownOpen && clDropdownRef.current) {
-                            const rect =
-                              clDropdownRef.current.getBoundingClientRect();
-                            setClPortalStyle({
-                              position: 'fixed',
-                              top: rect.bottom + 4,
-                              left: rect.left,
-                              width: rect.width,
-                              zIndex: 9999,
-                            });
-                          }
-                          setIsClDropdownOpen(v => !v);
-                        }}
-                        className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {offer.cl_status === 'done' ? (
-                            <ArrowsClockwise size={15} />
-                          ) : (
-                            <FilePlusIcon size={15} />
-                          )}
-                          CL
-                        </span>
-                        <svg
-                          className={`w-4 h-4 text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                    {isClDropdownOpen &&
-                      createPortal(
-                        <div
-                          ref={clPortalRef}
-                          style={clPortalStyle}
-                          className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
-                        >
-                          {[
-                            { value: 'en', label: 'English' },
-                            { value: 'pl', label: 'Polish' },
-                          ].map(opt => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleClSelect(opt.value);
-                              }}
-                              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>,
-                        document.body,
-                      )}
-                  </div>
-                  {!isClGenerating && offer.cl_status === 'done' && offer.cl_url && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        chrome.tabs.create({
-                          url: `${offer.cl_url}?t=${Date.now()}`,
-                        })
-                      }
-                      className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                    >
-                      CL
-                    </button>
-                  )}
-                  </div>
-                  {clLimitHit && (
-                    <PlanLimitBanner
-                      onButtonClick={() => { setClLimitHit(false); onClLimitReached?.(); }}
-                      buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
-                      isLoading={clPackageBuyLoading}
-                      errorMessage={clPackageBuyError}
-                    >
-                      <p className="text-xs text-gray-500">
-                        You've reached your cover letter generation limit.
-                      </p>
-                    </PlanLimitBanner>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
           {status && (
             <div
@@ -1242,14 +1216,14 @@ function ClientAccordion({
   const [scanLimitReached, setScanLimitReached] = useState(false);
   const [scanPackageLoading, setScanPackageLoading] = useState(false);
   const [scanPackageError, setScanPackageError] = useState<string | null>(null);
-  const [cvCounter, setCvCounter] = useState(0);
-  const [cvCounterMax, setCvCounterMax] = useState(0);
-  const [clCounter, setClCounter] = useState(0);
-  const [clCounterMax, setClCounterMax] = useState(0);
   const [cvPackageBuyLoading, setCvPackageBuyLoading] = useState(false);
-  const [cvPackageBuyError, setCvPackageBuyError] = useState<string | null>(null);
+  const [cvPackageBuyError, setCvPackageBuyError] = useState<string | null>(
+    null,
+  );
   const [clPackageBuyLoading, setClPackageBuyLoading] = useState(false);
-  const [clPackageBuyError, setClPackageBuyError] = useState<string | null>(null);
+  const [clPackageBuyError, setClPackageBuyError] = useState<string | null>(
+    null,
+  );
   const [pageOffer, setPageOffer] = useState<UserOffer | null>(null);
   const manualPageOfferRef = useRef(false);
   const manualPageOfferUrlRef = useRef<string | null>(null);
@@ -1266,20 +1240,12 @@ function ClientAccordion({
         const data = (await res.json()) as {
           subscribed_to: string | null;
           expires_at?: string | null;
-          cv_counter?: number;
-          cv_counter_max?: number;
-          cl_counter?: number;
-          cl_counter_max?: number;
         };
         const active =
           data.subscribed_to !== null &&
           (!data.expires_at ||
             new Date(data.expires_at).getTime() > Date.now());
         setIsPro(active);
-        if (data.cv_counter !== undefined) setCvCounter(data.cv_counter);
-        if (data.cv_counter_max !== undefined) setCvCounterMax(data.cv_counter_max);
-        if (data.cl_counter !== undefined) setClCounter(data.cl_counter);
-        if (data.cl_counter_max !== undefined) setClCounterMax(data.cl_counter_max);
       } catch {
         // ignore
       }
@@ -1885,29 +1851,30 @@ function ClientAccordion({
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
-          {!selfMode && (!hasLoaded || isLoading ? (
-            <Spinner size={12} className="text-gray-400" />
-          ) : (
-            <>
-              {filteredApplyOffers.length > 0 && (
-                <span
-                  className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                    statusFilter === 'pending_apply'
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {applyNowCount ?? filteredApplyOffers.length}
-                </span>
-              )}
-              {statusFilter === 'pending_apply' &&
-                filteredLevelUpOffers.length > 0 && (
-                  <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                    {levelUpCount ?? filteredLevelUpOffers.length}
+          {!selfMode &&
+            (!hasLoaded || isLoading ? (
+              <Spinner size={12} className="text-gray-400" />
+            ) : (
+              <>
+                {filteredApplyOffers.length > 0 && (
+                  <span
+                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                      statusFilter === 'pending_apply'
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {applyNowCount ?? filteredApplyOffers.length}
                   </span>
                 )}
-            </>
-          ))}
+                {statusFilter === 'pending_apply' &&
+                  filteredLevelUpOffers.length > 0 && (
+                    <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                      {levelUpCount ?? filteredLevelUpOffers.length}
+                    </span>
+                  )}
+              </>
+            ))}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
@@ -2060,22 +2027,20 @@ function ClientAccordion({
                       onSalaryUpdate={handleSalaryUpdate}
                       candidateSkills={candidateSkills}
                       isOfferLoading={false}
-                      cvCounter={cvCounter}
-                      cvCounterMax={cvCounterMax}
-                      clCounter={clCounter}
-                      clCounterMax={clCounterMax}
                       onCvLimitReached={() => void handleBuyCvPackage()}
                       onClLimitReached={() => void handleBuyClPackage()}
-                      onCvGenerated={() => setCvCounter(c => c + 1)}
-                      onClGenerated={() => setClCounter(c => c + 1)}
                       cvPackageBuyLoading={cvPackageBuyLoading}
                       cvPackageBuyError={cvPackageBuyError}
                       clPackageBuyLoading={clPackageBuyLoading}
                       clPackageBuyError={clPackageBuyError}
                       cvPackageAmount={generalSettings?.cv_package_amount}
-                      cvPackagePrice={generalSettings?.cv_package_price?.formatted}
+                      cvPackagePrice={
+                        generalSettings?.cv_package_price?.formatted
+                      }
                       clPackageAmount={generalSettings?.cl_package_amount}
-                      clPackagePrice={generalSettings?.cl_package_price?.formatted}
+                      clPackagePrice={
+                        generalSettings?.cl_package_price?.formatted
+                      }
                     />
                   )}
                 </div>
@@ -2147,10 +2112,7 @@ function ClientAccordion({
                                 clientLastName={client.last_name}
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
-                                  handleCardToggle(
-                                    offer,
-                                    offer.offer_url,
-                                  )
+                                  handleCardToggle(offer, offer.offer_url)
                                 }
                                 activeTabId={activeTabId}
                                 onRemove={id =>
@@ -2167,7 +2129,10 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
-                                isPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
+                                isPageOffer={
+                                  offer.user_offer_id ===
+                                  pageOffer?.user_offer_id
+                                }
                                 hideActions={true}
                               />
                             ),
@@ -2176,9 +2141,7 @@ function ClientAccordion({
                             applyNowCount !== null &&
                             applyOffers.length < applyNowCount && (
                               <PlanLimitBanner
-                                onButtonClick={() =>
-                                  setUpgradeDrawerOpen(true)
-                                }
+                                onButtonClick={() => setUpgradeDrawerOpen(true)}
                                 buttonText="Upgrade to Pro"
                               >
                                 <p className="text-xs text-gray-500">
@@ -2244,10 +2207,7 @@ function ClientAccordion({
                                 clientLastName={client.last_name}
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
-                                  handleCardToggle(
-                                    offer,
-                                    offer.offer_url,
-                                  )
+                                  handleCardToggle(offer, offer.offer_url)
                                 }
                                 activeTabId={activeTabId}
                                 onRemove={id =>
@@ -2264,7 +2224,10 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
-                                isPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
+                                isPageOffer={
+                                  offer.user_offer_id ===
+                                  pageOffer?.user_offer_id
+                                }
                                 hideActions={true}
                               />
                             ),
@@ -2273,9 +2236,7 @@ function ClientAccordion({
                             levelUpCount !== null &&
                             levelUpOffers.length < levelUpCount && (
                               <PlanLimitBanner
-                                onButtonClick={() =>
-                                  setUpgradeDrawerOpen(true)
-                                }
+                                onButtonClick={() => setUpgradeDrawerOpen(true)}
                                 buttonText="Upgrade to Pro"
                               >
                                 <p className="text-xs text-gray-500">
@@ -2345,10 +2306,7 @@ function ClientAccordion({
                                 clientLastName={client.last_name}
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
-                                  handleCardToggle(
-                                    offer,
-                                    offer.offer_url,
-                                  )
+                                  handleCardToggle(offer, offer.offer_url)
                                 }
                                 activeTabId={activeTabId}
                                 onRemove={id =>
@@ -2365,23 +2323,32 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
-                                isPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
-                                cvCounter={cvCounter}
-                                cvCounterMax={cvCounterMax}
-                                clCounter={clCounter}
-                                clCounterMax={clCounterMax}
-                                onCvLimitReached={() => void handleBuyCvPackage()}
-                                onClLimitReached={() => void handleBuyClPackage()}
-                                onCvGenerated={() => setCvCounter(c => c + 1)}
-                                onClGenerated={() => setClCounter(c => c + 1)}
+                                isPageOffer={
+                                  offer.user_offer_id ===
+                                  pageOffer?.user_offer_id
+                                }
+                                onCvLimitReached={() =>
+                                  void handleBuyCvPackage()
+                                }
+                                onClLimitReached={() =>
+                                  void handleBuyClPackage()
+                                }
                                 cvPackageBuyLoading={cvPackageBuyLoading}
                                 cvPackageBuyError={cvPackageBuyError}
                                 clPackageBuyLoading={clPackageBuyLoading}
                                 clPackageBuyError={clPackageBuyError}
-                                cvPackageAmount={generalSettings?.cv_package_amount}
-                                cvPackagePrice={generalSettings?.cv_package_price?.formatted}
-                                clPackageAmount={generalSettings?.cl_package_amount}
-                                clPackagePrice={generalSettings?.cl_package_price?.formatted}
+                                cvPackageAmount={
+                                  generalSettings?.cv_package_amount
+                                }
+                                cvPackagePrice={
+                                  generalSettings?.cv_package_price?.formatted
+                                }
+                                clPackageAmount={
+                                  generalSettings?.cl_package_amount
+                                }
+                                clPackagePrice={
+                                  generalSettings?.cl_package_price?.formatted
+                                }
                               />
                             ),
                           )}
