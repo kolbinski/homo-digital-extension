@@ -410,7 +410,16 @@ function OfferCard({
 
   async function handleSalarySubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!offer.offer_id) return;
+    const from = Number(salaryFrom);
+    const to = Number(salaryTo);
+    if (from <= 0 || to <= 0) {
+      setSalaryError('From and To must be greater than 0.');
+      return;
+    }
+    if (!offer.offer_id) {
+      setSalaryError('Cannot save: offer ID not found.');
+      return;
+    }
     setSalaryLoading(true);
     setSalaryError(null);
     try {
@@ -424,8 +433,8 @@ function OfferCard({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: Number(salaryFrom),
-            to: Number(salaryTo),
+            from,
+            to,
             currency: salaryCurrency,
             unit: salaryUnit,
             type: salaryType,
@@ -437,8 +446,8 @@ function OfferCard({
         return;
       }
       const newSalary: OfferSalary = {
-        min: Number(salaryFrom),
-        max: Number(salaryTo),
+        min: from,
+        max: to,
         currency: salaryCurrency,
         unit: salaryUnit,
         type: salaryType,
@@ -681,9 +690,10 @@ function OfferCard({
                       type="number"
                       min={0}
                       required
+                      disabled={salaryLoading}
                       value={salaryFrom}
                       onChange={e => setSalaryFrom(e.target.value)}
-                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -692,9 +702,10 @@ function OfferCard({
                       type="number"
                       min={0}
                       required
+                      disabled={salaryLoading}
                       value={salaryTo}
                       onChange={e => setSalaryTo(e.target.value)}
-                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -703,9 +714,10 @@ function OfferCard({
                     <label className="text-xs text-gray-500">Currency</label>
                     <select
                       required
+                      disabled={salaryLoading}
                       value={salaryCurrency}
                       onChange={e => setSalaryCurrency(e.target.value)}
-                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                     >
                       {currencyOptions.map(c => (
                         <option key={c} value={c}>{c}</option>
@@ -716,9 +728,10 @@ function OfferCard({
                     <label className="text-xs text-gray-500">Unit</label>
                     <select
                       required
+                      disabled={salaryLoading}
                       value={salaryUnit}
                       onChange={e => setSalaryUnit(e.target.value)}
-                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                     >
                       {unitOptions.map(u => (
                         <option key={u} value={u}>{u}</option>
@@ -730,9 +743,10 @@ function OfferCard({
                   <label className="text-xs text-gray-500">Type</label>
                   <select
                     required
+                    disabled={salaryLoading}
                     value={salaryType}
                     onChange={e => setSalaryType(e.target.value as 'contract' | 'permanent')}
-                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                   >
                     <option value="contract">Contract</option>
                     <option value="permanent">Permanent</option>
@@ -756,7 +770,7 @@ function OfferCard({
                     className="flex-1 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1 disabled:opacity-50"
                   >
                     {salaryLoading && <Spinner size={11} className="text-white" />}
-                    Save
+                    {salaryLoading ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </form>
