@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from '@phosphor-icons/react';
+import { ArrowSquareOut, X } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import type { OAuthData } from '../hooks/useAuth';
@@ -14,13 +14,33 @@ interface SubscriptionStatus {
 }
 
 interface BillingData {
-  first_name: string | null;
-  last_name: string | null;
-  address: string | null;
-  city: string | null;
-  zip_code: string | null;
-  country: string | null;
-  vat_number: string | null;
+  name: string | null;
+  email: string | null;
+  address: {
+    line1: string | null;
+    city: string | null;
+    postal_code: string | null;
+    country: string | null;
+  } | null;
+}
+
+interface BillingForm {
+  name: string;
+  line1: string;
+  city: string;
+  postal_code: string;
+  country: string;
+}
+
+interface BillingHistoryItem {
+  date: string | number;
+  description: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  invoice_pdf?: string | null;
+  receipt_url?: string | null;
+  hosted_invoice_url?: string | null;
 }
 
 interface Props {
@@ -28,25 +48,37 @@ interface Props {
   onLogout: () => void;
 }
 
-const BILLING_FIELDS: { key: keyof BillingData; label: string }[] = [
-  { key: 'first_name', label: 'First name' },
-  { key: 'last_name', label: 'Last name' },
-  { key: 'address', label: 'Address' },
+const BILLING_FORM_FIELDS: { key: keyof BillingForm; label: string }[] = [
+  { key: 'name', label: 'Name' },
+  { key: 'line1', label: 'Address' },
   { key: 'city', label: 'City' },
-  { key: 'zip_code', label: 'ZIP code' },
+  { key: 'postal_code', label: 'Postal code' },
   { key: 'country', label: 'Country' },
-  { key: 'vat_number', label: 'VAT number' },
 ];
 
-const EMPTY_BILLING: BillingData = {
-  first_name: null,
-  last_name: null,
-  address: null,
-  city: null,
-  zip_code: null,
-  country: null,
-  vat_number: null,
+const EMPTY_BILLING_FORM: BillingForm = {
+  name: '',
+  line1: '',
+  city: '',
+  postal_code: '',
+  country: '',
 };
+
+function formatAmount(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    }).format(amount / 100);
+  } catch {
+    return `${(amount / 100).toFixed(2)} ${currency.toUpperCase()}`;
+  }
+}
+
+function formatDate(date: string | number): string {
+  const d = typeof date === 'number' ? new Date(date * 1000) : new Date(date);
+  return d.toISOString().slice(0, 10);
+}
 
 export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const { getToken, getOAuthData } = useAuth();
@@ -71,9 +103,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [billingData, setBillingData] = useState<BillingData | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
   const [billingEditMode, setBillingEditMode] = useState(false);
-  const [billingForm, setBillingForm] = useState<BillingData>(EMPTY_BILLING);
+  const [billingForm, setBillingForm] = useState<BillingForm>(EMPTY_BILLING_FORM);
   const [billingSaving, setBillingSaving] = useState(false);
   const [billingSaveError, setBillingSaveError] = useState<string | null>(null);
+
+  const [billingHistory, setBillingHistory] = useState<BillingHistoryItem[]>([]);
+  const [billingHistoryLoading, setBillingHistoryLoading] = useState(true);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -117,12 +152,31 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) { setBillingData(null); return; }
-        const data = (await res.json()) as BillingData;
-        setBillingData(data);
+        const data = (await res.json()) as { billing_data: BillingData };
+        setBillingData(data.billing_data ?? null);
       } catch {
         setBillingData(null);
       } finally {
         setBillingLoading(false);
+      }
+    })();
+  }, [getToken]);
+
+  useEffect(() => {
+    void (async () => {
+      setBillingHistoryLoading(true);
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE_URL}/v1/billing/history`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) { setBillingHistory([]); return; }
+        const data = (await res.json()) as { history: BillingHistoryItem[] } | BillingHistoryItem[];
+        setBillingHistory(Array.isArray(data) ? data : (data.history ?? []));
+      } catch {
+        setBillingHistory([]);
+      } finally {
+        setBillingHistoryLoading(false);
       }
     })();
   }, [getToken]);
@@ -174,7 +228,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   }
 
   function handleEditBilling() {
-    setBillingForm(billingData ?? EMPTY_BILLING);
+    setBillingForm({
+      name: billingData?.name ?? '',
+      line1: billingData?.address?.line1 ?? '',
+      city: billingData?.address?.city ?? '',
+      postal_code: billingData?.address?.postal_code ?? '',
+      country: billingData?.address?.country ?? '',
+    });
     setBillingSaveError(null);
     setBillingEditMode(true);
   }
@@ -184,8 +244,8 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     setBillingSaveError(null);
   }
 
-  function updateBillingField(field: keyof BillingData, value: string) {
-    setBillingForm(prev => ({ ...prev, [field]: value || null }));
+  function updateBillingField(field: keyof BillingForm, value: string) {
+    setBillingForm(prev => ({ ...prev, [field]: value }));
   }
 
   async function handleSaveBilling() {
@@ -199,11 +259,27 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           Authorization: `Bearer ${token ?? ''}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(billingForm),
+        body: JSON.stringify({
+          name: billingForm.name || null,
+          address: {
+            line1: billingForm.line1 || null,
+            city: billingForm.city || null,
+            postal_code: billingForm.postal_code || null,
+            country: billingForm.country || null,
+          },
+        }),
       });
       if (!res.ok) { setBillingSaveError('Failed to save. Please try again.'); return; }
-      const data = (await res.json()) as BillingData;
-      setBillingData(data);
+      setBillingData(prev => ({
+        name: billingForm.name || null,
+        email: prev?.email ?? null,
+        address: {
+          line1: billingForm.line1 || null,
+          city: billingForm.city || null,
+          postal_code: billingForm.postal_code || null,
+          country: billingForm.country || null,
+        },
+      }));
       setBillingEditMode(false);
     } catch {
       setBillingSaveError('Network error. Please try again.');
@@ -219,6 +295,15 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const lastName = oauthData?.oauth_last_name ?? '';
   const initials =
     ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || '?';
+
+  const billingViewRows: { label: string; value: string | null | undefined }[] = [
+    { label: 'Name', value: billingData?.name },
+    { label: 'Email', value: billingData?.email },
+    { label: 'Address', value: billingData?.address?.line1 },
+    { label: 'City', value: billingData?.address?.city },
+    { label: 'Postal code', value: billingData?.address?.postal_code },
+    { label: 'Country', value: billingData?.address?.country },
+  ];
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -263,7 +348,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   Account
                 </h2>
                 <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 flex flex-col gap-3">
-                  {/* Your account: avatar + name/email */}
+                  {/* Avatar + name/email */}
                   <div className="flex items-center gap-3">
                     {oauthData?.oauth_photo_url ? (
                       <img
@@ -314,12 +399,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       </div>
                     ) : billingEditMode ? (
                       <div className="flex flex-col gap-2">
-                        {BILLING_FIELDS.map(({ key, label }) => (
+                        {BILLING_FORM_FIELDS.map(({ key, label }) => (
                           <div key={key} className="flex flex-col gap-0.5">
                             <label className="text-xs text-gray-500">{label}</label>
                             <input
                               type="text"
-                              value={billingForm[key] ?? ''}
+                              value={billingForm[key]}
                               onChange={e => updateBillingField(key, e.target.value)}
                               className="w-full px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
@@ -350,11 +435,11 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       </div>
                     ) : (
                       <div className="flex flex-col gap-1">
-                        {BILLING_FIELDS.map(({ key, label }) => (
-                          <div key={key} className="flex justify-between gap-2 text-xs">
+                        {billingViewRows.map(({ label, value }) => (
+                          <div key={label} className="flex justify-between gap-2 text-xs">
                             <span className="text-gray-500 shrink-0">{label}</span>
-                            <span className={`text-right ${billingData?.[key] ? 'text-gray-900' : 'text-gray-400'}`}>
-                              {billingData?.[key] ?? 'Not set'}
+                            <span className={`text-right ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {value ?? 'Not set'}
                             </span>
                           </div>
                         ))}
@@ -405,6 +490,66 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         </button>
                       </div>
                     </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Billing history */}
+              <section className="flex flex-col gap-3">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Billing history
+                </h2>
+                <div className="rounded-md border border-gray-200 bg-gray-50 overflow-hidden">
+                  {billingHistoryLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Spinner size={16} className="text-gray-400" />
+                    </div>
+                  ) : billingHistory.length === 0 ? (
+                    <p className="px-3 py-3 text-xs text-gray-400">
+                      No billing history yet.
+                    </p>
+                  ) : (
+                    billingHistory.map((item, i) => {
+                      const link =
+                        item.invoice_pdf ?? item.receipt_url ?? item.hosted_invoice_url ?? null;
+                      const isPaid =
+                        item.status === 'paid' || item.status === 'succeeded';
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center gap-2 px-3 py-2.5 text-xs ${i < billingHistory.length - 1 ? 'border-b border-gray-100' : ''}`}
+                        >
+                          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                            <span className="text-gray-900 font-medium truncate">
+                              {item.description ?? '—'}
+                            </span>
+                            <span className="text-gray-400">
+                              {formatDate(item.date)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-gray-900 font-medium">
+                              {formatAmount(item.amount, item.currency)}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${isPaid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                            >
+                              {isPaid ? 'Paid' : item.status}
+                            </span>
+                            {link && (
+                              <button
+                                type="button"
+                                onClick={() => chrome.tabs.create({ url: link })}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                aria-label="Open invoice"
+                              >
+                                <ArrowSquareOut size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </section>
