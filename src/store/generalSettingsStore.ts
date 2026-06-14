@@ -19,7 +19,9 @@ export interface GeneralSettings {
   scan_package_price?: { formatted: string } | null;
   package_page_scans_amount?: number;
   cv_package_amount?: number;
+  cv_package_price?: { formatted: string } | null;
   cl_package_amount?: number;
+  cl_package_price?: { formatted: string } | null;
 }
 
 interface StoreState {

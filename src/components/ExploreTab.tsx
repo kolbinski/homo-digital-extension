@@ -192,6 +192,10 @@ interface OfferCardProps {
   cvPackageBuyError?: string | null;
   clPackageBuyLoading?: boolean;
   clPackageBuyError?: string | null;
+  cvPackageAmount?: number;
+  cvPackagePrice?: string;
+  clPackageAmount?: number;
+  clPackagePrice?: string;
 }
 
 function OfferCard({
@@ -224,6 +228,10 @@ function OfferCard({
   cvPackageBuyError,
   clPackageBuyLoading = false,
   clPackageBuyError,
+  cvPackageAmount,
+  cvPackagePrice,
+  clPackageAmount,
+  clPackagePrice,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
@@ -243,6 +251,8 @@ function OfferCard({
   const [salaryError, setSalaryError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClGenerating, setIsClGenerating] = useState(false);
+  const [cvLimitHit, setCvLimitHit] = useState(false);
+  const [clLimitHit, setClLimitHit] = useState(false);
   const [status, setStatus] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -290,7 +300,7 @@ function OfferCard({
     setIsGenerating(false);
     if (!result.success) {
       if ('limitReached' in result) {
-        onCvLimitReached?.();
+        setCvLimitHit(true);
       } else if (result.error) {
         setStatus({ type: 'error', message: result.error });
       }
@@ -349,7 +359,7 @@ function OfferCard({
           message: 'Session expired. Please log in again.',
         });
       } else if (res.status === 402) {
-        onClLimitReached?.();
+        setClLimitHit(true);
       } else if (!res.ok) {
         setStatus({
           type: 'error',
@@ -839,8 +849,8 @@ function OfferCard({
               {cvCounterMax > 0 && cvCounter >= cvCounterMax ? (
                 <div className="flex-1">
                   <PlanLimitBanner
-                    onUpgradeClick={() => onCvLimitReached?.()}
-                    buttonLabel={`Buy ${generalSettings?.cv_package_amount ?? '...'} CVs`}
+                    onButtonClick={() => onCvLimitReached?.()}
+                    buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
                     isLoading={cvPackageBuyLoading}
                     errorMessage={cvPackageBuyError}
                   >
@@ -850,7 +860,8 @@ function OfferCard({
                   </PlanLimitBanner>
                 </div>
               ) : (
-                <div className="flex-1 flex gap-2 items-center">
+                <div className="flex-1 flex flex-col gap-1">
+                  <div className="flex gap-2 items-center">
                   <div ref={cvDropdownRef} className="flex-1">
                     {isGenerating ? (
                       <button
@@ -945,14 +956,27 @@ function OfferCard({
                       CV
                     </button>
                   )}
+                  </div>
+                  {cvLimitHit && (
+                    <PlanLimitBanner
+                      onButtonClick={() => { setCvLimitHit(false); onCvLimitReached?.(); }}
+                      buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
+                      isLoading={cvPackageBuyLoading}
+                      errorMessage={cvPackageBuyError}
+                    >
+                      <p className="text-xs text-gray-500">
+                        You've reached your CV generation limit.
+                      </p>
+                    </PlanLimitBanner>
+                  )}
                 </div>
               )}
               {/* CL section */}
               {clCounterMax > 0 && clCounter >= clCounterMax ? (
                 <div className="flex-1">
                   <PlanLimitBanner
-                    onUpgradeClick={() => onClLimitReached?.()}
-                    buttonLabel={`Buy ${generalSettings?.cl_package_amount ?? '...'} CLs`}
+                    onButtonClick={() => onClLimitReached?.()}
+                    buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
                     isLoading={clPackageBuyLoading}
                     errorMessage={clPackageBuyError}
                   >
@@ -962,7 +986,8 @@ function OfferCard({
                   </PlanLimitBanner>
                 </div>
               ) : (
-                <div className="flex-1 flex gap-2 items-center">
+                <div className="flex-1 flex flex-col gap-1">
+                  <div className="flex gap-2 items-center">
                   <div ref={clDropdownRef} className="flex-1">
                     {isClGenerating ? (
                       <button
@@ -1056,6 +1081,19 @@ function OfferCard({
                     >
                       CL
                     </button>
+                  )}
+                  </div>
+                  {clLimitHit && (
+                    <PlanLimitBanner
+                      onButtonClick={() => { setClLimitHit(false); onClLimitReached?.(); }}
+                      buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
+                      isLoading={clPackageBuyLoading}
+                      errorMessage={clPackageBuyError}
+                    >
+                      <p className="text-xs text-gray-500">
+                        You've reached your cover letter generation limit.
+                      </p>
+                    </PlanLimitBanner>
                   )}
                 </div>
               )}
@@ -1939,8 +1977,8 @@ function ClientAccordion({
               {/* Scan box */}
               {scanLimitReached ? (
                 <PlanLimitBanner
-                  onUpgradeClick={() => void handleBuyScanPackage()}
-                  buttonLabel={`Buy ${generalSettings?.package_page_scans_amount ?? 100} scans for ${generalSettings?.scan_package_price?.formatted ?? '...'}`}
+                  onButtonClick={() => void handleBuyScanPackage()}
+                  buttonText={`Buy ${generalSettings?.package_page_scans_amount ?? '...'} scans for ${generalSettings?.scan_package_price?.formatted ?? '...'}`}
                   isLoading={scanPackageLoading}
                   errorMessage={scanPackageError}
                 >
@@ -2034,6 +2072,10 @@ function ClientAccordion({
                       cvPackageBuyError={cvPackageBuyError}
                       clPackageBuyLoading={clPackageBuyLoading}
                       clPackageBuyError={clPackageBuyError}
+                      cvPackageAmount={generalSettings?.cv_package_amount}
+                      cvPackagePrice={generalSettings?.cv_package_price?.formatted}
+                      clPackageAmount={generalSettings?.cl_package_amount}
+                      clPackagePrice={generalSettings?.cl_package_price?.formatted}
                     />
                   )}
                 </div>
@@ -2134,9 +2176,10 @@ function ClientAccordion({
                             applyNowCount !== null &&
                             applyOffers.length < applyNowCount && (
                               <PlanLimitBanner
-                                onUpgradeClick={() =>
+                                onButtonClick={() =>
                                   setUpgradeDrawerOpen(true)
                                 }
+                                buttonText="Upgrade to Pro"
                               >
                                 <p className="text-xs text-gray-500">
                                   You've reached your free plan limit. Upgrade
@@ -2230,9 +2273,10 @@ function ClientAccordion({
                             levelUpCount !== null &&
                             levelUpOffers.length < levelUpCount && (
                               <PlanLimitBanner
-                                onUpgradeClick={() =>
+                                onButtonClick={() =>
                                   setUpgradeDrawerOpen(true)
                                 }
+                                buttonText="Upgrade to Pro"
                               >
                                 <p className="text-xs text-gray-500">
                                   You've reached your free plan limit. Upgrade
@@ -2334,6 +2378,10 @@ function ClientAccordion({
                                 cvPackageBuyError={cvPackageBuyError}
                                 clPackageBuyLoading={clPackageBuyLoading}
                                 clPackageBuyError={clPackageBuyError}
+                                cvPackageAmount={generalSettings?.cv_package_amount}
+                                cvPackagePrice={generalSettings?.cv_package_price?.formatted}
+                                clPackageAmount={generalSettings?.cl_package_amount}
+                                clPackagePrice={generalSettings?.cl_package_price?.formatted}
                               />
                             ),
                           )}

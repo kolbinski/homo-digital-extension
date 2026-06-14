@@ -3,16 +3,16 @@ import Spinner from './Spinner';
 
 interface Props {
   children: React.ReactNode;
-  onUpgradeClick: () => void;
-  buttonLabel?: string;
+  onButtonClick: () => void;
+  buttonText: string;
   isLoading?: boolean;
   errorMessage?: string | null;
 }
 
 export default function PlanLimitBanner({
   children,
-  onUpgradeClick,
-  buttonLabel = 'Upgrade to Pro',
+  onButtonClick,
+  buttonText,
   isLoading = false,
   errorMessage,
 }: Props) {
@@ -22,12 +22,12 @@ export default function PlanLimitBanner({
       {children}
       <button
         type="button"
-        onClick={onUpgradeClick}
+        onClick={onButtonClick}
         disabled={isLoading}
         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading && <Spinner size={11} className="text-white" />}
-        {buttonLabel}
+        {buttonText}
       </button>
       {errorMessage && (
         <p className="text-xs text-red-500">{errorMessage}</p>
