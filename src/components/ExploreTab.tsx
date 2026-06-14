@@ -1238,11 +1238,6 @@ function ClientAccordion({
     );
     if (match) {
       setExpandedOfferId(match.user_offer_id);
-      setTimeout(() => {
-        document
-          .getElementById('offer-on-this-page-section')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
     }
   }, [currentUrl, applyOffers, levelUpOffers]);
 
@@ -1275,11 +1270,6 @@ function ClientAccordion({
       if (match) {
         setIsOpen(true);
         setExpandedOfferId(match.user_offer_id);
-        setTimeout(() => {
-          document
-            .querySelector(`[data-user-offer-id="${match.user_offer_id}"]`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
       }
     }
     eagerLoad();
@@ -1324,6 +1314,15 @@ function ClientAccordion({
 
   useEffect(() => {
     setPageOfferOpen(true);
+  }, [pageOffer]);
+
+  useEffect(() => {
+    if (!pageOffer) return;
+    setTimeout(() => {
+      document
+        .getElementById('offer-on-this-page-section')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }, [pageOffer]);
 
   useEffect(() => {
