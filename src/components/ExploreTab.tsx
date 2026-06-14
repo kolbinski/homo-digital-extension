@@ -7,7 +7,6 @@ import {
   CheckFatIcon,
   CurrencyCircleDollar,
   FilePlusIcon,
-  Lock,
   WarningIcon,
   X,
 } from '@phosphor-icons/react';
@@ -21,6 +20,7 @@ import { useCvGenerate } from '../hooks/useCvGenerate';
 import { useGeneralSettings } from '../store/generalSettingsStore';
 import Spinner from './Spinner';
 import PlanDrawer from './PlanDrawer';
+import PlanLimitBanner from './PlanLimitBanner';
 
 interface OfferSalary {
   min: number;
@@ -1502,8 +1502,11 @@ function ClientAccordion({
                           {!isPro &&
                             applyNowCount !== null &&
                             applyOffers.length < applyNowCount && (
-                              <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
-                                <Lock size={18} className="text-gray-400" />
+                              <PlanLimitBanner
+                                onUpgradeClick={() =>
+                                  setUpgradeDrawerOpen(true)
+                                }
+                              >
                                 <p className="text-xs text-gray-500">
                                   You've reached your free plan limit. Upgrade
                                   to unlock{' '}
@@ -1512,14 +1515,7 @@ function ClientAccordion({
                                   </span>{' '}
                                   matches.
                                 </p>
-                                <button
-                                  type="button"
-                                  onClick={() => setUpgradeDrawerOpen(true)}
-                                  className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
-                                >
-                                  Upgrade to Pro
-                                </button>
-                              </div>
+                              </PlanLimitBanner>
                             )}
                         </div>
                       )}
@@ -1593,8 +1589,11 @@ function ClientAccordion({
                           {!isPro &&
                             levelUpCount !== null &&
                             levelUpOffers.length < levelUpCount && (
-                              <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
-                                <Lock size={18} className="text-gray-400" />
+                              <PlanLimitBanner
+                                onUpgradeClick={() =>
+                                  setUpgradeDrawerOpen(true)
+                                }
+                              >
                                 <p className="text-xs text-gray-500">
                                   You've reached your free plan limit. Upgrade
                                   to unlock{' '}
@@ -1603,14 +1602,7 @@ function ClientAccordion({
                                   </span>{' '}
                                   matches.
                                 </p>
-                                <button
-                                  type="button"
-                                  onClick={() => setUpgradeDrawerOpen(true)}
-                                  className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
-                                >
-                                  Upgrade to Pro
-                                </button>
-                              </div>
+                              </PlanLimitBanner>
                             )}
                         </div>
                       )}
