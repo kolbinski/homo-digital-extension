@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
+import type { OAuthData } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import PlanDrawer from './PlanDrawer';
 
@@ -12,18 +13,46 @@ interface SubscriptionStatus {
   status: 'active' | 'cancelling' | 'free';
 }
 
+interface BillingData {
+  first_name: string | null;
+  last_name: string | null;
+  address: string | null;
+  city: string | null;
+  zip_code: string | null;
+  country: string | null;
+  vat_number: string | null;
+}
+
 interface Props {
   onClose: () => void;
   onLogout: () => void;
 }
 
+const BILLING_FIELDS: { key: keyof BillingData; label: string }[] = [
+  { key: 'first_name', label: 'First name' },
+  { key: 'last_name', label: 'Last name' },
+  { key: 'address', label: 'Address' },
+  { key: 'city', label: 'City' },
+  { key: 'zip_code', label: 'ZIP code' },
+  { key: 'country', label: 'Country' },
+  { key: 'vat_number', label: 'VAT number' },
+];
+
+const EMPTY_BILLING: BillingData = {
+  first_name: null,
+  last_name: null,
+  address: null,
+  city: null,
+  zip_code: null,
+  country: null,
+  vat_number: null,
+};
+
 export default function SettingsDrawer({ onClose, onLogout }: Props) {
-  const { getToken } = useAuth();
+  const { getToken, getOAuthData } = useAuth();
   const [visible, setVisible] = useState(false);
 
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
-    null,
-  );
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [subscriptionError, setSubscriptionError] = useState(false);
   const [managePlanOpen, setManagePlanOpen] = useState(false);
@@ -37,6 +66,15 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const [oauthData, setOauthData] = useState<OAuthData | null>(null);
+
+  const [billingData, setBillingData] = useState<BillingData | null>(null);
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [billingEditMode, setBillingEditMode] = useState(false);
+  const [billingForm, setBillingForm] = useState<BillingData>(EMPTY_BILLING);
+  const [billingSaving, setBillingSaving] = useState(false);
+  const [billingSaveError, setBillingSaveError] = useState<string | null>(null);
+
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
@@ -49,10 +87,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) {
-        setSubscriptionError(true);
-        return;
-      }
+      if (!res.ok) { setSubscriptionError(true); return; }
       const data = (await res.json()) as SubscriptionStatus;
       setSubscription(data);
     } catch {
@@ -65,6 +100,32 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   useEffect(() => {
     void fetchSubscription();
   }, [fetchSubscription]);
+
+  useEffect(() => {
+    void (async () => {
+      const data = await getOAuthData();
+      setOauthData(data);
+    })();
+  }, [getOAuthData]);
+
+  useEffect(() => {
+    void (async () => {
+      setBillingLoading(true);
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE_URL}/v1/account/billing`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) { setBillingData(null); return; }
+        const data = (await res.json()) as BillingData;
+        setBillingData(data);
+      } catch {
+        setBillingData(null);
+      } finally {
+        setBillingLoading(false);
+      }
+    })();
+  }, [getToken]);
 
   function handleClose() {
     setVisible(false);
@@ -85,10 +146,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         },
         body: JSON.stringify({ message: message.trim(), source: 'extension' }),
       });
-      if (!res.ok) {
-        setFeedbackError('Something went wrong. Please try again.');
-        return;
-      }
+      if (!res.ok) { setFeedbackError('Something went wrong. Please try again.'); return; }
       setMessage('');
       setFeedbackSent(true);
     } catch {
@@ -115,8 +173,52 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     }
   }
 
+  function handleEditBilling() {
+    setBillingForm(billingData ?? EMPTY_BILLING);
+    setBillingSaveError(null);
+    setBillingEditMode(true);
+  }
+
+  function handleCancelBilling() {
+    setBillingEditMode(false);
+    setBillingSaveError(null);
+  }
+
+  function updateBillingField(field: keyof BillingData, value: string) {
+    setBillingForm(prev => ({ ...prev, [field]: value || null }));
+  }
+
+  async function handleSaveBilling() {
+    setBillingSaving(true);
+    setBillingSaveError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/account/billing`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token ?? ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(billingForm),
+      });
+      if (!res.ok) { setBillingSaveError('Failed to save. Please try again.'); return; }
+      const data = (await res.json()) as BillingData;
+      setBillingData(data);
+      setBillingEditMode(false);
+    } catch {
+      setBillingSaveError('Network error. Please try again.');
+    } finally {
+      setBillingSaving(false);
+    }
+  }
+
   const isPro =
     subscription != null && subscription.plan_name.toLowerCase() !== 'free';
+
+  const firstName = oauthData?.oauth_first_name ?? '';
+  const lastName = oauthData?.oauth_last_name ?? '';
+  const initials =
+    ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || '?';
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -160,47 +262,151 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Account
                 </h2>
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="w-full font-medium py-2 px-4 rounded-md text-sm transition-colors bg-gray-700 hover:bg-gray-800 text-gray-100"
-                >
-                  Log out
-                </button>
-                {deleteError && (
-                  <p className="text-xs text-red-600">{deleteError}</p>
-                )}
-                {!showConfirm ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(true)}
-                    className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors bg-red-600 hover:bg-red-700"
-                  >
-                    Delete account
-                  </button>
-                ) : (
-                  <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
-                    <p className="text-sm text-gray-700">
-                      Are you sure? This action cannot be undone.
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm(false)}
-                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleDeleteAccount}
-                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5"
-                      >
-                        Delete account
-                      </button>
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 flex flex-col gap-3">
+                  {/* Your account: avatar + name/email */}
+                  <div className="flex items-center gap-3">
+                    {oauthData?.oauth_photo_url ? (
+                      <img
+                        src={oauthData.oauth_photo_url}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-700 text-white text-sm font-medium shrink-0 leading-none">
+                        {initials}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      {(firstName || lastName) && (
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {[firstName, lastName].filter(Boolean).join(' ')}
+                        </p>
+                      )}
+                      {oauthData?.oauth_email && (
+                        <p className="text-xs text-gray-500 truncate">
+                          {oauthData.oauth_email}
+                        </p>
+                      )}
                     </div>
                   </div>
-                )}
+
+                  <div className="border-t border-gray-200" />
+
+                  {/* Your billing data */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-700">
+                        Your billing data
+                      </span>
+                      {!billingEditMode && !billingLoading && (
+                        <button
+                          type="button"
+                          onClick={handleEditBilling}
+                          className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                        >
+                          Change
+                        </button>
+                      )}
+                    </div>
+                    {billingLoading ? (
+                      <div className="flex justify-center py-1">
+                        <Spinner size={14} className="text-gray-400" />
+                      </div>
+                    ) : billingEditMode ? (
+                      <div className="flex flex-col gap-2">
+                        {BILLING_FIELDS.map(({ key, label }) => (
+                          <div key={key} className="flex flex-col gap-0.5">
+                            <label className="text-xs text-gray-500">{label}</label>
+                            <input
+                              type="text"
+                              value={billingForm[key] ?? ''}
+                              onChange={e => updateBillingField(key, e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                        ))}
+                        {billingSaveError && (
+                          <p className="text-xs text-red-600">{billingSaveError}</p>
+                        )}
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={handleCancelBilling}
+                            disabled={billingSaving}
+                            className="flex-1 py-1.5 text-xs font-medium border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveBilling}
+                            disabled={billingSaving}
+                            className="flex-1 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          >
+                            {billingSaving && <Spinner size={11} className="text-white" />}
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {BILLING_FIELDS.map(({ key, label }) => (
+                          <div key={key} className="flex justify-between gap-2 text-xs">
+                            <span className="text-gray-500 shrink-0">{label}</span>
+                            <span className={`text-right ${billingData?.[key] ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {billingData?.[key] ?? 'Not set'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-gray-200" />
+
+                  {/* Log out + Delete account */}
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="w-full font-medium py-2 px-4 rounded-md text-sm transition-colors bg-gray-700 hover:bg-gray-800 text-gray-100"
+                  >
+                    Log out
+                  </button>
+                  {deleteError && (
+                    <p className="text-xs text-red-600">{deleteError}</p>
+                  )}
+                  {!showConfirm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(true)}
+                      className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors bg-red-600 hover:bg-red-700"
+                    >
+                      Delete account
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
+                      <p className="text-sm text-gray-700">
+                        Are you sure? This action cannot be undone.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirm(false)}
+                          className="flex-1 py-2 px-3 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDeleteAccount}
+                          className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5"
+                        >
+                          Delete account
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </section>
 
               {/* Feedback */}
