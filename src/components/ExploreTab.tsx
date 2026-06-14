@@ -1344,32 +1344,8 @@ function ClientAccordion({
         return;
       }
       const newOffer = data.user_offer!;
-      console.log(
-        '[scanPage] claude_recommended:',
-        newOffer.claude_recommended,
-        'user_offer_id:',
-        newOffer.user_offer_id,
-      );
-      if (newOffer.claude_recommended) {
-        setApplyOffers(prev => [newOffer, ...prev]);
-        setApplyOpen(true);
-      } else {
-        console.log(
-          '[scanPage] existing levelUpOffers ids:',
-          levelUpOffers.map(o => o.user_offer_id),
-        );
-        console.log('[scanPage] new offer id:', newOffer.user_offer_id);
-        console.log(
-          '[scanPage] already exists:',
-          levelUpOffers.some(o => o.user_offer_id === newOffer.user_offer_id),
-        );
-        setLevelUpOffers(prev => [newOffer, ...prev]);
-        console.log(
-          '[scanPage] levelUpOffers after set:',
-          levelUpOffers.length,
-        );
-        setLevelUpOpen(true);
-      }
+      setApplyOffers(prev => [newOffer, ...prev]);
+      setApplyOpen(true);
       onResetFilters?.();
       setExpandedOfferId(newOffer.user_offer_id);
       console.log('[scanPage] expandedOfferId set to:', newOffer.user_offer_id);
