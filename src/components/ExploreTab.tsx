@@ -1129,8 +1129,8 @@ function OfferCard({
                     style={portalStyle}
                     className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                   >
-                    {STATUS_OPTIONS.filter(opt =>
-                      !selfMode || opt.value !== 'agent_withdrawn'
+                    {STATUS_OPTIONS.filter(
+                      opt => !selfMode || opt.value !== 'agent_withdrawn',
                     ).map(opt => (
                       <button
                         key={opt.value}
@@ -1138,7 +1138,9 @@ function OfferCard({
                         onClick={() => handleStatusChange(opt.value)}
                         className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                       >
-                        {selfMode && opt.value === 'client_withdrawn' ? 'Withdrawn' : opt.label}
+                        {selfMode && opt.value === 'client_withdrawn'
+                          ? 'Withdrawn'
+                          : opt.label}
                       </button>
                     ))}
                   </div>,
@@ -1824,6 +1826,9 @@ function ClientAccordion({
     [levelUpOffers, minScore, cvGenerated, clGenerated],
   );
 
+  const effectiveSortBy =
+    selfMode && !isPro && sortBy === 'salary_delta' ? 'score' : sortBy;
+
   return (
     <div className="border border-gray-200 rounded-md overflow-hidden">
       <div
@@ -2073,6 +2078,16 @@ function ClientAccordion({
             </div>
           ) : (
             <>
+              {selfMode && !isPro && sortBy === 'salary_delta' && (
+                <PlanLimitBanner
+                  onButtonClick={() => setUpgradeDrawerOpen(true)}
+                  buttonText="Upgrade to Pro"
+                >
+                  <p className="text-xs text-gray-500">
+                    Sorting by salary delta is a Pro feature.
+                  </p>
+                </PlanLimitBanner>
+              )}
               {statusFilter === 'pending_apply' ? (
                 <>
                   {/* Apply now sub-section */}
@@ -2107,7 +2122,7 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(filteredApplyOffers, sortBy).map(
+                          {sortOffers(filteredApplyOffers, effectiveSortBy).map(
                             offer => (
                               <OfferCard
                                 key={offer.user_offer_id}
@@ -2202,41 +2217,41 @@ function ClientAccordion({
                               levelUpOffers.map(o => o.user_offer_id),
                             );
                           })()}
-                          {sortOffers(filteredLevelUpOffers, sortBy).map(
-                            offer => (
-                              <OfferCard
-                                key={offer.user_offer_id}
-                                offer={offer}
-                                clientId={client.id}
-                                clientFirstName={client.first_name}
-                                clientLastName={client.last_name}
-                                isOpen={expandedOfferId === offer.user_offer_id}
-                                onToggle={() =>
-                                  handleCardToggle(offer, offer.offer_url)
-                                }
-                                activeTabId={activeTabId}
-                                onRemove={id =>
-                                  setLevelUpOffers(prev =>
-                                    prev.filter(o => o.user_offer_id !== id),
-                                  )
-                                }
-                                onRollback={o =>
-                                  setLevelUpOffers(prev => [...prev, o])
-                                }
-                                onError={setStatusError}
-                                onCvUpdate={handleCvUpdate}
-                                onClUpdate={handleClUpdate}
-                                onSalaryUpdate={handleSalaryUpdate}
-                                candidateSkills={candidateSkills}
-                                isOfferLoading={isLoading}
-                                isPageOffer={
-                                  offer.user_offer_id ===
-                                  pageOffer?.user_offer_id
-                                }
-                                hideActions={true}
-                              />
-                            ),
-                          )}
+                          {sortOffers(
+                            filteredLevelUpOffers,
+                            effectiveSortBy,
+                          ).map(offer => (
+                            <OfferCard
+                              key={offer.user_offer_id}
+                              offer={offer}
+                              clientId={client.id}
+                              clientFirstName={client.first_name}
+                              clientLastName={client.last_name}
+                              isOpen={expandedOfferId === offer.user_offer_id}
+                              onToggle={() =>
+                                handleCardToggle(offer, offer.offer_url)
+                              }
+                              activeTabId={activeTabId}
+                              onRemove={id =>
+                                setLevelUpOffers(prev =>
+                                  prev.filter(o => o.user_offer_id !== id),
+                                )
+                              }
+                              onRollback={o =>
+                                setLevelUpOffers(prev => [...prev, o])
+                              }
+                              onError={setStatusError}
+                              onCvUpdate={handleCvUpdate}
+                              onClUpdate={handleClUpdate}
+                              onSalaryUpdate={handleSalaryUpdate}
+                              candidateSkills={candidateSkills}
+                              isOfferLoading={isLoading}
+                              isPageOffer={
+                                offer.user_offer_id === pageOffer?.user_offer_id
+                              }
+                              hideActions={true}
+                            />
+                          ))}
                           {!isPro &&
                             levelUpCount !== null &&
                             levelUpOffers.length < levelUpCount && (
@@ -2279,7 +2294,9 @@ function ClientAccordion({
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                            {selfMode && statusFilter === 'client_withdrawn' ? 'Withdrawn' : (STATUS_LABELS[statusFilter] ?? statusFilter)}
+                            {selfMode && statusFilter === 'client_withdrawn'
+                              ? 'Withdrawn'
+                              : (STATUS_LABELS[statusFilter] ?? statusFilter)}
                           </span>
                           <span className="text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                             {filteredApplyOffers.length}
@@ -2301,7 +2318,7 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(filteredApplyOffers, sortBy).map(
+                          {sortOffers(filteredApplyOffers, effectiveSortBy).map(
                             offer => (
                               <OfferCard
                                 key={offer.user_offer_id}
@@ -2590,8 +2607,12 @@ export default function ExploreTab({
             >
               <option value="pending_apply">Pending apply</option>
               <option value="applied">Applied</option>
-              {!selfMode && <option value="agent_withdrawn">Agent withdrawn</option>}
-              <option value="client_withdrawn">{selfMode ? 'Withdrawn' : 'Client withdrawn'}</option>
+              {!selfMode && (
+                <option value="agent_withdrawn">Agent withdrawn</option>
+              )}
+              <option value="client_withdrawn">
+                {selfMode ? 'Withdrawn' : 'Client withdrawn'}
+              </option>
               <option value="recruiter_rejected">Recruiter rejected</option>
               <option value="offer_received">Offer received</option>
               <option value="accepted">Accepted</option>
