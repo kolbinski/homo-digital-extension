@@ -10,6 +10,16 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     chrome.storage.local.set({ scan_package_purchased: Date.now() })
     return
   }
+  if (tab.url?.includes('upgrade=cv_package')) {
+    chrome.tabs.remove(tabId)
+    chrome.storage.local.set({ cv_package_purchased: Date.now() })
+    return
+  }
+  if (tab.url?.includes('upgrade=cl_package')) {
+    chrome.tabs.remove(tabId)
+    chrome.storage.local.set({ cl_package_purchased: Date.now() })
+    return
+  }
   if (!tab.url?.includes('upgrade=success')) return
   chrome.tabs.remove(tabId)
   chrome.storage.local.set({ upgrade_success: Date.now() })

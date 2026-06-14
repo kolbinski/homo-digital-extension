@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 
 type GenerateResult =
   | { success: true; cvUrl: string; cvStatus: string }
+  | { success: false; limitReached: true }
   | { success: false; error: string };
 
 export function useCvGenerate() {
@@ -45,6 +46,8 @@ export function useCvGenerate() {
       });
       if (res.status === 401)
         return { success: false, error: 'Session expired. Please log in again.' };
+      if (res.status === 402)
+        return { success: false, limitReached: true };
       if (!res.ok)
         return {
           success: false,
