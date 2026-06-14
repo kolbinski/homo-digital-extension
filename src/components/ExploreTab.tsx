@@ -1847,7 +1847,7 @@ function ClientAccordion({
   );
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-gray-200 rounded-md overflow-clip">
       <div
         role={selfMode ? undefined : 'button'}
         tabIndex={selfMode ? undefined : 0}
@@ -2029,7 +2029,7 @@ function ClientAccordion({
                     id="offer-on-this-page-section"
                     type="button"
                     onClick={() => setPageOfferOpen(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
                   >
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Offer on this page
@@ -2116,7 +2116,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setApplyOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2205,7 +2205,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setLevelUpOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
