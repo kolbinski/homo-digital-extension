@@ -432,7 +432,15 @@ function OfferCard({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            employment_types: [{ from, to, currency: salaryCurrency, unit: salaryUnit, type: salaryType }],
+            employment_types: [
+              {
+                from,
+                to,
+                currency: salaryCurrency,
+                unit: salaryUnit,
+                type: salaryType,
+              },
+            ],
           }),
         },
       );
@@ -1594,7 +1602,7 @@ function ClientAccordion({
     try {
       const token = await getToken();
       const res = await fetch(
-        `${API_BASE_URL}/v1/subscriptions/scan-package-checkout`,
+        `${API_BASE_URL}/v1/subscription/scan-package-checkout`,
         {
           method: 'POST',
           headers: {
@@ -1770,32 +1778,34 @@ function ClientAccordion({
                   </p>
                 </PlanLimitBanner>
               ) : (
-                !pageOffer && <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
-                  <p className="text-xs font-medium text-gray-700">
-                    Scan this page for a job offer
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Open any job posting and click Scan to instantly match
-                    it with your profile.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void handleScanPage()}
-                    disabled={isScanning}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isScanning && (
-                      <Spinner size={12} className="text-white" />
+                !pageOffer && (
+                  <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                    <p className="text-xs font-medium text-gray-700">
+                      Scan this page for a job offer
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Open any job posting and click Scan to instantly match it
+                      with your profile.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleScanPage()}
+                      disabled={isScanning}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isScanning && (
+                        <Spinner size={12} className="text-white" />
+                      )}
+                      {isScanning ? 'Scanning...' : 'Scan this page'}
+                    </button>
+                    {scanMessage && (
+                      <p className="text-xs text-gray-500">{scanMessage}</p>
                     )}
-                    {isScanning ? 'Scanning...' : 'Scan this page'}
-                  </button>
-                  {scanMessage && (
-                    <p className="text-xs text-gray-500">{scanMessage}</p>
-                  )}
-                  {scanError && (
-                    <p className="text-xs text-red-500">{scanError}</p>
-                  )}
-                </div>
+                    {scanError && (
+                      <p className="text-xs text-red-500">{scanError}</p>
+                    )}
+                  </div>
+                )
               )}
               {/* Offer on this page sub-section */}
               {pageOffer && (
