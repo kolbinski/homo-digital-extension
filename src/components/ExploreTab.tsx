@@ -178,6 +178,8 @@ interface OfferCardProps {
   onClUpdate: (offerId: string, clUrl: string, clStatus: string) => void;
   onSalaryUpdate?: (userOfferId: string, salary: OfferSalary) => void;
   isOfferLoading: boolean;
+  isPageOffer?: boolean;
+  hideActions?: boolean;
 }
 
 function OfferCard({
@@ -196,6 +198,8 @@ function OfferCard({
   onClUpdate,
   onSalaryUpdate,
   isOfferLoading,
+  isPageOffer = false,
+  hideActions = false,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
@@ -795,7 +799,7 @@ function OfferCard({
       {/* Expanded: CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
-          {statusLoading !== offer.user_offer_id && (
+          {!isPageOffer && !hideActions && statusLoading !== offer.user_offer_id && (
             <div className="flex gap-2 items-center">
               {/* CV dropdown */}
               <div ref={cvDropdownRef} className="flex-1">
@@ -1006,7 +1010,7 @@ function OfferCard({
             </div>
           )}
 
-          {!isGenerating && !isClGenerating && (
+          {!isPageOffer && !hideActions && !isGenerating && !isClGenerating && (
             <div ref={dropdownRef}>
               <button
                 type="button"
@@ -1207,6 +1211,7 @@ function ClientAccordion({
       return;
     }
     setExpandedOfferId(offerId);
+    setPageOffer(null);
     if (offerUrl && typeof chrome !== 'undefined') {
       await openOfferUrl(offerUrl);
     }
@@ -1235,7 +1240,7 @@ function ClientAccordion({
       setExpandedOfferId(match.user_offer_id);
       setTimeout(() => {
         document
-          .querySelector(`[data-user-offer-id="${match.user_offer_id}"]`)
+          .getElementById('offer-on-this-page-section')
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 50);
     }
@@ -1292,6 +1297,7 @@ function ClientAccordion({
       setPageOffer(null);
       return;
     }
+    setPageOffer(null);
     let cancelled = false;
     async function fetchPageOffer() {
       const token = await getToken();
@@ -1813,6 +1819,7 @@ function ClientAccordion({
               {pageOffer && (
                 <div className="border-b border-gray-100">
                   <button
+                    id="offer-on-this-page-section"
                     type="button"
                     onClick={() => setPageOfferOpen(v => !v)}
                     className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
@@ -1943,6 +1950,8 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
+                                isPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
+                                hideActions={true}
                               />
                             ),
                           )}
@@ -2037,6 +2046,8 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
+                                isPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
+                                hideActions={true}
                               />
                             ),
                           )}
@@ -2135,6 +2146,7 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
+                                isPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
                               />
                             ),
                           )}
