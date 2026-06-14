@@ -383,7 +383,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       <span className="text-xs font-semibold text-gray-700">
                         Your billing data
                       </span>
-                      {!billingEditMode && !billingLoading && (
+                      {!billingEditMode && !billingLoading && billingData !== null && (
                         <button
                           type="button"
                           onClick={handleEditBilling}
@@ -433,6 +433,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           </button>
                         </div>
                       </div>
+                    ) : billingData === null ? (
+                      <p className="text-xs text-gray-400">
+                        You haven't made any purchases yet. Your billing data will appear here after your first purchase.
+                      </p>
                     ) : (
                       <div className="flex flex-col gap-1">
                         {billingViewRows.map(({ label, value }) => (
