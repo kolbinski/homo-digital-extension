@@ -116,8 +116,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   }
 
   const isPro =
-    subscription != null &&
-    subscription.plan_name.toLowerCase() !== 'free';
+    subscription != null && subscription.plan_name.toLowerCase() !== 'free';
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -156,86 +155,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
             </header>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
-              {/* Your plan */}
-              <section className="flex flex-col gap-3">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Your plan
-                </h2>
-                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-2">
-                  {subscriptionLoading ? (
-                    <div className="flex justify-center">
-                      <Spinner size={16} className="text-gray-400" />
-                    </div>
-                  ) : subscriptionError ? (
-                    <p className="text-sm text-gray-500">
-                      Could not load plan info
-                    </p>
-                  ) : subscription ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900">
-                          {subscription.plan_name
-                            ? subscription.plan_name.charAt(0).toUpperCase() +
-                              subscription.plan_name.slice(1)
-                            : 'Free'}
-                        </span>
-                        {subscription.current_period_end && (
-                          <span className="text-xs text-gray-500">
-                            Ends at{' '}
-                            {subscription.current_period_end.slice(0, 10)}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setManagePlanOpen(true)}
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-start"
-                      >
-                        Manage your plan
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-              </section>
-
-              {/* Feedback */}
-              <section className="flex flex-col gap-3">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Feedback
-                </h2>
-                {feedbackSent ? (
-                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2.5">
-                    Thank you! We'll get back to you soon.
-                  </p>
-                ) : (
-                  <>
-                    <textarea
-                      value={message}
-                      onChange={e => {
-                        setMessage(e.target.value);
-                        setFeedbackError('');
-                      }}
-                      placeholder="Write your feedback or anything we should improve..."
-                      rows={4}
-                      disabled={isSending}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-50 disabled:text-gray-400"
-                    />
-                    {feedbackError && (
-                      <p className="text-xs text-red-600">{feedbackError}</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleSend}
-                      disabled={isSending || !message.trim()}
-                      className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700"
-                    >
-                      {isSending && <Spinner className="text-white" />}
-                      {isSending ? 'Sending…' : 'Send'}
-                    </button>
-                  </>
-                )}
-              </section>
-
               {/* Account */}
               <section className="flex flex-col gap-3">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -282,6 +201,86 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     </div>
                   </div>
                 )}
+              </section>
+
+              {/* Feedback */}
+              <section className="flex flex-col gap-3">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Feedback
+                </h2>
+                {feedbackSent ? (
+                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2.5">
+                    Thank you! We'll get back to you soon.
+                  </p>
+                ) : (
+                  <>
+                    <textarea
+                      value={message}
+                      onChange={e => {
+                        setMessage(e.target.value);
+                        setFeedbackError('');
+                      }}
+                      placeholder="Write your feedback or anything we should improve..."
+                      rows={4}
+                      disabled={isSending}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-50 disabled:text-gray-400"
+                    />
+                    {feedbackError && (
+                      <p className="text-xs text-red-600">{feedbackError}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={isSending || !message.trim()}
+                      className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700"
+                    >
+                      {isSending && <Spinner className="text-white" />}
+                      {isSending ? 'Sending…' : 'Send'}
+                    </button>
+                  </>
+                )}
+              </section>
+
+              {/* Your plan */}
+              <section className="flex flex-col gap-3">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Your plan
+                </h2>
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-2">
+                  {subscriptionLoading ? (
+                    <div className="flex justify-center">
+                      <Spinner size={16} className="text-gray-400" />
+                    </div>
+                  ) : subscriptionError ? (
+                    <p className="text-sm text-gray-500">
+                      Could not load plan info
+                    </p>
+                  ) : subscription ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-900">
+                          {subscription.plan_name
+                            ? subscription.plan_name.charAt(0).toUpperCase() +
+                              subscription.plan_name.slice(1)
+                            : 'Free'}
+                        </span>
+                        {subscription.current_period_end && (
+                          <span className="text-xs text-gray-500">
+                            Ends at{' '}
+                            {subscription.current_period_end.slice(0, 10)}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setManagePlanOpen(true)}
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-start"
+                      >
+                        Manage your plan
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </section>
             </div>
           </>

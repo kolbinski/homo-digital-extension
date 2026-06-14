@@ -832,21 +832,23 @@ function OfferCard({
       {isOpen && (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
           {!isPageOffer && !hideActions && statusLoading !== offer.user_offer_id && (
-            <div className="flex flex-col gap-2">
-              {/* CV row */}
+            <div className="flex gap-2">
+              {/* CV section */}
               {cvCounterMax > 0 && cvCounter >= cvCounterMax ? (
-                <PlanLimitBanner
-                  onUpgradeClick={() => onCvLimitReached?.()}
-                  buttonLabel={`Buy ${generalSettings?.cv_package_amount ?? '...'} CVs`}
-                  isLoading={cvPackageBuyLoading}
-                  errorMessage={cvPackageBuyError}
-                >
-                  <p className="text-xs text-gray-500">
-                    You've reached your CV generation limit.
-                  </p>
-                </PlanLimitBanner>
+                <div className="flex-1">
+                  <PlanLimitBanner
+                    onUpgradeClick={() => onCvLimitReached?.()}
+                    buttonLabel={`Buy ${generalSettings?.cv_package_amount ?? '...'} CVs`}
+                    isLoading={cvPackageBuyLoading}
+                    errorMessage={cvPackageBuyError}
+                  >
+                    <p className="text-xs text-gray-500">
+                      You've reached your CV generation limit.
+                    </p>
+                  </PlanLimitBanner>
+                </div>
               ) : (
-                <div className="flex gap-2 items-center">
+                <div className="flex-1 flex gap-2 items-center">
                   <div ref={cvDropdownRef} className="flex-1">
                     {isGenerating ? (
                       <button
@@ -943,20 +945,22 @@ function OfferCard({
                   )}
                 </div>
               )}
-              {/* CL row */}
+              {/* CL section */}
               {clCounterMax > 0 && clCounter >= clCounterMax ? (
-                <PlanLimitBanner
-                  onUpgradeClick={() => onClLimitReached?.()}
-                  buttonLabel={`Buy ${generalSettings?.cl_package_amount ?? '...'} CLs`}
-                  isLoading={clPackageBuyLoading}
-                  errorMessage={clPackageBuyError}
-                >
-                  <p className="text-xs text-gray-500">
-                    You've reached your cover letter generation limit.
-                  </p>
-                </PlanLimitBanner>
+                <div className="flex-1">
+                  <PlanLimitBanner
+                    onUpgradeClick={() => onClLimitReached?.()}
+                    buttonLabel={`Buy ${generalSettings?.cl_package_amount ?? '...'} CLs`}
+                    isLoading={clPackageBuyLoading}
+                    errorMessage={clPackageBuyError}
+                  >
+                    <p className="text-xs text-gray-500">
+                      You've reached your cover letter generation limit.
+                    </p>
+                  </PlanLimitBanner>
+                </div>
               ) : (
-                <div className="flex gap-2 items-center">
+                <div className="flex-1 flex gap-2 items-center">
                   <div ref={clDropdownRef} className="flex-1">
                     {isClGenerating ? (
                       <button
