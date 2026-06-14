@@ -1176,6 +1176,7 @@ function ClientAccordion({
         changes.scan_package_purchased.newValue !== undefined
       ) {
         setScanLimitReached(false);
+        void handleScanPage();
       }
     }
 
