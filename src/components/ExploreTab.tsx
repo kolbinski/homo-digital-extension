@@ -297,6 +297,7 @@ function OfferCard({
     } else {
       onCvUpdate(offer.user_offer_id, result.cvUrl, result.cvStatus);
       onCvGenerated?.();
+      chrome.tabs.create({ url: result.cvUrl });
     }
   }
 
@@ -361,6 +362,7 @@ function OfferCard({
         };
         onClUpdate(offer.user_offer_id, data.cl_url, data.cl_status);
         onClGenerated?.();
+        chrome.tabs.create({ url: data.cl_url });
       }
     } catch {
       setStatus({
