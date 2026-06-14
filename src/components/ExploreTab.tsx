@@ -1847,7 +1847,7 @@ function ClientAccordion({
           <span className="text-sm font-medium text-gray-900">
             {client.first_name} {client.last_name}
           </span>
-          {!hasLoaded || isLoading ? (
+          {!selfMode && (!hasLoaded || isLoading ? (
             <Spinner size={12} className="text-gray-400" />
           ) : (
             <>
@@ -1869,7 +1869,7 @@ function ClientAccordion({
                   </span>
                 )}
             </>
-          )}
+          ))}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
