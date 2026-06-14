@@ -1,4 +1,4 @@
-import { Lock } from '@phosphor-icons/react';
+import { Lock, XCircle } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   isLoading?: boolean;
   errorMessage?: string | null;
   withMX?: boolean;
+  closable?: boolean;
+  onClose?: () => void;
 }
 
 export default function PlanLimitBanner({
@@ -17,11 +19,23 @@ export default function PlanLimitBanner({
   isLoading = false,
   errorMessage,
   withMX = true,
+  closable = false,
+  onClose,
 }: Props) {
   return (
     <div
-      className={`${withMX ? 'mx-3' : ''} my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center`}
+      className={`${withMX ? 'mx-3' : ''} my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center relative`}
     >
+      {closable && onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Dismiss"
+        >
+          <XCircle size={16} />
+        </button>
+      )}
       <Lock size={18} className="text-gray-400" />
       {children}
       <button

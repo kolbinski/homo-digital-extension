@@ -247,6 +247,8 @@ function OfferCard({
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
   const [clLimitHit, setClLimitHit] = useState(false);
+  const [cvLimitBannerClosed, setCvLimitBannerClosed] = useState(false);
+  const [clLimitBannerClosed, setClLimitBannerClosed] = useState(false);
   const [status, setStatus] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -1041,32 +1043,38 @@ function OfferCard({
                       )}
                   </div>
                 </div>
-                {cvLimitHit && (
+                {cvLimitHit && !cvLimitBannerClosed && (
                   <PlanLimitBanner
                     onButtonClick={() => {
                       setCvLimitHit(false);
+                      setCvLimitBannerClosed(false);
                       onCvLimitReached?.();
                     }}
                     buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
                     isLoading={cvPackageBuyLoading}
                     errorMessage={cvPackageBuyError}
                     withMX={false}
+                    closable
+                    onClose={() => setCvLimitBannerClosed(true)}
                   >
                     <p className="text-xs text-gray-500">
                       You've reached your CV generation limit.
                     </p>
                   </PlanLimitBanner>
                 )}
-                {clLimitHit && (
+                {clLimitHit && !clLimitBannerClosed && (
                   <PlanLimitBanner
                     onButtonClick={() => {
                       setClLimitHit(false);
+                      setClLimitBannerClosed(false);
                       onClLimitReached?.();
                     }}
                     buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
                     isLoading={clPackageBuyLoading}
                     errorMessage={clPackageBuyError}
                     withMX={false}
+                    closable
+                    onClose={() => setClLimitBannerClosed(true)}
                   >
                     <p className="text-xs text-gray-500">
                       You've reached your cover letter generation limit.
@@ -1222,6 +1230,7 @@ function ClientAccordion({
   const [scanLimitReached, setScanLimitReached] = useState(false);
   const [scanPackageLoading, setScanPackageLoading] = useState(false);
   const [scanPackageError, setScanPackageError] = useState<string | null>(null);
+  const [salaryDeltaBannerClosed, setSalaryDeltaBannerClosed] = useState(false);
   const [cvPackageBuyLoading, setCvPackageBuyLoading] = useState(false);
   const [cvPackageBuyError, setCvPackageBuyError] = useState<string | null>(
     null,
@@ -1630,6 +1639,10 @@ function ClientAccordion({
     };
   }, [selfMode]);
 
+  useEffect(() => {
+    if (sortBy === 'salary_delta') setSalaryDeltaBannerClosed(false);
+  }, [sortBy]);
+
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
       offers.map(o =>
@@ -1950,6 +1963,19 @@ function ClientAccordion({
           )}
           {statusFilter === 'pending_apply' && (
             <>
+              {/* Salary delta upsell */}
+              {selfMode && !isPro && sortBy === 'salary_delta' && !salaryDeltaBannerClosed && (
+                <PlanLimitBanner
+                  onButtonClick={() => setUpgradeDrawerOpen(true)}
+                  buttonText="Upgrade to Pro"
+                  closable
+                  onClose={() => setSalaryDeltaBannerClosed(true)}
+                >
+                  <p className="text-xs text-gray-500">
+                    Sorting by salary delta is a Pro feature.
+                  </p>
+                </PlanLimitBanner>
+              )}
               {/* Scan box */}
               {scanLimitReached ? (
                 <PlanLimitBanner
@@ -2078,16 +2104,6 @@ function ClientAccordion({
             </div>
           ) : (
             <>
-              {selfMode && !isPro && sortBy === 'salary_delta' && (
-                <PlanLimitBanner
-                  onButtonClick={() => setUpgradeDrawerOpen(true)}
-                  buttonText="Upgrade to Pro"
-                >
-                  <p className="text-xs text-gray-500">
-                    Sorting by salary delta is a Pro feature.
-                  </p>
-                </PlanLimitBanner>
-              )}
               {statusFilter === 'pending_apply' ? (
                 <>
                   {/* Apply now sub-section */}
