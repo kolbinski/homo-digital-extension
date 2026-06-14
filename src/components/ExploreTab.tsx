@@ -1527,7 +1527,6 @@ function ClientAccordion({
         active: true,
         currentWindow: true,
       });
-      console.log('[scanPage] tab:', tab?.id, tab?.url);
       const pageUrl = tab.url ?? '';
       if (
         !tab?.url ||
@@ -1544,7 +1543,6 @@ function ClientAccordion({
         target: { tabId: tab.id! },
         func: () => document.body.innerText,
       });
-      console.log('[scanPage] pageText length:', pageText?.length);
       const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/v1/scan-page`, {
         method: 'POST',
@@ -1567,13 +1565,6 @@ function ClientAccordion({
         is_job_offer: boolean;
         user_offer?: UserOffer;
       };
-      console.log('[scanPage] response:', JSON.stringify(data));
-      console.log(
-        '[scanPage] is_job_offer:',
-        data.is_job_offer,
-        'user_offer:',
-        data.user_offer,
-      );
       if (!data.is_job_offer) {
         setScanMessage(
           "This page doesn't look like a job offer. Try opening a job posting first.",
@@ -1592,8 +1583,7 @@ function ClientAccordion({
           .querySelector(`[data-user-offer-id="${newOffer.user_offer_id}"]`)
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    } catch (err) {
-      console.error('[scanPage] error:', err);
+    } catch {
       setScanError('Something went wrong. Please try again.');
       setTimeout(() => setScanError(null), 4000);
     } finally {
