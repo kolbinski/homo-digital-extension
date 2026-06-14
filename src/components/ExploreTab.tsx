@@ -57,7 +57,6 @@ interface UserOffer {
   claude_recommended?: boolean | null;
 }
 
-
 function formatNum(n: number): string {
   const sign = n < 0 ? '-' : '';
   return (
@@ -211,7 +210,9 @@ function OfferCard({
   const [salaryTo, setSalaryTo] = useState('');
   const [salaryCurrency, setSalaryCurrency] = useState('');
   const [salaryUnit, setSalaryUnit] = useState('');
-  const [salaryType, setSalaryType] = useState<'contract' | 'permanent'>('contract');
+  const [salaryType, setSalaryType] = useState<'contract' | 'permanent'>(
+    'contract',
+  );
   const [salaryLoading, setSalaryLoading] = useState(false);
   const [salaryError, setSalaryError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -682,7 +683,9 @@ function OfferCard({
                 onClick={e => e.stopPropagation()}
                 className="mt-1 p-2.5 rounded-md border border-gray-200 bg-gray-50 flex flex-col gap-2"
               >
-                <span className="text-xs font-medium text-gray-700">Edit offer salary</span>
+                <span className="text-xs font-medium text-gray-700">
+                  Edit offer salary
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex flex-col gap-1">
                     <label className="text-xs text-gray-500">From</label>
@@ -720,7 +723,9 @@ function OfferCard({
                       className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                     >
                       {currencyOptions.map(c => (
-                        <option key={c} value={c}>{c}</option>
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -734,7 +739,9 @@ function OfferCard({
                       className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                     >
                       {unitOptions.map(u => (
-                        <option key={u} value={u}>{u}</option>
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -745,7 +752,9 @@ function OfferCard({
                     required
                     disabled={salaryLoading}
                     value={salaryType}
-                    onChange={e => setSalaryType(e.target.value as 'contract' | 'permanent')}
+                    onChange={e =>
+                      setSalaryType(e.target.value as 'contract' | 'permanent')
+                    }
                     className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50"
                   >
                     <option value="contract">Contract</option>
@@ -769,7 +778,9 @@ function OfferCard({
                     disabled={salaryLoading}
                     className="flex-1 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1 disabled:opacity-50"
                   >
-                    {salaryLoading && <Spinner size={11} className="text-white" />}
+                    {salaryLoading && (
+                      <Spinner size={11} className="text-white" />
+                    )}
                     {salaryLoading ? 'Saving...' : 'Save'}
                   </button>
                 </div>
@@ -1120,6 +1131,7 @@ function ClientAccordion({
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanLimitReached, setScanLimitReached] = useState(false);
+  const [pageOffer, setPageOffer] = useState<UserOffer | null>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1258,6 +1270,39 @@ function ClientAccordion({
       cancelled = true;
     };
   }, [currentUrl, client.id]);
+
+  useEffect(() => {
+    if (
+      !currentUrl ||
+      currentUrl.startsWith('chrome://') ||
+      currentUrl.startsWith('chrome-extension://')
+    ) {
+      setPageOffer(null);
+      return;
+    }
+    let cancelled = false;
+    async function fetchPageOffer() {
+      const token = await getToken();
+      if (!token || cancelled) return;
+      const params = new URLSearchParams({ url: currentUrl! });
+      if (!selfMode) params.append('client_id', client.id);
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/v1/user-offers/by-url?${params}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { user_offer: UserOffer | null };
+        if (!cancelled) setPageOffer(data.user_offer ?? null);
+      } catch {
+        // silently ignore
+      }
+    }
+    fetchPageOffer();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUrl]);
 
   useEffect(() => {
     setHasLoaded(false);
@@ -1758,6 +1803,34 @@ function ClientAccordion({
                       {scanError && (
                         <p className="text-xs text-red-500">{scanError}</p>
                       )}
+                    </div>
+                  )}
+                  {/* Offer on this page sub-section */}
+                  {pageOffer && (
+                    <div className="border-b border-gray-100">
+                      <div className="w-full flex items-center px-3 py-2 bg-gray-50">
+                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                          Offer on this page
+                        </span>
+                      </div>
+                      <OfferCard
+                        key={pageOffer.user_offer_id}
+                        offer={pageOffer}
+                        clientId={client.id}
+                        clientFirstName={client.first_name}
+                        clientLastName={client.last_name}
+                        isOpen={true}
+                        onToggle={() => {}}
+                        activeTabId={activeTabId}
+                        onRemove={() => setPageOffer(null)}
+                        onRollback={() => {}}
+                        onError={setStatusError}
+                        onCvUpdate={handleCvUpdate}
+                        onClUpdate={handleClUpdate}
+                        onSalaryUpdate={handleSalaryUpdate}
+                        candidateSkills={candidateSkills}
+                        isOfferLoading={false}
+                      />
                     </div>
                   )}
                   {/* Apply now sub-section */}
