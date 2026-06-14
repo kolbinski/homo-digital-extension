@@ -24,7 +24,7 @@ export default function PlanLimitBanner({
 }: Props) {
   return (
     <div
-      className={`${withMX ? 'mx-3' : ''} my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center relative`}
+      className={`${withMX ? 'mx-3' : ''} my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center relative`}
     >
       {closable && onClose && (
         <button

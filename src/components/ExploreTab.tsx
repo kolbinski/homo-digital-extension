@@ -158,6 +158,7 @@ interface ClientAccordionProps {
   cvGenerated: boolean;
   clGenerated: boolean;
   onClientUpdate?: (id: string, firstName: string, lastName: string) => void;
+  onSortByOverride?: (value: string) => void;
   defaultExpanded?: boolean;
   selfMode?: boolean;
 }
@@ -268,6 +269,7 @@ function OfferCard({
   const clPortalRef = useRef<HTMLDivElement>(null);
 
   async function handleGenerate(language: string) {
+    setCvLimitBannerClosed(false);
     if (activeTabId === undefined) {
       setStatus({ type: 'error', message: 'Could not read page content.' });
       return;
@@ -313,6 +315,7 @@ function OfferCard({
   }
 
   async function handleGenerateCl(language: string) {
+    setClLimitBannerClosed(false);
     if (activeTabId === undefined) {
       setStatus({ type: 'error', message: 'Could not read page content.' });
       return;
@@ -1198,6 +1201,7 @@ function ClientAccordion({
   cvGenerated,
   clGenerated,
   onClientUpdate,
+  onSortByOverride,
   defaultExpanded = false,
   selfMode = false,
 }: ClientAccordionProps) {
@@ -1230,7 +1234,7 @@ function ClientAccordion({
   const [scanLimitReached, setScanLimitReached] = useState(false);
   const [scanPackageLoading, setScanPackageLoading] = useState(false);
   const [scanPackageError, setScanPackageError] = useState<string | null>(null);
-  const [salaryDeltaBannerClosed, setSalaryDeltaBannerClosed] = useState(false);
+  const [showSalaryDeltaBanner, setShowSalaryDeltaBanner] = useState(false);
   const [cvPackageBuyLoading, setCvPackageBuyLoading] = useState(false);
   const [cvPackageBuyError, setCvPackageBuyError] = useState<string | null>(
     null,
@@ -1640,8 +1644,11 @@ function ClientAccordion({
   }, [selfMode]);
 
   useEffect(() => {
-    if (sortBy === 'salary_delta') setSalaryDeltaBannerClosed(false);
-  }, [sortBy]);
+    if (selfMode && !isPro && sortBy === 'salary_delta') {
+      setShowSalaryDeltaBanner(true);
+      onSortByOverride?.('score');
+    }
+  }, [sortBy, isPro]);
 
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
@@ -1839,9 +1846,6 @@ function ClientAccordion({
     [levelUpOffers, minScore, cvGenerated, clGenerated],
   );
 
-  const effectiveSortBy =
-    selfMode && !isPro && sortBy === 'salary_delta' ? 'score' : sortBy;
-
   return (
     <div className="border border-gray-200 rounded-md overflow-hidden">
       <div
@@ -1964,12 +1968,12 @@ function ClientAccordion({
           {statusFilter === 'pending_apply' && (
             <>
               {/* Salary delta upsell */}
-              {selfMode && !isPro && sortBy === 'salary_delta' && !salaryDeltaBannerClosed && (
+              {showSalaryDeltaBanner && !isPro && (
                 <PlanLimitBanner
                   onButtonClick={() => setUpgradeDrawerOpen(true)}
                   buttonText="Upgrade to Pro"
                   closable
-                  onClose={() => setSalaryDeltaBannerClosed(true)}
+                  onClose={() => setShowSalaryDeltaBanner(false)}
                 >
                   <p className="text-xs text-gray-500">
                     Sorting by salary delta is a Pro feature.
@@ -1990,7 +1994,7 @@ function ClientAccordion({
                 </PlanLimitBanner>
               ) : (
                 !pageOffer && (
-                  <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                  <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center">
                     <p className="text-xs font-medium text-gray-700">
                       Scan this page for a job offer
                     </p>
@@ -2138,7 +2142,7 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(filteredApplyOffers, effectiveSortBy).map(
+                          {sortOffers(filteredApplyOffers, sortBy).map(
                             offer => (
                               <OfferCard
                                 key={offer.user_offer_id}
@@ -2233,41 +2237,41 @@ function ClientAccordion({
                               levelUpOffers.map(o => o.user_offer_id),
                             );
                           })()}
-                          {sortOffers(
-                            filteredLevelUpOffers,
-                            effectiveSortBy,
-                          ).map(offer => (
-                            <OfferCard
-                              key={offer.user_offer_id}
-                              offer={offer}
-                              clientId={client.id}
-                              clientFirstName={client.first_name}
-                              clientLastName={client.last_name}
-                              isOpen={expandedOfferId === offer.user_offer_id}
-                              onToggle={() =>
-                                handleCardToggle(offer, offer.offer_url)
-                              }
-                              activeTabId={activeTabId}
-                              onRemove={id =>
-                                setLevelUpOffers(prev =>
-                                  prev.filter(o => o.user_offer_id !== id),
-                                )
-                              }
-                              onRollback={o =>
-                                setLevelUpOffers(prev => [...prev, o])
-                              }
-                              onError={setStatusError}
-                              onCvUpdate={handleCvUpdate}
-                              onClUpdate={handleClUpdate}
-                              onSalaryUpdate={handleSalaryUpdate}
-                              candidateSkills={candidateSkills}
-                              isOfferLoading={isLoading}
-                              isPageOffer={
-                                offer.user_offer_id === pageOffer?.user_offer_id
-                              }
-                              hideActions={true}
-                            />
-                          ))}
+                          {sortOffers(filteredLevelUpOffers, sortBy).map(
+                            offer => (
+                              <OfferCard
+                                key={offer.user_offer_id}
+                                offer={offer}
+                                clientId={client.id}
+                                clientFirstName={client.first_name}
+                                clientLastName={client.last_name}
+                                isOpen={expandedOfferId === offer.user_offer_id}
+                                onToggle={() =>
+                                  handleCardToggle(offer, offer.offer_url)
+                                }
+                                activeTabId={activeTabId}
+                                onRemove={id =>
+                                  setLevelUpOffers(prev =>
+                                    prev.filter(o => o.user_offer_id !== id),
+                                  )
+                                }
+                                onRollback={o =>
+                                  setLevelUpOffers(prev => [...prev, o])
+                                }
+                                onError={setStatusError}
+                                onCvUpdate={handleCvUpdate}
+                                onClUpdate={handleClUpdate}
+                                onSalaryUpdate={handleSalaryUpdate}
+                                candidateSkills={candidateSkills}
+                                isOfferLoading={isLoading}
+                                isPageOffer={
+                                  offer.user_offer_id ===
+                                  pageOffer?.user_offer_id
+                                }
+                                hideActions={true}
+                              />
+                            ),
+                          )}
                           {!isPro &&
                             levelUpCount !== null &&
                             levelUpOffers.length < levelUpCount && (
@@ -2334,7 +2338,7 @@ function ClientAccordion({
                       </button>
                       {applyOpen && (
                         <div>
-                          {sortOffers(filteredApplyOffers, effectiveSortBy).map(
+                          {sortOffers(filteredApplyOffers, sortBy).map(
                             offer => (
                               <OfferCard
                                 key={offer.user_offer_id}
@@ -2701,6 +2705,7 @@ export default function ExploreTab({
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
+              onSortByOverride={handleSortChange}
               defaultExpanded={true}
               selfMode={true}
             />
