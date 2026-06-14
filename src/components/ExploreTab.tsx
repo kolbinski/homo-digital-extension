@@ -1714,6 +1714,79 @@ function ClientAccordion({
               </button>
             </div>
           )}
+          {statusFilter === 'pending_apply' && (
+            <>
+              {/* Scan box */}
+              {scanLimitReached ? (
+                <PlanLimitBanner
+                  onUpgradeClick={() =>
+                    console.log('Buy 100 scans clicked')
+                  }
+                  buttonLabel="Buy 100 scans"
+                >
+                  <p className="text-xs text-gray-500">
+                    You've reached your scan limit. Buy a package for 100
+                    more scans.
+                  </p>
+                </PlanLimitBanner>
+              ) : (
+                !pageOffer && <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
+                  <p className="text-xs font-medium text-gray-700">
+                    Scan this page for a job offer
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Open any job posting and click Scan to instantly match
+                    it with your profile.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void handleScanPage()}
+                    disabled={isScanning}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isScanning && (
+                      <Spinner size={12} className="text-white" />
+                    )}
+                    {isScanning ? 'Scanning...' : 'Scan this page'}
+                  </button>
+                  {scanMessage && (
+                    <p className="text-xs text-gray-500">{scanMessage}</p>
+                  )}
+                  {scanError && (
+                    <p className="text-xs text-red-500">{scanError}</p>
+                  )}
+                </div>
+              )}
+              {/* Offer on this page sub-section */}
+              {pageOffer && (
+                <div className="border-b border-gray-100">
+                  <div className="w-full flex items-center px-3 py-2 bg-gray-50">
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      Offer on this page
+                    </span>
+                  </div>
+                  <OfferCard
+                    key={pageOffer.user_offer_id}
+                    offer={pageOffer}
+                    clientId={client.id}
+                    clientFirstName={client.first_name}
+                    clientLastName={client.last_name}
+                    isOpen={true}
+                    onToggle={() => {}}
+                    activeTabId={activeTabId}
+                    onRemove={() => setPageOffer(null)}
+                    onRollback={() => {}}
+                    onError={setStatusError}
+                    onCvUpdate={handleCvUpdate}
+                    onClUpdate={handleClUpdate}
+                    onSalaryUpdate={handleSalaryUpdate}
+                    candidateSkills={candidateSkills}
+                    isOfferLoading={false}
+                  />
+                </div>
+              )}
+            </>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
               <Spinner className="text-indigo-600" />
@@ -1737,75 +1810,6 @@ function ClientAccordion({
             <>
               {statusFilter === 'pending_apply' ? (
                 <>
-                  {/* Scan box */}
-                  {scanLimitReached ? (
-                    <PlanLimitBanner
-                      onUpgradeClick={() =>
-                        console.log('Buy 100 scans clicked')
-                      }
-                      buttonLabel="Buy 100 scans"
-                    >
-                      <p className="text-xs text-gray-500">
-                        You've reached your scan limit. Buy a package for 100
-                        more scans.
-                      </p>
-                    </PlanLimitBanner>
-                  ) : (
-                    !pageOffer && <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-gray-50 flex flex-col items-center gap-2 text-center">
-                      <p className="text-xs font-medium text-gray-700">
-                        Scan this page for a job offer
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Open any job posting and click Scan to instantly match
-                        it with your profile.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => void handleScanPage()}
-                        disabled={isScanning}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isScanning && (
-                          <Spinner size={12} className="text-white" />
-                        )}
-                        {isScanning ? 'Scanning...' : 'Scan this page'}
-                      </button>
-                      {scanMessage && (
-                        <p className="text-xs text-gray-500">{scanMessage}</p>
-                      )}
-                      {scanError && (
-                        <p className="text-xs text-red-500">{scanError}</p>
-                      )}
-                    </div>
-                  )}
-                  {/* Offer on this page sub-section */}
-                  {pageOffer && (
-                    <div className="border-b border-gray-100">
-                      <div className="w-full flex items-center px-3 py-2 bg-gray-50">
-                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                          Offer on this page
-                        </span>
-                      </div>
-                      <OfferCard
-                        key={pageOffer.user_offer_id}
-                        offer={pageOffer}
-                        clientId={client.id}
-                        clientFirstName={client.first_name}
-                        clientLastName={client.last_name}
-                        isOpen={true}
-                        onToggle={() => {}}
-                        activeTabId={activeTabId}
-                        onRemove={() => setPageOffer(null)}
-                        onRollback={() => {}}
-                        onError={setStatusError}
-                        onCvUpdate={handleCvUpdate}
-                        onClUpdate={handleClUpdate}
-                        onSalaryUpdate={handleSalaryUpdate}
-                        candidateSkills={candidateSkills}
-                        isOfferLoading={false}
-                      />
-                    </div>
-                  )}
                   {/* Apply now sub-section */}
                   {filteredApplyOffers.length > 0 && (
                     <div className="border-b border-gray-100">
