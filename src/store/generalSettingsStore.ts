@@ -16,6 +16,8 @@ export interface GeneralSettings {
   experience_levels: string[];
   show_source_filter?: boolean;
   pro_price?: { formatted: string };
+  scan_package_price?: { formatted: string } | null;
+  package_page_scans_amount?: number;
 }
 
 interface StoreState {

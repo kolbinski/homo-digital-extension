@@ -1100,6 +1100,7 @@ function ClientAccordion({
   selfMode = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
+  const { settings: generalSettings } = useGeneralSettings();
 
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -1124,6 +1125,8 @@ function ClientAccordion({
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanLimitReached, setScanLimitReached] = useState(false);
+  const [scanPackageLoading, setScanPackageLoading] = useState(false);
+  const [scanPackageError, setScanPackageError] = useState<string | null>(null);
   const [pageOffer, setPageOffer] = useState<UserOffer | null>(null);
 
   useEffect(() => {
@@ -1159,6 +1162,12 @@ function ClientAccordion({
         changes.upgrade_success.newValue !== undefined
       ) {
         void checkSubscription();
+      }
+      if (
+        'scan_package_purchased' in changes &&
+        changes.scan_package_purchased.newValue !== undefined
+      ) {
+        setScanLimitReached(false);
       }
     }
 
@@ -1579,6 +1588,34 @@ function ClientAccordion({
     }
   }
 
+  async function handleBuyScanPackage() {
+    setScanPackageLoading(true);
+    setScanPackageError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${API_BASE_URL}/v1/subscriptions/scan-package-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token ?? ''}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      if (!res.ok) {
+        setScanPackageError('Something went wrong. Please try again.');
+        return;
+      }
+      const data = (await res.json()) as { url: string };
+      chrome.tabs.create({ url: data.url });
+    } catch {
+      setScanPackageError('Something went wrong. Please try again.');
+    } finally {
+      setScanPackageLoading(false);
+    }
+  }
+
   const filteredApplyOffers = useMemo(
     () =>
       (applyOffers ?? [])
@@ -1719,14 +1756,17 @@ function ClientAccordion({
               {/* Scan box */}
               {scanLimitReached ? (
                 <PlanLimitBanner
-                  onUpgradeClick={() =>
-                    console.log('Buy 100 scans clicked')
+                  onUpgradeClick={() => void handleBuyScanPackage()}
+                  buttonLabel={
+                    generalSettings?.scan_package_price?.formatted
+                      ? `Buy ${generalSettings.package_page_scans_amount ?? 100} scans for ${generalSettings.scan_package_price.formatted}`
+                      : `Buy ${generalSettings?.package_page_scans_amount ?? 100} more scans`
                   }
-                  buttonLabel="Buy 100 scans"
+                  isLoading={scanPackageLoading}
+                  errorMessage={scanPackageError}
                 >
                   <p className="text-xs text-gray-500">
-                    You've reached your scan limit. Buy a package for 100
-                    more scans.
+                    You've reached your scan limit.
                   </p>
                 </PlanLimitBanner>
               ) : (

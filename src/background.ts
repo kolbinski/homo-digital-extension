@@ -5,6 +5,11 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete') return
+  if (tab.url?.includes('upgrade=scan_package')) {
+    chrome.tabs.remove(tabId)
+    chrome.storage.local.set({ scan_package_purchased: Date.now() })
+    return
+  }
   if (!tab.url?.includes('upgrade=success')) return
   chrome.tabs.remove(tabId)
   chrome.storage.local.set({ upgrade_success: Date.now() })
