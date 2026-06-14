@@ -54,11 +54,6 @@ interface UserOffer {
   claude_recommended?: boolean | null;
 }
 
-function providerIcon(source?: string): string | null {
-  if (!source) return null;
-  if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return null;
-  return chrome.runtime.getURL(`icons/${source}.png`);
-}
 
 function formatNum(n: number): string {
   const sign = n < 0 ? '-' : '';
@@ -220,8 +215,6 @@ function OfferCard({
   const cvPortalRef = useRef<HTMLDivElement>(null);
   const clDropdownRef = useRef<HTMLDivElement>(null);
   const clPortalRef = useRef<HTMLDivElement>(null);
-
-  const icon = providerIcon(offer.source);
 
   async function handleGenerate(language: string) {
     if (activeTabId === undefined) {
@@ -409,9 +402,6 @@ function OfferCard({
         className="w-full px-3 py-2.5 text-left flex items-center gap-2 hover:bg-gray-50 transition-colors group"
       >
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          {icon && (
-            <img src={icon} width={16} height={16} className="shrink-0" />
-          )}
           {offer.claude_score != null && (
             <span
               className={`text-xs font-medium px-1.5 py-0.5 rounded border shrink-0 ${offerScoreBadgeClass(offer.claude_score)}`}
@@ -1340,7 +1330,12 @@ function ClientAccordion({
         user_offer?: UserOffer;
       };
       console.log('[scanPage] response:', JSON.stringify(data));
-      console.log('[scanPage] is_job_offer:', data.is_job_offer, 'user_offer:', data.user_offer);
+      console.log(
+        '[scanPage] is_job_offer:',
+        data.is_job_offer,
+        'user_offer:',
+        data.user_offer,
+      );
       if (!data.is_job_offer) {
         setScanMessage(
           "This page doesn't look like a job offer. Try opening a job posting first.",
@@ -1349,16 +1344,30 @@ function ClientAccordion({
         return;
       }
       const newOffer = data.user_offer!;
-      console.log('[scanPage] claude_recommended:', newOffer.claude_recommended, 'user_offer_id:', newOffer.user_offer_id);
+      console.log(
+        '[scanPage] claude_recommended:',
+        newOffer.claude_recommended,
+        'user_offer_id:',
+        newOffer.user_offer_id,
+      );
       if (newOffer.claude_recommended) {
         setApplyOffers(prev => [newOffer, ...prev]);
         setApplyOpen(true);
       } else {
-        console.log('[scanPage] existing levelUpOffers ids:', levelUpOffers.map(o => o.user_offer_id));
+        console.log(
+          '[scanPage] existing levelUpOffers ids:',
+          levelUpOffers.map(o => o.user_offer_id),
+        );
         console.log('[scanPage] new offer id:', newOffer.user_offer_id);
-        console.log('[scanPage] already exists:', levelUpOffers.some(o => o.user_offer_id === newOffer.user_offer_id));
+        console.log(
+          '[scanPage] already exists:',
+          levelUpOffers.some(o => o.user_offer_id === newOffer.user_offer_id),
+        );
         setLevelUpOffers(prev => [newOffer, ...prev]);
-        console.log('[scanPage] levelUpOffers after set:', levelUpOffers.length);
+        console.log(
+          '[scanPage] levelUpOffers after set:',
+          levelUpOffers.length,
+        );
         setLevelUpOpen(true);
       }
       onResetFilters?.();
@@ -1696,7 +1705,12 @@ function ClientAccordion({
                       </button>
                       {levelUpOpen && (
                         <div>
-                          {(() => { console.log('[render] levelUpOffers:', levelUpOffers.map(o => o.user_offer_id)); })()}
+                          {(() => {
+                            console.log(
+                              '[render] levelUpOffers:',
+                              levelUpOffers.map(o => o.user_offer_id),
+                            );
+                          })()}
                           {sortOffers(filteredLevelUpOffers, sortBy).map(
                             offer => (
                               <OfferCard
@@ -1890,10 +1904,7 @@ function ClientAccordion({
           document.body,
         )}
       {upgradeDrawerOpen && (
-        <PlanDrawer
-          onClose={() => setUpgradeDrawerOpen(false)}
-          isPro={isPro}
-        />
+        <PlanDrawer onClose={() => setUpgradeDrawerOpen(false)} isPro={isPro} />
       )}
     </div>
   );
@@ -2135,7 +2146,10 @@ export default function ExploreTab({
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
-              onResetFilters={() => { setMinScore(0); setSortBy('score'); }}
+              onResetFilters={() => {
+                setMinScore(0);
+                setSortBy('score');
+              }}
               defaultExpanded={true}
               selfMode={true}
             />
@@ -2162,7 +2176,10 @@ export default function ExploreTab({
                 cvGenerated={cvGenerated}
                 clGenerated={clGenerated}
                 onClientUpdate={handleClientUpdate}
-                onResetFilters={() => { setMinScore(0); setSortBy('score'); }}
+                onResetFilters={() => {
+                  setMinScore(0);
+                  setSortBy('score');
+                }}
               />
             ))
         )}
