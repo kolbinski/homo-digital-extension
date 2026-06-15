@@ -34,6 +34,7 @@ interface Props {
   clientId?: string;
   onClose?: () => void;
   onSaved?: (profile: Profile) => void;
+  onRematch?: () => void;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
 }
@@ -46,6 +47,7 @@ export default function WizardShell({
   clientId,
   onClose,
   onSaved,
+  onRematch,
   isOnboarding = false,
   onCloseComplete,
 }: Props) {
@@ -248,6 +250,7 @@ export default function WizardShell({
   }
 
   function handleRematch() {
+    onRematch?.();
     onClose?.();
     void (async () => {
       try {
@@ -260,6 +263,7 @@ export default function WizardShell({
           },
           body: JSON.stringify({
             profile_ready: true,
+            profile_editing_snapshot: null,
             ...(clientId ? { client_id: clientId } : {}),
           }),
         });

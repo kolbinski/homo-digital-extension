@@ -2665,6 +2665,7 @@ function ClientAccordion({
                 onChange={setWizardProfile}
                 clientId={client.id}
                 onClose={() => setProfileOpen(false)}
+                onRematch={() => setProfileReady(true)}
                 onSubmitted={() => setProfileOpen(false)}
                 onSaved={saved => {
                   const fn = saved.basic_info?.first_name ?? '';
