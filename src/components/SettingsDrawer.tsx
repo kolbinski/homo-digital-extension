@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowSquareOut, CheckCircle, X } from '@phosphor-icons/react';
+import { ArrowSquareOut, CheckCircle, CloudCheck, X } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import type { OAuthData } from '../hooks/useAuth';
@@ -102,6 +102,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     preferred_currency: string | null;
   } | null>(null);
   const [currencySaved, setCurrencySaved] = useState(false);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
   const [timezoneSaved, setTimezoneSaved] = useState(false);
   const [tzQuery, setTzQuery] = useState('');
   const [tzDropdownOpen, setTzDropdownOpen] = useState(false);
@@ -276,6 +277,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   async function handleCurrencyChange(value: string) {
     setAccountSettings(prev => prev ? { ...prev, preferred_currency: value } : prev);
+    setCurrencyLoading(true);
     try {
       const token = await getToken();
       const patchRes = await fetch(`${API_BASE_URL}/v1/account/settings`, {
@@ -286,7 +288,8 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       if (!patchRes.ok) return;
       const syncRes = await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ force_relevant_change: true }),
       });
       if (syncRes.status === 402) {
         const prev = prevCurrencyRef.current;
@@ -305,10 +308,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         chrome.storage.local.set({ offers_cleared: Date.now() });
         if (currencySavedTimerRef.current) clearTimeout(currencySavedTimerRef.current);
         setCurrencySaved(true);
-        currencySavedTimerRef.current = setTimeout(() => setCurrencySaved(false), 1000);
+        currencySavedTimerRef.current = setTimeout(() => setCurrencySaved(false), 5000);
       }
     } catch {
       // ignore
+    } finally {
+      setCurrencyLoading(false);
     }
   }
 
@@ -524,18 +529,26 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           Show offer salaries in currency
                         </label>
                         {currencySaved && (
-                          <CheckCircle size={13} weight="fill" className="text-green-500 shrink-0" />
+                          <CloudCheck size={13} weight="fill" className="text-green-500 shrink-0" />
                         )}
                       </div>
-                      <select
-                        value={accountSettings?.preferred_currency ?? 'USD'}
-                        onChange={e => void handleCurrencyChange(e.target.value)}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                      >
-                        {(generalSettings?.currencies ?? ['USD']).map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={accountSettings?.preferred_currency ?? 'USD'}
+                          onChange={e => void handleCurrencyChange(e.target.value)}
+                          disabled={currencyLoading}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {(generalSettings?.currencies ?? ['USD']).map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        {currencyLoading && (
+                          <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                            <Spinner size={12} className="text-gray-400" />
+                          </div>
+                        )}
+                      </div>
                       {showCurrencyLimitBanner && (
                         <PlanLimitBanner
                           onButtonClick={() => void handleBuyRematchFromSettings()}
