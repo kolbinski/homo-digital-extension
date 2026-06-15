@@ -2167,7 +2167,7 @@ function ClientAccordion({
                   onClose={() => setShowSalaryDeltaBanner(false)}
                 >
                   <p className="text-xs text-gray-500">
-                    Sorting by salary delta is a Pro feature.
+                    Sorting by biggest pay raise is not available in Free plan.
                   </p>
                 </PlanLimitBanner>
               )}
@@ -3008,7 +3008,7 @@ export default function ExploreTab({
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Generated:</span>
+              <span className="text-xs text-gray-500">With:</span>
               <label className="flex items-center gap-1 cursor-pointer">
                 <input
                   type="checkbox"
@@ -3036,7 +3036,7 @@ export default function ExploreTab({
                 className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="score">Score</option>
-                <option value="salary_delta">Salary delta</option>
+                <option value="salary_delta">Biggest pay raise</option>
               </select>
             </div>
           </div>
