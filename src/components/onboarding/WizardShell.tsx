@@ -543,8 +543,8 @@ export default function WizardShell({
             }}
           >
             <p className="text-xs text-gray-500">
-              You've reached your profile re-match limit. Buy more edits to keep
-              matching offers.
+              You've reached your limit for re-matching offers based on profile
+              changes. Buy more edits to keep matching offers.
             </p>
           </PlanLimitBanner>
         )}
