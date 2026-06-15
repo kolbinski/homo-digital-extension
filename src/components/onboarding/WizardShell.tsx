@@ -6,6 +6,7 @@ import {
   CloudLightning,
   Gear,
   QuestionIcon,
+  WarningCircle,
   X,
 } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
@@ -133,9 +134,17 @@ export default function WizardShell({
       });
       let syncTriggered = false;
       if (res.ok && profileReady) {
-        const data = (await res.json()) as { matching_relevant_change?: boolean };
-        console.log('[wizard close] matching_relevant_change:', data.matching_relevant_change);
-        console.log('[wizard close] will trigger sync:', data.matching_relevant_change === true);
+        const data = (await res.json()) as {
+          matching_relevant_change?: boolean;
+        };
+        console.log(
+          '[wizard close] matching_relevant_change:',
+          data.matching_relevant_change,
+        );
+        console.log(
+          '[wizard close] will trigger sync:',
+          data.matching_relevant_change === true,
+        );
         if (data.matching_relevant_change) {
           syncTriggered = true;
           void fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
@@ -238,14 +247,86 @@ export default function WizardShell({
     }
   }
 
+  function handleRematch() {
+    onClose?.();
+    void (async () => {
+      try {
+        const token = await getAuthTokenRef.current();
+        const res = await fetch(`${API_BASE_URL}/v1/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            profile_ready: true,
+            ...(clientId ? { client_id: clientId } : {}),
+          }),
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        onSavedRef.current?.(profile);
+        await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+      } catch (err) {
+        console.error('[handleRematch]', err);
+      }
+    })();
+  }
+
+  function handleCancelEdit() {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    onSavedRef.current = undefined;
+    onClose?.();
+    void (async () => {
+      try {
+        const token = await getAuthTokenRef.current();
+        const res = await fetch(`${API_BASE_URL}/v1/profile/cancel-edit`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+      } catch (err) {
+        console.error('[handleCancelEdit]', err);
+      }
+    })();
+  }
+
+  const isEditMode = !isOnboarding && !!onClose;
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <span className="text-sm font-semibold text-gray-900">
-          Great jobs start with a great profile
+          {isEditMode
+            ? 'Edit profile'
+            : 'Great jobs start with a great profile'}
         </span>
-        {onClose ? (
+        {isEditMode ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Cancel changes
+            </button>
+            <button
+              type="button"
+              onClick={handleRematch}
+              disabled={totalErrors > 0 || autoSaveStatus === 'saving'}
+              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Re-match offers
+              {totalErrors > 0 && <WarningCircle size={14} weight="fill" className="text-red-500" />}
+            </button>
+          </div>
+        ) : onClose ? (
           <button
             type="button"
             onClick={handleClose}
@@ -253,9 +334,11 @@ export default function WizardShell({
             aria-label="Close"
             className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isClosing || autoSaveStatus === 'saving'
-              ? <Spinner size={14} className="text-gray-500" />
-              : <X size={16} />}
+            {isClosing || autoSaveStatus === 'saving' ? (
+              <Spinner size={14} className="text-gray-500" />
+            ) : (
+              <X size={16} />
+            )}
           </button>
         ) : onLogout ? (
           <button
@@ -437,7 +520,12 @@ export default function WizardShell({
             <button
               type="button"
               onClick={handleReview}
-              disabled={isReviewing || submitting || autoSaveStatus === 'saving' || totalErrors > 0}
+              disabled={
+                isReviewing ||
+                submitting ||
+                autoSaveStatus === 'saving' ||
+                totalErrors > 0
+              }
               title={totalErrors > 0 ? 'Fix all errors first' : undefined}
               className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
             >
