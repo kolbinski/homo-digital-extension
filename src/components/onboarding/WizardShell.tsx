@@ -288,10 +288,13 @@ export default function WizardShell({
           matching_relevant_change?: boolean;
         };
         if (patchData.matching_relevant_change === true) {
-          const syncRes = await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
-            method: 'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
+          const syncRes = await fetch(
+            `${API_BASE_URL}/v1/profile/trigger-sync`,
+            {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            },
+          );
           if (syncRes.status === 402) {
             onRematchLimitReachedRef.current?.();
           } else {
@@ -371,7 +374,13 @@ export default function WizardShell({
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Re-match offers
-              {totalErrors > 0 && <WarningCircle size={14} weight="fill" className="text-red-500" />}
+              {totalErrors > 0 && (
+                <WarningCircle
+                  size={14}
+                  weight="fill"
+                  className="text-red-500"
+                />
+              )}
             </button>
           </div>
         ) : onClose ? (
@@ -521,106 +530,111 @@ export default function WizardShell({
         />
       )}
 
-      {/* Rematch limit banner */}
-      {isEditMode && profileRematchPending && (
-        <PlanLimitBanner
-          onButtonClick={() => void handleBuyRematch()}
-          buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
-          withMX={false}
-        >
-          <p className="text-xs text-gray-500">
-            You've reached your profile re-match limit. Buy more edits to keep
-            matching offers.
-          </p>
-        </PlanLimitBanner>
-      )}
       {/* Footer */}
-      <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-2">
-        {/* Left: error / all-clear indicator */}
-        <div className="flex items-center">
-          {totalErrors > 0 ? (
-            <span
-              className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none font-medium"
-              style={{
-                fontSize: 11,
-                minWidth: 20,
-                height: 20,
-                padding: '0 4px',
-              }}
-            >
-              {totalErrors}
-            </span>
-          ) : (
-            <CheckCircle size={20} weight="fill" className="text-green-500" />
-          )}
-        </div>
+      <div className="shrink-0 bg-white border-t border-gray-200 flex flex-col">
+        {isEditMode && profileRematchPending && (
+          <PlanLimitBanner
+            onButtonClick={() => void handleBuyRematch()}
+            buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
+            styles={{
+              marginBottom: 0,
+              marginRight: 16,
+              marginLeft: 16,
+            }}
+          >
+            <p className="text-xs text-gray-500">
+              You've reached your profile re-match limit. Buy more edits to keep
+              matching offers.
+            </p>
+          </PlanLimitBanner>
+        )}
+        <div className="px-4 py-3 flex items-center gap-2">
+          {/* Left: error / all-clear indicator */}
+          <div className="flex items-center">
+            {totalErrors > 0 ? (
+              <span
+                className="inline-flex items-center justify-center rounded-full bg-red-500 text-white leading-none font-medium"
+                style={{
+                  fontSize: 11,
+                  minWidth: 20,
+                  height: 20,
+                  padding: '0 4px',
+                }}
+              >
+                {totalErrors}
+              </span>
+            ) : (
+              <CheckCircle size={20} weight="fill" className="text-green-500" />
+            )}
+          </div>
 
-        {/* Right: save status + Review + Submit grouped */}
-        <div className="flex-1 flex items-center justify-end gap-2">
-          <div className="flex items-center gap-1">
-            {autoSaveStatus === 'saving' && (
-              <>
-                <span className="text-sm text-gray-400">Saving</span>
-                <CloudArrowUp size={20} className="text-gray-400" />
-              </>
-            )}
-            {autoSaveStatus === 'saved' && (
-              <>
-                <span className="text-sm text-gray-400">Saved</span>
-                <CloudCheck size={20} className="text-gray-400" />
-              </>
-            )}
-            {autoSaveStatus === 'error' && (
-              <>
-                <span className="text-xs text-red-400">Save failed</span>
-                <CloudLightning size={15} className="text-red-400" />
-              </>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <button
-              type="button"
-              onClick={handleReview}
-              disabled={
-                isReviewing ||
-                submitting ||
-                autoSaveStatus === 'saving' ||
-                totalErrors > 0
-              }
-              title={totalErrors > 0 ? 'Fix all errors first' : undefined}
-              className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
-            >
-              {isReviewing ? (
+          {/* Right: save status + Review + Submit grouped */}
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <div className="flex items-center gap-1">
+              {autoSaveStatus === 'saving' && (
                 <>
-                  <Spinner size={14} className="text-white" />
-                  Reviewing
+                  <span className="text-sm text-gray-400">Saving</span>
+                  <CloudArrowUp size={20} className="text-gray-400" />
                 </>
-              ) : (
-                'Review by AI'
               )}
-            </button>
-            {reviewError && (
-              <span className="text-xs text-red-500">{reviewError}</span>
+              {autoSaveStatus === 'saved' && (
+                <>
+                  <span className="text-sm text-gray-400">Saved</span>
+                  <CloudCheck size={20} className="text-gray-400" />
+                </>
+              )}
+              {autoSaveStatus === 'error' && (
+                <>
+                  <span className="text-xs text-red-400">Save failed</span>
+                  <CloudLightning size={15} className="text-red-400" />
+                </>
+              )}
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                onClick={handleReview}
+                disabled={
+                  isReviewing ||
+                  submitting ||
+                  autoSaveStatus === 'saving' ||
+                  totalErrors > 0
+                }
+                title={totalErrors > 0 ? 'Fix all errors first' : undefined}
+                className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+              >
+                {isReviewing ? (
+                  <>
+                    <Spinner size={14} className="text-white" />
+                    Reviewing
+                  </>
+                ) : (
+                  'Review by AI'
+                )}
+              </button>
+              {reviewError && (
+                <span className="text-xs text-red-500">{reviewError}</span>
+              )}
+            </div>
+            {isOnboarding && (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={
+                  submitting ||
+                  !allComplete ||
+                  autoSaveStatus === 'saving' ||
+                  isReviewing
+                }
+                title={
+                  !allComplete ? 'Complete all required tabs first' : undefined
+                }
+                className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 flex items-center gap-1.5"
+              >
+                {submitting ? 'Submitting' : 'Submit'}
+              </button>
             )}
           </div>
-          {isOnboarding && (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={
-                submitting ||
-                !allComplete ||
-                autoSaveStatus === 'saving' ||
-                isReviewing
-              }
-              title={
-                !allComplete ? 'Complete all required tabs first' : undefined
-              }
-              className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 flex items-center gap-1.5"
-            >
-              {submitting ? 'Submitting' : 'Submit'}
-            </button>
-          )}
         </div>
       </div>
     </div>

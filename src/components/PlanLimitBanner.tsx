@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Lock, XCircle } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 
@@ -10,6 +11,7 @@ interface Props {
   withMX?: boolean;
   closable?: boolean;
   onClose?: () => void;
+  styles?: CSSProperties;
 }
 
 export default function PlanLimitBanner({
@@ -21,10 +23,12 @@ export default function PlanLimitBanner({
   withMX = true,
   closable = false,
   onClose,
+  styles = {},
 }: Props) {
   return (
     <div
       className={`${withMX ? 'mx-3' : ''} my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center relative`}
+      style={styles}
     >
       {closable && onClose && (
         <button
