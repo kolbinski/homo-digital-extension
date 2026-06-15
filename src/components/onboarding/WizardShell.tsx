@@ -35,6 +35,7 @@ interface Props {
   onClose?: () => void;
   onSaved?: (profile: Profile) => void;
   onRematch?: () => void;
+  onSyncTriggered?: () => void;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
 }
@@ -48,6 +49,7 @@ export default function WizardShell({
   onClose,
   onSaved,
   onRematch,
+  onSyncTriggered,
   isOnboarding = false,
   onCloseComplete,
 }: Props) {
@@ -66,6 +68,8 @@ export default function WizardShell({
   getAuthTokenRef.current = getToken;
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
+  const onSyncTriggeredRef = useRef(onSyncTriggered);
+  onSyncTriggeredRef.current = onSyncTriggered;
 
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
@@ -277,6 +281,7 @@ export default function WizardShell({
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
+          onSyncTriggeredRef.current?.();
         }
       } catch (err) {
         console.error('[handleRematch]', err);

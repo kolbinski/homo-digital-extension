@@ -2666,6 +2666,14 @@ function ClientAccordion({
                 clientId={client.id}
                 onClose={() => setProfileOpen(false)}
                 onRematch={() => setProfileReady(true)}
+                onSyncTriggered={() => {
+                  setApplyOffers([]);
+                  setLevelUpOffers([]);
+                  setApplyNowCount(null);
+                  setLevelUpCount(null);
+                  setApplyPage(1);
+                  setLevelUpPage(1);
+                }}
                 onSubmitted={() => setProfileOpen(false)}
                 onSaved={saved => {
                   const fn = saved.basic_info?.first_name ?? '';
