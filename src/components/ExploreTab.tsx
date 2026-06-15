@@ -1329,6 +1329,7 @@ function ClientAccordion({
         changes.profile_rematch_purchased.newValue !== undefined
       ) {
         setProfileRematchPending(false);
+        setProfileOpen(false);
         void (async () => {
           try {
             const token = await getToken();
