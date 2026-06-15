@@ -1476,9 +1476,13 @@ function ClientAccordion({
   useEffect(() => {
     if (!pageOffer) return;
     setTimeout(() => {
-      document
-        .getElementById('offer-on-this-page-section')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const el = document.getElementById('offer-on-this-page-section');
+      const scrollContainer = document.getElementById('main-scroll');
+      if (el && scrollContainer) {
+        const elTop = el.getBoundingClientRect().top;
+        const containerTop = scrollContainer.getBoundingClientRect().top;
+        scrollContainer.scrollBy({ top: elTop - containerTop - 8, behavior: 'smooth' });
+      }
     }, 100);
   }, [pageOffer]);
 
