@@ -30,14 +30,6 @@ interface BillingData {
   } | null;
 }
 
-interface BillingForm {
-  name: string;
-  line1: string;
-  city: string;
-  postal_code: string;
-  country: string;
-}
-
 interface BillingHistoryItem {
   date: string | number;
   description: string | null;
@@ -54,21 +46,6 @@ interface Props {
   onLogout: () => void;
 }
 
-const BILLING_FORM_FIELDS: { key: keyof BillingForm; label: string }[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'line1', label: 'Address' },
-  { key: 'city', label: 'City' },
-  { key: 'postal_code', label: 'Postal code' },
-  { key: 'country', label: 'Country' },
-];
-
-const EMPTY_BILLING_FORM: BillingForm = {
-  name: '',
-  line1: '',
-  city: '',
-  postal_code: '',
-  country: '',
-};
 
 function formatAmount(amount: number, currency: string): string {
   try {
@@ -110,12 +87,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   const [billingData, setBillingData] = useState<BillingData | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
-  const [billingEditMode, setBillingEditMode] = useState(false);
-  const [billingForm, setBillingForm] =
-    useState<BillingForm>(EMPTY_BILLING_FORM);
-  const [billingSaving, setBillingSaving] = useState(false);
-  const [billingSaveError, setBillingSaveError] = useState<string | null>(null);
-
   const [billingHistory, setBillingHistory] = useState<BillingHistoryItem[]>(
     [],
   );
@@ -252,70 +223,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     }
   }
 
-  function handleEditBilling() {
-    setBillingForm({
-      name: billingData?.name ?? '',
-      line1: billingData?.address?.line1 ?? '',
-      city: billingData?.address?.city ?? '',
-      postal_code: billingData?.address?.postal_code ?? '',
-      country: billingData?.address?.country ?? '',
-    });
-    setBillingSaveError(null);
-    setBillingEditMode(true);
-  }
-
-  function handleCancelBilling() {
-    setBillingEditMode(false);
-    setBillingSaveError(null);
-  }
-
-  function updateBillingField(field: keyof BillingForm, value: string) {
-    setBillingForm(prev => ({ ...prev, [field]: value }));
-  }
-
-  async function handleSaveBilling() {
-    setBillingSaving(true);
-    setBillingSaveError(null);
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/v1/account/billing`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token ?? ''}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: billingForm.name || null,
-          address: {
-            line1: billingForm.line1 || null,
-            city: billingForm.city || null,
-            postal_code: billingForm.postal_code || null,
-            country: billingForm.country || null,
-          },
-        }),
-      });
-      if (!res.ok) {
-        setBillingSaveError('Failed to save. Please try again.');
-        return;
-      }
-      setBillingData(prev => ({
-        name: billingForm.name || null,
-        email: prev?.email ?? null,
-        address: {
-          line1: billingForm.line1 || null,
-          city: billingForm.city || null,
-          postal_code: billingForm.postal_code || null,
-          country: billingForm.country || null,
-        },
-      }));
-      setBillingEditMode(false);
-    } catch {
-      setBillingSaveError('Network error. Please try again.');
-    } finally {
-      setBillingSaving(false);
-    }
-  }
-
   const isPro =
     subscription != null && subscription.plan_name.toLowerCase() !== 'free';
 
@@ -327,7 +234,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const billingViewRows: { label: string; value: string | null | undefined }[] =
     [
       { label: 'Name', value: billingData?.name },
-      { label: 'Email', value: billingData?.email },
       { label: 'Address', value: billingData?.address?.line1 },
       { label: 'City', value: billingData?.address?.city },
       { label: 'Postal code', value: billingData?.address?.postal_code },
@@ -408,69 +314,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
                   {/* Your billing data */}
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-gray-700">
-                        Your billing data
-                      </span>
-                      {!billingEditMode &&
-                        !billingLoading &&
-                        billingData !== null && (
-                          <button
-                            type="button"
-                            onClick={handleEditBilling}
-                            className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
-                          >
-                            Change
-                          </button>
-                        )}
-                    </div>
+                    <span className="text-xs font-semibold text-gray-700">
+                      Your billing data
+                    </span>
                     {billingLoading ? (
                       <div className="flex justify-center py-1">
                         <Spinner size={14} className="text-gray-400" />
-                      </div>
-                    ) : billingEditMode ? (
-                      <div className="flex flex-col gap-2">
-                        {BILLING_FORM_FIELDS.map(({ key, label }) => (
-                          <div key={key} className="flex flex-col gap-0.5">
-                            <label className="text-xs text-gray-500">
-                              {label}
-                            </label>
-                            <input
-                              type="text"
-                              value={billingForm[key]}
-                              onChange={e =>
-                                updateBillingField(key, e.target.value)
-                              }
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </div>
-                        ))}
-                        {billingSaveError && (
-                          <p className="text-xs text-red-600">
-                            {billingSaveError}
-                          </p>
-                        )}
-                        <div className="flex gap-2 mt-1">
-                          <button
-                            type="button"
-                            onClick={handleCancelBilling}
-                            disabled={billingSaving}
-                            className="flex-1 py-1.5 text-xs font-medium border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveBilling}
-                            disabled={billingSaving}
-                            className="flex-1 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1.5 disabled:opacity-50"
-                          >
-                            {billingSaving && (
-                              <Spinner size={11} className="text-white" />
-                            )}
-                            Save
-                          </button>
-                        </div>
                       </div>
                     ) : billingData === null ? (
                       <p className="text-xs text-gray-400">
@@ -542,6 +391,48 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       </div>
                     </div>
                   )}
+                </div>
+              </section>
+
+              {/* Your plan */}
+              <section className="flex flex-col gap-3">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Your plan
+                </h2>
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-2">
+                  {subscriptionLoading ? (
+                    <div className="flex justify-center">
+                      <Spinner size={16} className="text-gray-400" />
+                    </div>
+                  ) : subscriptionError ? (
+                    <p className="text-sm text-gray-500">
+                      Could not load plan info
+                    </p>
+                  ) : subscription ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-900">
+                          {subscription.plan_name
+                            ? subscription.plan_name.charAt(0).toUpperCase() +
+                              subscription.plan_name.slice(1)
+                            : 'Free'}
+                        </span>
+                        {subscription.current_period_end && (
+                          <span className="text-xs text-gray-500">
+                            Ends at{' '}
+                            {subscription.current_period_end.slice(0, 10)}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setManagePlanOpen(true)}
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-start"
+                      >
+                        Manage your plan
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </section>
 
@@ -698,48 +589,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     </button>
                   </>
                 )}
-              </section>
-
-              {/* Your plan */}
-              <section className="flex flex-col gap-3">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Your plan
-                </h2>
-                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-2">
-                  {subscriptionLoading ? (
-                    <div className="flex justify-center">
-                      <Spinner size={16} className="text-gray-400" />
-                    </div>
-                  ) : subscriptionError ? (
-                    <p className="text-sm text-gray-500">
-                      Could not load plan info
-                    </p>
-                  ) : subscription ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900">
-                          {subscription.plan_name
-                            ? subscription.plan_name.charAt(0).toUpperCase() +
-                              subscription.plan_name.slice(1)
-                            : 'Free'}
-                        </span>
-                        {subscription.current_period_end && (
-                          <span className="text-xs text-gray-500">
-                            Ends at{' '}
-                            {subscription.current_period_end.slice(0, 10)}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setManagePlanOpen(true)}
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-start"
-                      >
-                        Manage your plan
-                      </button>
-                    </>
-                  ) : null}
-                </div>
               </section>
             </div>
           </>
