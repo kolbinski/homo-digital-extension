@@ -2668,6 +2668,7 @@ function ClientAccordion({
                 clientId={client.id}
                 onClose={() => setProfileOpen(false)}
                 onRematch={() => setProfileReady(true)}
+                onCancelEdit={() => setProfileReady(true)}
                 onSyncTriggered={() => {
                   setApplyOffers([]);
                   setLevelUpOffers([]);

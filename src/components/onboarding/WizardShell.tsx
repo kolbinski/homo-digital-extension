@@ -35,6 +35,7 @@ interface Props {
   onClose?: () => void;
   onSaved?: (profile: Profile) => void;
   onRematch?: () => void;
+  onCancelEdit?: () => void;
   onSyncTriggered?: () => void;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
@@ -49,6 +50,7 @@ export default function WizardShell({
   onClose,
   onSaved,
   onRematch,
+  onCancelEdit,
   onSyncTriggered,
   isOnboarding = false,
   onCloseComplete,
@@ -295,6 +297,7 @@ export default function WizardShell({
       autoSaveTimerRef.current = null;
     }
     onSavedRef.current = undefined;
+    onCancelEdit?.();
     onClose?.();
     void (async () => {
       try {
