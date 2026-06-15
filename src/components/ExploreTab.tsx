@@ -1546,6 +1546,10 @@ function ClientAccordion({
     const params = new URLSearchParams({ status: 'pending_apply|ai_rejected' });
     if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
+    params.append('min_score', String(minScore));
+    if (cvGenerated) params.append('generated_cv', 'true');
+    if (clGenerated) params.append('generated_cl', 'true');
+    if (!(sortBy === 'salary_delta' && !isPro)) params.append('sort_by', sortBy);
     params.append('page', String(page));
     params.append('page_size', String(pageSize));
     try {
@@ -1573,6 +1577,10 @@ function ClientAccordion({
     const params = new URLSearchParams({ status });
     if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
+    params.append('min_score', String(minScore));
+    if (cvGenerated) params.append('generated_cv', 'true');
+    if (clGenerated) params.append('generated_cl', 'true');
+    if (!(sortBy === 'salary_delta' && !isPro)) params.append('sort_by', sortBy);
     params.append('page', String(page));
     params.append('page_size', String(pageSize));
     try {
@@ -2691,6 +2699,8 @@ export default function ExploreTab({
   const [cvGenerated, setCvGenerated] = useState(false);
   const [clGenerated, setClGenerated] = useState(false);
   const [minScore, setMinScore] = useState(75);
+  const [debouncedMinScore, setDebouncedMinScore] = useState(75);
+  const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -2723,9 +2733,17 @@ export default function ExploreTab({
     if (typeof chrome === 'undefined' || !chrome.storage) return;
     chrome.storage.local.get('hd_min_score', result => {
       if (chrome.runtime.lastError) return;
-      if (result.hd_min_score !== undefined)
+      if (result.hd_min_score !== undefined) {
         setMinScore(result.hd_min_score as number);
+        setDebouncedMinScore(result.hd_min_score as number);
+      }
     });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (minScoreDebounceRef.current) clearTimeout(minScoreDebounceRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -2769,9 +2787,13 @@ export default function ExploreTab({
 
   function handleMinScoreChange(value: number) {
     setMinScore(value);
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.set({ hd_min_score: value });
-    }
+    if (minScoreDebounceRef.current) clearTimeout(minScoreDebounceRef.current);
+    minScoreDebounceRef.current = setTimeout(() => {
+      setDebouncedMinScore(value);
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.set({ hd_min_score: value });
+      }
+    }, 400);
   }
 
   useEffect(() => {
@@ -2910,7 +2932,7 @@ export default function ExploreTab({
               sortBy={sortBy}
               statusFilter={statusFilter}
               sourceFilter={sourceFilter}
-              minScore={minScore}
+              minScore={debouncedMinScore}
               cvGenerated={cvGenerated}
               clGenerated={clGenerated}
               onClientUpdate={handleClientUpdate}
@@ -2937,7 +2959,7 @@ export default function ExploreTab({
                 sortBy={sortBy}
                 statusFilter={statusFilter}
                 sourceFilter={sourceFilter}
-                minScore={minScore}
+                minScore={debouncedMinScore}
                 cvGenerated={cvGenerated}
                 clGenerated={clGenerated}
                 onClientUpdate={handleClientUpdate}
