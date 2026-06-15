@@ -237,7 +237,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       {
         label: 'Address',
         value:
-          `${billingData?.address?.line1} ${billingData?.address?.line2}`.trim(),
+          `${billingData?.address?.line1 ?? ''} ${billingData?.address?.line2 ?? ''}`.trim(),
       },
       { label: 'City', value: billingData?.address?.city },
       { label: 'Postal code', value: billingData?.address?.postal_code },
