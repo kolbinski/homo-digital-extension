@@ -1268,6 +1268,7 @@ function ClientAccordion({
   const [statusLoadingMore, setStatusLoadingMore] = useState(false);
   const manualPageOfferRef = useRef(false);
   const manualPageOfferUrlRef = useRef<string | null>(null);
+  const pageOfferSectionRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1476,14 +1477,8 @@ function ClientAccordion({
   useEffect(() => {
     if (!pageOffer) return;
     setTimeout(() => {
-      const el = document.getElementById('offer-on-this-page-section');
-      const scrollContainer = document.getElementById('main-scroll');
-      if (el && scrollContainer) {
-        const elTop = el.getBoundingClientRect().top;
-        const containerTop = scrollContainer.getBoundingClientRect().top;
-        scrollContainer.scrollBy({ top: elTop - containerTop - 8, behavior: 'smooth' });
-      }
-    }, 100);
+      pageOfferSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
   }, [pageOffer]);
 
   useEffect(() => {
@@ -2150,6 +2145,7 @@ function ClientAccordion({
               {pageOffer && (
                 <div className="border-b border-gray-100">
                   <button
+                    ref={pageOfferSectionRef}
                     id="offer-on-this-page-section"
                     type="button"
                     onClick={() => setPageOfferOpen(v => !v)}
