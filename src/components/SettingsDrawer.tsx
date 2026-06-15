@@ -334,6 +334,8 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   }
 
   async function handleCurrencyChange(value: string) {
+    setShowCurrencyLimitBanner(false);
+    setPendingCurrency(null);
     setAccountSettings(prev =>
       prev ? { ...prev, preferred_currency: value } : prev,
     );
