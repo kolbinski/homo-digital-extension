@@ -542,6 +542,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   const isPro =
     subscription != null && subscription.plan_name.toLowerCase() !== 'free';
+  const isAdmin = subscription?.is_admin === true;
 
   const firstName = oauthData?.oauth_first_name ?? '';
   const lastName = oauthData?.oauth_last_name ?? '';
@@ -1021,7 +1022,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </section>
 
               {/* Feedback */}
-              <section className="flex flex-col gap-3">
+              {!isAdmin && <section className="flex flex-col gap-3">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Feedback
                 </h2>
@@ -1056,10 +1057,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     </button>
                   </>
                 )}
-              </section>
+              </section>}
 
               {/* AI Usage — admin only */}
-              {subscription?.is_admin && (
+              {isAdmin && (
                 <section className="flex flex-col gap-3">
                   <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     AI Usage
