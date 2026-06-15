@@ -249,8 +249,22 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   useEffect(() => {
     function listener(changes: Record<string, chrome.storage.StorageChange>) {
+      if (
+        'upgrade_cancelled' in changes &&
+        changes.upgrade_cancelled.newValue !== undefined
+      ) {
+        setCheckoutLoading(false);
+        setShowCurrencyLimitBanner(false);
+        setPendingCurrency(null);
+      }
+
       const anyPurchase = (
-        ['scan_package_purchased', 'cv_package_purchased', 'cl_package_purchased', 'profile_rematch_purchased'] as const
+        [
+          'scan_package_purchased',
+          'cv_package_purchased',
+          'cl_package_purchased',
+          'profile_rematch_purchased',
+        ] as const
       ).some(key => key in changes && changes[key].newValue !== undefined);
       if (!anyPurchase) return;
 
@@ -659,8 +673,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           onClose={() => setShowCurrencyLimitBanner(false)}
                         >
                           <p className="text-xs text-gray-500">
-                            You've reached your profile re-match limit. Buy more
-                            edits to keep matching offers.
+                            You've reached your limit for re-matching offers
+                            based on profile changes. Buy more edits to keep
+                            matching offers.
                           </p>
                         </PlanLimitBanner>
                       )}
@@ -860,7 +875,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         max: subscription.cl_counter_max ?? 0,
                       },
                       {
-                        label: 'Profile re-matches',
+                        label: 'Profile-based offer re-matching',
                         counter:
                           subscription.profile_relevant_change_counter ?? 0,
                         max:

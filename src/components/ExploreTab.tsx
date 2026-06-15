@@ -1307,6 +1307,12 @@ function ClientAccordion({
         void checkSubscription();
       }
       if (
+        'upgrade_cancelled' in changes &&
+        changes.upgrade_cancelled.newValue !== undefined
+      ) {
+        setUpgradeDrawerOpen(false);
+      }
+      if (
         'scan_package_purchased' in changes &&
         changes.scan_package_purchased.newValue !== undefined
       ) {

@@ -25,6 +25,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     chrome.storage.local.set({ profile_rematch_purchased: Date.now() })
     return
   }
+  if (tab.url?.includes('upgrade=cancelled')) {
+    chrome.tabs.remove(tabId)
+    chrome.storage.local.set({ upgrade_cancelled: Date.now() })
+    return
+  }
   if (!tab.url?.includes('upgrade=success')) return
   chrome.tabs.remove(tabId)
   chrome.storage.local.set({ upgrade_success: Date.now() })
