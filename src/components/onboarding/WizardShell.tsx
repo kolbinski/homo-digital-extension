@@ -269,10 +269,15 @@ export default function WizardShell({
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         onSavedRef.current?.(profile);
-        await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const patchData = (await res.json()) as {
+          matching_relevant_change?: boolean;
+        };
+        if (patchData.matching_relevant_change === true) {
+          await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+        }
       } catch (err) {
         console.error('[handleRematch]', err);
       }
