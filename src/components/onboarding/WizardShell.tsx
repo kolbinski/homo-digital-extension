@@ -82,6 +82,24 @@ export default function WizardShell({
   const onRematchLimitReachedRef = useRef(onRematchLimitReached);
   onRematchLimitReachedRef.current = onRematchLimitReached;
 
+  const [preferredCurrency, setPreferredCurrency] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const token = await getAuthTokenRef.current();
+        const res = await fetch(`${API_BASE_URL}/v1/account/settings`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { preferred_currency: string | null };
+        if (data.preferred_currency) setPreferredCurrency(data.preferred_currency);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
   const activeCompletion = completions.find(t => t.id === activeTab)!;
@@ -510,6 +528,7 @@ export default function WizardShell({
           <PreferencesTab
             preferences={profile.preferences}
             onChange={preferences => onChange({ ...profile, preferences })}
+            preferredCurrency={preferredCurrency}
           />
         ) : activeTab === 'red_flags' ? (
           <RedFlagsTab

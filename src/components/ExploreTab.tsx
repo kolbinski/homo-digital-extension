@@ -2772,6 +2772,19 @@ function ClientAccordion({
                     setLevelUpCount(null);
                     setApplyPage(1);
                     setLevelUpPage(1);
+                    const currency = wizardProfile?.preferences?.salary[0]?.currency;
+                    if (currency) {
+                      void (async () => {
+                        try {
+                          const token = await getToken();
+                          await fetch(`${API_BASE_URL}/v1/account/settings`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                            body: JSON.stringify({ preferred_currency: currency }),
+                          });
+                        } catch { /* ignore */ }
+                      })();
+                    }
                   }}
                   onSubmitted={closeWizard}
                   onSaved={saved => {

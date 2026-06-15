@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  CheckCircle,
   DotsSixVertical,
   Plus,
   Trash,
@@ -10,11 +9,12 @@ import {
 import { API_BASE_URL } from '../../../config';
 import { useGeneralSettings } from '../../../store/generalSettingsStore';
 import Spinner from '../../Spinner';
-import type { ProfilePreferences, SalaryEntry } from '../types';
+import type { ProfilePreferences } from '../types';
 
 interface Props {
   preferences: ProfilePreferences;
   onChange: (preferences: ProfilePreferences) => void;
+  preferredCurrency?: string;
 }
 
 const inputClass =
@@ -101,6 +101,7 @@ function labelFor(val: string): string {
 export default function PreferencesTab({
   preferences: prefs,
   onChange,
+  preferredCurrency,
 }: Props) {
   const [cityInput, setCityInput] = useState('');
   const [industryInput, setIndustryInput] = useState('');
@@ -129,25 +130,59 @@ export default function PreferencesTab({
     prefs.work_model.includes('hybrid') || prefs.work_model.includes('office');
 
   // ── Salary ──────────────────────────────────────────────────────────────
-  function updateSalary(idx: number, patch: Partial<SalaryEntry>) {
-    onChange({
-      ...prefs,
-      salary: prefs.salary.map((s, i) => (i === idx ? { ...s, ...patch } : s)),
-    });
+  const contractEntry = prefs.salary.find(s => s.type === 'contract');
+  const permanentEntry = prefs.salary.find(s => s.type === 'permanent');
+  const contractChecked = !!contractEntry;
+  const contractMin = contractEntry?.min ?? 0;
+  const permanentChecked = !!permanentEntry;
+  const permanentMin = permanentEntry?.min ?? 0;
+  const noneChecked = !contractChecked && !permanentChecked;
+
+  const [sharedCurrency, setSharedCurrency] = useState<string>(
+    () => prefs.salary[0]?.currency ?? preferredCurrency ?? currencies[0] ?? 'USD',
+  );
+
+  useEffect(() => {
+    if (prefs.salary.length === 0 && preferredCurrency) {
+      setSharedCurrency(preferredCurrency);
+    }
+  }, [preferredCurrency]);
+
+  useEffect(() => {
+    if (prefs.salary.length > 0) {
+      setSharedCurrency(prefs.salary[0].currency);
+    }
+  }, [prefs.salary]);
+
+  function handleContractCheck(checked: boolean) {
+    if (checked) {
+      const without = prefs.salary.filter(s => s.type !== 'contract');
+      onChange({ ...prefs, salary: [...without, { type: 'contract', min: contractMin, currency: sharedCurrency }] });
+    } else {
+      onChange({ ...prefs, salary: prefs.salary.filter(s => s.type !== 'contract') });
+    }
   }
 
-  function addSalary() {
-    onChange({
-      ...prefs,
-      salary: [
-        ...prefs.salary,
-        { type: 'contract', currency: currencies[0] ?? '', min: 0 },
-      ],
-    });
+  function handlePermanentCheck(checked: boolean) {
+    if (checked) {
+      const without = prefs.salary.filter(s => s.type !== 'permanent');
+      onChange({ ...prefs, salary: [...without, { type: 'permanent', min: permanentMin, currency: sharedCurrency }] });
+    } else {
+      onChange({ ...prefs, salary: prefs.salary.filter(s => s.type !== 'permanent') });
+    }
   }
 
-  function removeSalary(idx: number) {
-    onChange({ ...prefs, salary: prefs.salary.filter((_, i) => i !== idx) });
+  function handleContractMin(val: number) {
+    onChange({ ...prefs, salary: prefs.salary.map(s => s.type === 'contract' ? { ...s, min: val } : s) });
+  }
+
+  function handlePermanentMin(val: number) {
+    onChange({ ...prefs, salary: prefs.salary.map(s => s.type === 'permanent' ? { ...s, min: val } : s) });
+  }
+
+  function handleSalaryCurrency(val: string) {
+    setSharedCurrency(val);
+    onChange({ ...prefs, salary: prefs.salary.map(s => ({ ...s, currency: val })) });
   }
 
   // ── Target role ──────────────────────────────────────────────────────────
@@ -327,77 +362,65 @@ export default function PreferencesTab({
       <Section
         title="Salary expectations"
         badge={
-          prefs.salary.length === 0 ? (
-            <XCircle
-              size={16}
-              weight="fill"
-              className="text-red-400 shrink-0"
-            />
+          noneChecked ? (
+            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
           ) : undefined
         }
       >
         <div className="flex flex-col gap-2">
-          {prefs.salary.map((row, i) => (
-            <div key={i} className="flex items-center gap-2 flex-wrap">
-              <div className="flex gap-1 shrink-0">
-                {(['contract', 'permanent'] as const).map(t => (
-                  <Chip
-                    key={t}
-                    label={t === 'contract' ? 'Contr' : 'Perm'}
-                    selected={row.type === t}
-                    onClick={() => updateSalary(i, { type: t })}
-                  />
-                ))}
-              </div>
-              <select
-                value={row.currency}
-                onChange={e => updateSalary(i, { currency: e.target.value })}
-                className={selectClass}
-              >
-                {currencies.map(c => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                value={row.min || ''}
-                onChange={e => updateSalary(i, { min: Number(e.target.value) })}
-                placeholder="Min"
-                className="px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                style={{ width: 85 }}
-              />
-              <span className="shrink-0">
-                {row.min ? (
-                  <CheckCircle
-                    size={18}
-                    weight="fill"
-                    className="text-green-500"
-                  />
-                ) : (
-                  <XCircle size={18} weight="fill" className="text-red-400" />
+          {([['contract', 'Contract'], ['permanent', 'Permanent']] as const).map(([type, label]) => {
+            const isChecked = type === 'contract' ? contractChecked : permanentChecked;
+            const minVal = type === 'contract' ? contractMin : permanentMin;
+            const handleCheck = type === 'contract' ? handleContractCheck : handlePermanentCheck;
+            const handleMin = type === 'contract' ? handleContractMin : handlePermanentMin;
+            const hasMinError = isChecked && minVal <= 0;
+            return (
+              <div key={type} className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="checkbox"
+                  id={`salary-${type}`}
+                  checked={isChecked}
+                  onChange={e => handleCheck(e.target.checked)}
+                  className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
+                />
+                <label
+                  htmlFor={`salary-${type}`}
+                  className="text-sm text-gray-700 shrink-0 cursor-pointer w-20"
+                >
+                  {label}
+                </label>
+                {isChecked && (
+                  <>
+                    <input
+                      type="number"
+                      value={minVal || ''}
+                      onChange={e => handleMin(Number(e.target.value))}
+                      placeholder="Min salary"
+                      min={1}
+                      className={`px-2.5 py-1.5 border ${hasMinError ? 'border-red-400' : 'border-gray-300'} rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      style={{ width: 110 }}
+                    />
+                    <select
+                      value={sharedCurrency}
+                      onChange={e => handleSalaryCurrency(e.target.value)}
+                      className={selectClass}
+                    >
+                      {(currencies.length > 0 ? currencies : ['USD']).map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    {hasMinError && (
+                      <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+                    )}
+                  </>
                 )}
-              </span>
-              <button
-                type="button"
-                onClick={() => removeSalary(i)}
-                aria-label="Remove salary row"
-                className="text-red-400 hover:text-red-600 transition-colors shrink-0"
-              >
-                <Trash size={18} />
-              </button>
-            </div>
-          ))}
+              </div>
+            );
+          })}
+          {noneChecked && (
+            <p className="text-xs text-red-500">Select at least one salary type</p>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={addSalary}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors w-fit"
-        >
-          <Plus size={16} />
-          Add salary expectation
-        </button>
       </Section>
 
       {/* Work model */}

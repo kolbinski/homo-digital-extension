@@ -400,6 +400,29 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         setPendingCurrency(null);
         setShowCurrencyLimitBanner(false);
         chrome.storage.local.set({ offers_cleared: Date.now() });
+        void (async () => {
+          try {
+            const profileRes = await fetch(`${API_BASE_URL}/v1/profile`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!profileRes.ok) return;
+            const profileData = (await profileRes.json()) as {
+              preferences?: { salary?: { type: string; min: number; currency: string }[] };
+            };
+            const salary = profileData.preferences?.salary;
+            if (!salary || salary.length === 0) return;
+            await fetch(`${API_BASE_URL}/v1/profile`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+              body: JSON.stringify({
+                preferences: {
+                  ...profileData.preferences,
+                  salary: salary.map(s => ({ ...s, currency: value })),
+                },
+              }),
+            });
+          } catch { /* ignore */ }
+        })();
         if (currencySavedTimerRef.current)
           clearTimeout(currencySavedTimerRef.current);
         setCurrencySaved(true);
