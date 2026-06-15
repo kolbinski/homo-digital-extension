@@ -11,6 +11,12 @@ interface SubscriptionStatus {
   plan_name: string;
   current_period_end: string | null;
   status: 'active' | 'cancelling' | 'free';
+  scan_page_counter?: number;
+  scan_page_counter_max?: number;
+  cv_counter?: number;
+  cv_counter_max?: number;
+  cl_counter?: number;
+  cl_counter_max?: number;
 }
 
 interface BillingData {
@@ -84,7 +90,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const { getToken, getOAuthData } = useAuth();
   const [visible, setVisible] = useState(false);
 
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
+    null,
+  );
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [subscriptionError, setSubscriptionError] = useState(false);
   const [managePlanOpen, setManagePlanOpen] = useState(false);
@@ -103,11 +111,14 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [billingData, setBillingData] = useState<BillingData | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
   const [billingEditMode, setBillingEditMode] = useState(false);
-  const [billingForm, setBillingForm] = useState<BillingForm>(EMPTY_BILLING_FORM);
+  const [billingForm, setBillingForm] =
+    useState<BillingForm>(EMPTY_BILLING_FORM);
   const [billingSaving, setBillingSaving] = useState(false);
   const [billingSaveError, setBillingSaveError] = useState<string | null>(null);
 
-  const [billingHistory, setBillingHistory] = useState<BillingHistoryItem[]>([]);
+  const [billingHistory, setBillingHistory] = useState<BillingHistoryItem[]>(
+    [],
+  );
   const [billingHistoryLoading, setBillingHistoryLoading] = useState(true);
 
   useEffect(() => {
@@ -122,7 +133,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       const res = await fetch(`${API_BASE_URL}/v1/subscription/status`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) { setSubscriptionError(true); return; }
+      if (!res.ok) {
+        setSubscriptionError(true);
+        return;
+      }
       const data = (await res.json()) as SubscriptionStatus;
       setSubscription(data);
     } catch {
@@ -151,7 +165,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         const res = await fetch(`${API_BASE_URL}/v1/account/billing`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        if (!res.ok) { setBillingData(null); return; }
+        if (!res.ok) {
+          setBillingData(null);
+          return;
+        }
         const data = (await res.json()) as { billing_data: BillingData };
         setBillingData(data.billing_data ?? null);
       } catch {
@@ -170,8 +187,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         const res = await fetch(`${API_BASE_URL}/v1/billing/history`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        if (!res.ok) { setBillingHistory([]); return; }
-        const data = (await res.json()) as { history: BillingHistoryItem[] } | BillingHistoryItem[];
+        if (!res.ok) {
+          setBillingHistory([]);
+          return;
+        }
+        const data = (await res.json()) as
+          | { history: BillingHistoryItem[] }
+          | BillingHistoryItem[];
         setBillingHistory(Array.isArray(data) ? data : (data.history ?? []));
       } catch {
         setBillingHistory([]);
@@ -200,7 +222,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         },
         body: JSON.stringify({ message: message.trim(), source: 'extension' }),
       });
-      if (!res.ok) { setFeedbackError('Something went wrong. Please try again.'); return; }
+      if (!res.ok) {
+        setFeedbackError('Something went wrong. Please try again.');
+        return;
+      }
       setMessage('');
       setFeedbackSent(true);
     } catch {
@@ -269,7 +294,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           },
         }),
       });
-      if (!res.ok) { setBillingSaveError('Failed to save. Please try again.'); return; }
+      if (!res.ok) {
+        setBillingSaveError('Failed to save. Please try again.');
+        return;
+      }
       setBillingData(prev => ({
         name: billingForm.name || null,
         email: prev?.email ?? null,
@@ -296,14 +324,15 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const initials =
     ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || '?';
 
-  const billingViewRows: { label: string; value: string | null | undefined }[] = [
-    { label: 'Name', value: billingData?.name },
-    { label: 'Email', value: billingData?.email },
-    { label: 'Address', value: billingData?.address?.line1 },
-    { label: 'City', value: billingData?.address?.city },
-    { label: 'Postal code', value: billingData?.address?.postal_code },
-    { label: 'Country', value: billingData?.address?.country },
-  ];
+  const billingViewRows: { label: string; value: string | null | undefined }[] =
+    [
+      { label: 'Name', value: billingData?.name },
+      { label: 'Email', value: billingData?.email },
+      { label: 'Address', value: billingData?.address?.line1 },
+      { label: 'City', value: billingData?.address?.city },
+      { label: 'Postal code', value: billingData?.address?.postal_code },
+      { label: 'Country', value: billingData?.address?.country },
+    ];
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -383,15 +412,17 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       <span className="text-xs font-semibold text-gray-700">
                         Your billing data
                       </span>
-                      {!billingEditMode && !billingLoading && billingData !== null && (
-                        <button
-                          type="button"
-                          onClick={handleEditBilling}
-                          className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
-                        >
-                          Change
-                        </button>
-                      )}
+                      {!billingEditMode &&
+                        !billingLoading &&
+                        billingData !== null && (
+                          <button
+                            type="button"
+                            onClick={handleEditBilling}
+                            className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                          >
+                            Change
+                          </button>
+                        )}
                     </div>
                     {billingLoading ? (
                       <div className="flex justify-center py-1">
@@ -401,17 +432,23 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       <div className="flex flex-col gap-2">
                         {BILLING_FORM_FIELDS.map(({ key, label }) => (
                           <div key={key} className="flex flex-col gap-0.5">
-                            <label className="text-xs text-gray-500">{label}</label>
+                            <label className="text-xs text-gray-500">
+                              {label}
+                            </label>
                             <input
                               type="text"
                               value={billingForm[key]}
-                              onChange={e => updateBillingField(key, e.target.value)}
+                              onChange={e =>
+                                updateBillingField(key, e.target.value)
+                              }
                               className="w-full px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                           </div>
                         ))}
                         {billingSaveError && (
-                          <p className="text-xs text-red-600">{billingSaveError}</p>
+                          <p className="text-xs text-red-600">
+                            {billingSaveError}
+                          </p>
                         )}
                         <div className="flex gap-2 mt-1">
                           <button
@@ -428,21 +465,31 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                             disabled={billingSaving}
                             className="flex-1 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1.5 disabled:opacity-50"
                           >
-                            {billingSaving && <Spinner size={11} className="text-white" />}
+                            {billingSaving && (
+                              <Spinner size={11} className="text-white" />
+                            )}
                             Save
                           </button>
                         </div>
                       </div>
                     ) : billingData === null ? (
                       <p className="text-xs text-gray-400">
-                        You haven't made any purchases yet. Your billing data will appear here after your first purchase.
+                        You haven't made any purchases yet. Your billing data
+                        will appear here after your first purchase.
                       </p>
                     ) : (
                       <div className="flex flex-col gap-1">
                         {billingViewRows.map(({ label, value }) => (
-                          <div key={label} className="flex justify-between gap-2 text-xs">
-                            <span className="text-gray-500 shrink-0">{label}</span>
-                            <span className={`text-right ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+                          <div
+                            key={label}
+                            className="flex justify-between gap-2 text-xs"
+                          >
+                            <span className="text-gray-500 shrink-0">
+                              {label}
+                            </span>
+                            <span
+                              className={`text-right ${value ? 'text-gray-900' : 'text-gray-400'}`}
+                            >
                               {value ?? 'Not set'}
                             </span>
                           </div>
@@ -498,6 +545,63 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                 </div>
               </section>
 
+              {/* Usage */}
+              <section className="flex flex-col gap-3">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Usage
+                </h2>
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-3">
+                  {subscriptionLoading ? (
+                    <div className="flex justify-center">
+                      <Spinner size={16} className="text-gray-400" />
+                    </div>
+                  ) : subscription ? (
+                    [
+                      {
+                        label: 'Page scans',
+                        counter: subscription.scan_page_counter ?? 0,
+                        max: subscription.scan_page_counter_max ?? 0,
+                      },
+                      {
+                        label: 'CV generations',
+                        counter: subscription.cv_counter ?? 0,
+                        max: subscription.cv_counter_max ?? 0,
+                      },
+                      {
+                        label: 'Cover letters',
+                        counter: subscription.cl_counter ?? 0,
+                        max: subscription.cl_counter_max ?? 0,
+                      },
+                    ].map(({ label, counter, max }) => {
+                      const pct =
+                        max === 0 ? 0 : Math.round((100 * counter) / max);
+                      const barColor =
+                        pct >= 100
+                          ? 'bg-red-500'
+                          : pct >= 80
+                            ? 'bg-orange-400'
+                            : 'bg-green-500';
+                      return (
+                        <div key={label} className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-600">{label}</span>
+                            <span className="text-gray-500 font-medium">
+                              {pct}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${barColor} transition-all`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : null}
+                </div>
+              </section>
+
               {/* Billing history */}
               <section className="flex flex-col gap-3">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -515,9 +619,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   ) : (
                     billingHistory.map((item, i) => {
                       const link =
-                        item.invoice_pdf ?? item.receipt_url ?? item.hosted_invoice_url ?? null;
-                      const isPaid =
-                        item.status === 'paid' || item.status === 'succeeded';
+                        item.invoice_pdf ??
+                        item.receipt_url ??
+                        item.hosted_invoice_url ??
+                        null;
                       return (
                         <div
                           key={i}
@@ -525,7 +630,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         >
                           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                             <span className="text-gray-900 font-medium truncate">
-                              {item.description ?? '—'}
+                              {item.description
+                                ?.replace('Homo Digital', '')
+                                .trim() ?? '—'}
                             </span>
                             <span className="text-gray-400">
                               {formatDate(item.date)}
@@ -535,15 +642,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                             <span className="text-gray-900 font-medium">
                               {formatAmount(item.amount, item.currency)}
                             </span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${isPaid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-                            >
-                              {isPaid ? 'Paid' : item.status}
-                            </span>
                             {link && (
                               <button
                                 type="button"
-                                onClick={() => chrome.tabs.create({ url: link })}
+                                onClick={() =>
+                                  chrome.tabs.create({ url: link })
+                                }
                                 className="text-gray-400 hover:text-gray-600 transition-colors"
                                 aria-label="Open invoice"
                               >
