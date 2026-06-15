@@ -26,6 +26,14 @@ interface SubscriptionStatus {
   cl_counter_max?: number;
   profile_relevant_change_counter?: number;
   profile_relevant_change_counter_max?: number;
+  is_admin?: boolean;
+}
+
+interface AiUsageEntry {
+  user_id: string;
+  email: string;
+  total_cost: number;
+  models: { model: string; cost: number }[];
 }
 
 interface BillingData {
@@ -125,6 +133,8 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [showCurrencyLimitBanner, setShowCurrencyLimitBanner] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const checkoutTabIdRef = useRef<number | null>(null);
+  const [aiUsage, setAiUsage] = useState<AiUsageEntry[] | null>(null);
+  const [aiUsageLoading, setAiUsageLoading] = useState(false);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -144,6 +154,22 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       }
       const data = (await res.json()) as SubscriptionStatus;
       setSubscription(data);
+      if (data.is_admin) {
+        setAiUsageLoading(true);
+        try {
+          const usageRes = await fetch(`${API_BASE_URL}/v1/admin/ai-usage`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (usageRes.ok) {
+            const usageData = (await usageRes.json()) as AiUsageEntry[];
+            setAiUsage(usageData);
+          }
+        } catch {
+          // ignore
+        } finally {
+          setAiUsageLoading(false);
+        }
+      }
     } catch {
       setSubscriptionError(true);
     } finally {
@@ -1031,6 +1057,43 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   </>
                 )}
               </section>
+
+              {/* AI Usage — admin only */}
+              {subscription?.is_admin && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    AI Usage
+                  </h2>
+                  <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-3">
+                    {aiUsageLoading ? (
+                      <div className="flex justify-center">
+                        <Spinner size={16} className="text-gray-400" />
+                      </div>
+                    ) : !aiUsage || aiUsage.length === 0 ? (
+                      <p className="text-xs text-gray-400">No data yet.</p>
+                    ) : (
+                      [...aiUsage]
+                        .sort((a, b) => b.total_cost - a.total_cost)
+                        .map((user, i, arr) => (
+                          <div key={user.user_id} className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-900 font-medium truncate">{user.email}</span>
+                              <span className="text-gray-700 font-medium shrink-0 ml-2">${user.total_cost.toFixed(4)}</span>
+                            </div>
+                            <p className="text-xs text-gray-400 truncate">{user.user_id}</p>
+                            {user.models.map(m => (
+                              <div key={m.model} className="flex items-center justify-between text-xs text-gray-500 pl-2">
+                                <span className="truncate">{m.model}</span>
+                                <span className="shrink-0 ml-2">${m.cost.toFixed(4)}</span>
+                              </div>
+                            ))}
+                            {i < arr.length - 1 && <div className="border-t border-gray-200 mt-1" />}
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </section>
+              )}
             </div>
           </>
         )}
