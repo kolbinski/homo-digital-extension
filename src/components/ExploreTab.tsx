@@ -28,10 +28,8 @@ interface OfferSalary {
   min: number;
   max: number;
   currency: string;
-  unit?: string;
   type: string;
   delta: number;
-  delta_normalized?: number;
 }
 
 interface UserOffer {
@@ -502,10 +500,8 @@ function OfferCard({
         min: from,
         max: to,
         currency: salaryCurrency,
-        unit: salaryUnit,
         type: salaryType,
         delta: 0,
-        delta_normalized: 0,
       };
       onSalaryUpdate?.(offer.user_offer_id, newSalary);
       setEditSalaryOpen(false);
@@ -605,12 +601,6 @@ function OfferCard({
                   {s.currency} {formatSalaryType(s.type)} {formatNum(s.min)} –{' '}
                   {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
-                  {s.currency !== 'PLN' && s.delta_normalized != null && (
-                    <span className={deltaColor}>
-                      {' '}
-                      ({formatNum(s.delta_normalized)} PLN)
-                    </span>
-                  )}
                 </span>
               );
             })}
