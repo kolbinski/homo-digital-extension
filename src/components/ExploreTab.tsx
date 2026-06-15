@@ -4,6 +4,7 @@ import {
   AddressBook,
   ArrowsClockwise,
   ArrowUp,
+  CaretDown,
   CheckFatIcon,
   CurrencyCircleDollar,
   FilePlusIcon,
@@ -171,6 +172,7 @@ interface OfferCardProps {
   candidateSkills: string[];
   isOpen: boolean;
   onToggle: () => void;
+  onShowOffer?: () => void;
   activeTabId?: number;
   onRemove: (offerId: string) => void;
   onRollback: (offer: UserOffer) => void;
@@ -204,6 +206,7 @@ function OfferCard({
   candidateSkills,
   isOpen,
   onToggle,
+  onShowOffer,
   activeTabId,
   onRemove,
   onRollback,
@@ -518,7 +521,7 @@ function OfferCard({
       className="border-b border-gray-100 last:border-0"
       data-user-offer-id={offer.user_offer_id}
     >
-      {/* Header row — click to expand/collapse */}
+      {/* Header row — click to toggle collapse */}
       <button
         type="button"
         onClick={onToggle}
@@ -539,19 +542,16 @@ function OfferCard({
             <span className="text-gray-600"> @&nbsp;{offer.offer_company}</span>
           </span>
         </div>
+        <CaretDown
+          size={14}
+          className={`text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
-      {/* Always visible: role fit + salary */}
-      <div className="px-3 pb-2 flex flex-col gap-1">
-        {(offer.city || offer.work_model) && (
-          <div
-            style={{
-              display: 'flex',
-              gap: '4px',
-              flexWrap: 'wrap',
-              marginBottom: '2px',
-            }}
-          >
+      {/* Always visible: tags + salary + skills */}
+      <div className="px-3 flex flex-col gap-1">
+        {(offer.city || offer.work_model || onShowOffer) && (
+          <div className="flex items-center gap-1 flex-wrap">
             {offer.work_model && (
               <span
                 className="bg-gray-100 text-gray-500"
@@ -578,107 +578,20 @@ function OfferCard({
                 {offer.city}
               </span>
             )}
+            {onShowOffer && (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  onShowOffer();
+                }}
+                className="ml-auto text-xs text-blue-600 hover:text-blue-700 transition-colors shrink-0"
+              >
+                Show offer
+              </button>
+            )}
           </div>
         )}
-        {offer.required_skills && offer.required_skills.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            <span className="text-xs text-gray-500">Required skills:</span>
-            {[
-              ...offer.required_skills.filter(s =>
-                candidateSkills.includes(s.toLowerCase()),
-              ),
-              ...offer.required_skills.filter(
-                s => !candidateSkills.includes(s.toLowerCase()),
-              ),
-            ].map(skill => {
-              const has =
-                candidateSkills.length === 0 ||
-                candidateSkills.includes(skill.toLowerCase());
-              return (
-                <span
-                  key={skill}
-                  className="text-xs px-1.5 py-px"
-                  style={{
-                    backgroundColor: has ? '#f0fdf4' : '#fef2f2',
-                    color: has ? '#15803d' : '#dc2626',
-                    border: `0.5px solid ${has ? '#bbf7d0' : '#fecaca'}`,
-                    borderRadius: '3px',
-                  }}
-                >
-                  {skill}
-                </span>
-              );
-            })}
-          </div>
-        )}
-        {offer.nice_to_have_skills && offer.nice_to_have_skills.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            <span className="text-xs text-gray-500">Nice to have skills:</span>
-            {[
-              ...offer.nice_to_have_skills.filter(s =>
-                candidateSkills.includes(s.toLowerCase()),
-              ),
-              ...offer.nice_to_have_skills.filter(
-                s => !candidateSkills.includes(s.toLowerCase()),
-              ),
-            ].map(skill => {
-              const has =
-                candidateSkills.length === 0 ||
-                candidateSkills.includes(skill.toLowerCase());
-              return (
-                <span
-                  key={skill}
-                  className="text-xs px-1.5 py-px"
-                  style={{
-                    backgroundColor: has ? '#f0fdf4' : '#fef2f2',
-                    color: has ? '#15803d' : '#dc2626',
-                    border: `0.5px solid ${has ? '#bbf7d0' : '#fecaca'}`,
-                    borderRadius: '3px',
-                  }}
-                >
-                  {skill}
-                </span>
-              );
-            })}
-          </div>
-        )}
-        {offer.claude_role_fit && (
-          <p className="text-xs text-gray-600 leading-relaxed">
-            {offer.claude_role_fit}
-          </p>
-        )}
-        {offer.claude_matched_reasons &&
-          (offer.claude_matched_reasons.cons.length > 0 ||
-            offer.claude_matched_reasons.pros.length > 0) && (
-            <div className="flex flex-col gap-0.5">
-              {offer.claude_matched_reasons.pros.map((item, i) => (
-                <span
-                  key={i}
-                  className="flex items-start gap-1 text-xs text-gray-700"
-                >
-                  <CheckFatIcon
-                    size={16}
-                    weight="fill"
-                    className="text-green-500 shrink-0 mt-px"
-                  />
-                  {item}
-                </span>
-              ))}
-              {offer.claude_matched_reasons.cons.map((item, i) => (
-                <span
-                  key={i}
-                  className="flex items-start gap-1 text-xs text-gray-700"
-                >
-                  <WarningIcon
-                    size={16}
-                    weight="fill"
-                    className="text-orange-500 shrink-0 mt-px"
-                  />
-                  {item}
-                </span>
-              ))}
-            </div>
-          )}
         {offer.salary && offer.salary.length > 0 ? (
           <div className="flex flex-col gap-0.5">
             {offer.salary.map((s, i) => {
@@ -837,11 +750,110 @@ function OfferCard({
             )}
           </div>
         )}
+        {offer.required_skills && offer.required_skills.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-500">Required skills:</span>
+            {[
+              ...offer.required_skills.filter(s =>
+                candidateSkills.includes(s.toLowerCase()),
+              ),
+              ...offer.required_skills.filter(
+                s => !candidateSkills.includes(s.toLowerCase()),
+              ),
+            ].map(skill => {
+              const has =
+                candidateSkills.length === 0 ||
+                candidateSkills.includes(skill.toLowerCase());
+              return (
+                <span
+                  key={skill}
+                  className="text-xs px-1.5 py-px"
+                  style={{
+                    backgroundColor: has ? '#f0fdf4' : '#fef2f2',
+                    color: has ? '#15803d' : '#dc2626',
+                    border: `0.5px solid ${has ? '#bbf7d0' : '#fecaca'}`,
+                    borderRadius: '3px',
+                  }}
+                >
+                  {skill}
+                </span>
+              );
+            })}
+          </div>
+        )}
+        {offer.nice_to_have_skills && offer.nice_to_have_skills.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <span className="text-xs text-gray-500">Nice to have skills:</span>
+            {[
+              ...offer.nice_to_have_skills.filter(s =>
+                candidateSkills.includes(s.toLowerCase()),
+              ),
+              ...offer.nice_to_have_skills.filter(
+                s => !candidateSkills.includes(s.toLowerCase()),
+              ),
+            ].map(skill => {
+              const has =
+                candidateSkills.length === 0 ||
+                candidateSkills.includes(skill.toLowerCase());
+              return (
+                <span
+                  key={skill}
+                  className="text-xs px-1.5 py-px"
+                  style={{
+                    backgroundColor: has ? '#f0fdf4' : '#fef2f2',
+                    color: has ? '#15803d' : '#dc2626',
+                    border: `0.5px solid ${has ? '#bbf7d0' : '#fecaca'}`,
+                    borderRadius: '3px',
+                  }}
+                >
+                  {skill}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Expanded: CV generation + Withdraw */}
+      {/* Expanded: role fit + pros/cons + CV generation + Withdraw */}
       {isOpen && (
-        <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
+        <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100">
+          {offer.claude_role_fit && (
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {offer.claude_role_fit}
+            </p>
+          )}
+          {offer.claude_matched_reasons &&
+            (offer.claude_matched_reasons.cons.length > 0 ||
+              offer.claude_matched_reasons.pros.length > 0) && (
+              <div className="flex flex-col gap-0.5">
+                {offer.claude_matched_reasons.pros.map((item, i) => (
+                  <span
+                    key={i}
+                    className="flex items-start gap-1 text-xs text-gray-700"
+                  >
+                    <CheckFatIcon
+                      size={16}
+                      weight="fill"
+                      className="text-green-500 shrink-0 mt-px"
+                    />
+                    {item}
+                  </span>
+                ))}
+                {offer.claude_matched_reasons.cons.map((item, i) => (
+                  <span
+                    key={i}
+                    className="flex items-start gap-1 text-xs text-gray-700"
+                  >
+                    <WarningIcon
+                      size={16}
+                      weight="fill"
+                      className="text-orange-500 shrink-0 mt-px"
+                    />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            )}
           {!isPageOffer &&
             !hideActions &&
             statusLoading !== offer.user_offer_id && (
@@ -2152,7 +2164,20 @@ function ClientAccordion({
                                 clientLastName={client.last_name}
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
-                                  handleCardToggle(offer, offer.offer_url)
+                                  setExpandedOfferId(prev =>
+                                    prev === offer.user_offer_id
+                                      ? null
+                                      : offer.user_offer_id,
+                                  )
+                                }
+                                onShowOffer={
+                                  offer.offer_url
+                                    ? () =>
+                                        void handleCardToggle(
+                                          offer,
+                                          offer.offer_url,
+                                        )
+                                    : undefined
                                 }
                                 activeTabId={activeTabId}
                                 onRemove={id =>
@@ -2247,7 +2272,20 @@ function ClientAccordion({
                                 clientLastName={client.last_name}
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
-                                  handleCardToggle(offer, offer.offer_url)
+                                  setExpandedOfferId(prev =>
+                                    prev === offer.user_offer_id
+                                      ? null
+                                      : offer.user_offer_id,
+                                  )
+                                }
+                                onShowOffer={
+                                  offer.offer_url
+                                    ? () =>
+                                        void handleCardToggle(
+                                          offer,
+                                          offer.offer_url,
+                                        )
+                                    : undefined
                                 }
                                 activeTabId={activeTabId}
                                 onRemove={id =>
@@ -2348,7 +2386,20 @@ function ClientAccordion({
                                 clientLastName={client.last_name}
                                 isOpen={expandedOfferId === offer.user_offer_id}
                                 onToggle={() =>
-                                  handleCardToggle(offer, offer.offer_url)
+                                  setExpandedOfferId(prev =>
+                                    prev === offer.user_offer_id
+                                      ? null
+                                      : offer.user_offer_id,
+                                  )
+                                }
+                                onShowOffer={
+                                  offer.offer_url
+                                    ? () =>
+                                        void handleCardToggle(
+                                          offer,
+                                          offer.offer_url,
+                                        )
+                                    : undefined
                                 }
                                 activeTabId={activeTabId}
                                 onRemove={id =>
