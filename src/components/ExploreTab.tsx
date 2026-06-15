@@ -1219,6 +1219,7 @@ function ClientAccordion({
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
+  const pageSize = generalSettings?.listing_page_size ?? 10;
 
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -1256,6 +1257,15 @@ function ClientAccordion({
     null,
   );
   const [pageOffer, setPageOffer] = useState<UserOffer | null>(null);
+  const [applyPage, setApplyPage] = useState(1);
+  const [levelUpPage, setLevelUpPage] = useState(1);
+  const [statusPage, setStatusPage] = useState(1);
+  const [applyHasMore, setApplyHasMore] = useState(false);
+  const [levelUpHasMore, setLevelUpHasMore] = useState(false);
+  const [statusHasMore, setStatusHasMore] = useState(false);
+  const [applyLoadingMore, setApplyLoadingMore] = useState(false);
+  const [levelUpLoadingMore, setLevelUpLoadingMore] = useState(false);
+  const [statusLoadingMore, setStatusLoadingMore] = useState(false);
   const manualPageOfferRef = useRef(false);
   const manualPageOfferUrlRef = useRef<string | null>(null);
 
@@ -1382,13 +1392,17 @@ function ClientAccordion({
       let pending: UserOffer[] = [];
       let levelUp: UserOffer[] = [];
       if (statusFilter === 'pending_apply') {
-        const result = await fetchCombinedOffers();
+        const result = await fetchCombinedOffers(1);
         pending = result.apply_now.offers ?? [];
         levelUp = result.level_up.offers ?? [];
         setApplyNowCount(result.apply_now.count);
         setLevelUpCount(result.level_up.count);
+        setApplyHasMore(result.apply_now.has_more ?? false);
+        setLevelUpHasMore(result.level_up.has_more ?? false);
       } else {
-        pending = await fetchOffers(statusFilter);
+        const fetched = await fetchOffers(statusFilter, 1);
+        pending = fetched.offers;
+        setStatusHasMore(fetched.has_more);
       }
       if (cancelled) return;
       setApplyOffers(pending);
@@ -1470,22 +1484,35 @@ function ClientAccordion({
 
   useEffect(() => {
     setHasLoaded(false);
+    setApplyPage(1);
+    setLevelUpPage(1);
+    setStatusPage(1);
+    setApplyHasMore(false);
+    setLevelUpHasMore(false);
+    setStatusHasMore(false);
+    setApplyOffers([]);
+    setLevelUpOffers([]);
+    if (sortBy === 'salary_delta' && !isPro) return;
     let cancelled = false;
     async function refetchOffers() {
       if (isOpen) setIsLoading(true);
       if (statusFilter === 'pending_apply') {
-        const result = await fetchCombinedOffers();
+        const result = await fetchCombinedOffers(1);
         if (cancelled) return;
         setApplyOffers(result.apply_now.offers ?? []);
+        setApplyHasMore(result.apply_now.has_more ?? false);
         setLevelUpOffers(result.level_up.offers ?? []);
+        setLevelUpHasMore(result.level_up.has_more ?? false);
         setApplyNowCount(result.apply_now.count);
         setLevelUpCount(result.level_up.count);
       } else {
-        const pending = await fetchOffers(statusFilter);
+        const fetched = await fetchOffers(statusFilter, 1);
         if (cancelled) return;
-        setApplyOffers(pending);
+        setApplyOffers(fetched.offers);
+        setStatusHasMore(fetched.has_more);
         setLevelUpOffers([]);
       }
+      if (cancelled) return;
       if (isOpen) setIsLoading(false);
       setHasLoaded(true);
     }
@@ -1493,11 +1520,12 @@ function ClientAccordion({
     return () => {
       cancelled = true;
     };
-  }, [statusFilter, sourceFilter]);
+  }, [statusFilter, sourceFilter, minScore, sortBy, cvGenerated, clGenerated]);
 
   interface CombinedBucket {
     offers: UserOffer[];
     count: number;
+    has_more?: boolean;
   }
   interface CombinedOffersResponse {
     apply_now: CombinedBucket;
@@ -1510,12 +1538,16 @@ function ClientAccordion({
     count: 0,
   };
 
-  async function fetchCombinedOffers(): Promise<CombinedOffersResponse> {
+  async function fetchCombinedOffers(
+    page = 1,
+  ): Promise<CombinedOffersResponse> {
     const token = await getToken();
     if (!token) return EMPTY_COMBINED;
     const params = new URLSearchParams({ status: 'pending_apply|ai_rejected' });
     if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
+    params.append('page', String(page));
+    params.append('page_size', String(pageSize));
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -1532,21 +1564,30 @@ function ClientAccordion({
     }
   }
 
-  async function fetchOffers(status: string): Promise<UserOffer[]> {
+  async function fetchOffers(
+    status: string,
+    page = 1,
+  ): Promise<{ offers: UserOffer[]; has_more: boolean }> {
     const token = await getToken();
-    if (!token) return [];
+    if (!token) return { offers: [], has_more: false };
     const params = new URLSearchParams({ status });
     if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
+    params.append('page', String(page));
+    params.append('page_size', String(pageSize));
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return [];
-      const data = (await res.json()) as { offers?: UserOffer[] } | UserOffer[];
-      return (Array.isArray(data) ? data : data.offers) ?? [];
+      if (!res.ok) return { offers: [], has_more: false };
+      const data = (await res.json()) as
+        | { offers?: UserOffer[]; has_more?: boolean }
+        | UserOffer[];
+      const offers = Array.isArray(data) ? data : (data.offers ?? []);
+      const has_more = Array.isArray(data) ? false : (data.has_more ?? false);
+      return { offers, has_more };
     } catch {
-      return [];
+      return { offers: [], has_more: false };
     }
   }
 
@@ -1556,13 +1597,17 @@ function ClientAccordion({
     if (opening && !hasLoaded) {
       setIsLoading(true);
       if (statusFilter === 'pending_apply') {
-        const result = await fetchCombinedOffers();
+        const result = await fetchCombinedOffers(1);
         setApplyOffers(result.apply_now.offers ?? []);
+        setApplyHasMore(result.apply_now.has_more ?? false);
         setLevelUpOffers(result.level_up.offers ?? []);
+        setLevelUpHasMore(result.level_up.has_more ?? false);
         setApplyNowCount(result.apply_now.count);
         setLevelUpCount(result.level_up.count);
       } else {
-        setApplyOffers(await fetchOffers(statusFilter));
+        const fetched = await fetchOffers(statusFilter, 1);
+        setApplyOffers(fetched.offers);
+        setStatusHasMore(fetched.has_more);
         setLevelUpOffers([]);
       }
       setIsLoading(false);
@@ -1582,14 +1627,21 @@ function ClientAccordion({
     setIsRefreshing(true);
     setIsLoading(true);
     setHasNewOffers(false);
+    setApplyPage(1);
+    setLevelUpPage(1);
+    setStatusPage(1);
     if (statusFilter === 'pending_apply') {
-      const result = await fetchCombinedOffers();
+      const result = await fetchCombinedOffers(1);
       setApplyOffers(result.apply_now.offers ?? []);
+      setApplyHasMore(result.apply_now.has_more ?? false);
       setLevelUpOffers(result.level_up.offers ?? []);
+      setLevelUpHasMore(result.level_up.has_more ?? false);
       setApplyNowCount(result.apply_now.count);
       setLevelUpCount(result.level_up.count);
     } else {
-      setApplyOffers(await fetchOffers(statusFilter));
+      const fetched = await fetchOffers(statusFilter, 1);
+      setApplyOffers(fetched.offers);
+      setStatusHasMore(fetched.has_more);
       setLevelUpOffers([]);
     }
     setIsLoading(false);
@@ -1599,6 +1651,36 @@ function ClientAccordion({
 
   const handleRefreshRef = useRef(handleRefresh);
   handleRefreshRef.current = handleRefresh;
+
+  async function handleLoadMoreApply() {
+    setApplyLoadingMore(true);
+    const nextPage = applyPage + 1;
+    const result = await fetchCombinedOffers(nextPage);
+    setApplyOffers(prev => [...prev, ...(result.apply_now.offers ?? [])]);
+    setApplyHasMore(result.apply_now.has_more ?? false);
+    setApplyPage(nextPage);
+    setApplyLoadingMore(false);
+  }
+
+  async function handleLoadMoreLevelUp() {
+    setLevelUpLoadingMore(true);
+    const nextPage = levelUpPage + 1;
+    const result = await fetchCombinedOffers(nextPage);
+    setLevelUpOffers(prev => [...prev, ...(result.level_up.offers ?? [])]);
+    setLevelUpHasMore(result.level_up.has_more ?? false);
+    setLevelUpPage(nextPage);
+    setLevelUpLoadingMore(false);
+  }
+
+  async function handleLoadMoreStatus() {
+    setStatusLoadingMore(true);
+    const nextPage = statusPage + 1;
+    const fetched = await fetchOffers(statusFilter, nextPage);
+    setApplyOffers(prev => [...prev, ...fetched.offers]);
+    setStatusHasMore(fetched.has_more);
+    setStatusPage(nextPage);
+    setStatusLoadingMore(false);
+  }
 
   async function openWizard() {
     setWizardProfile(null);
@@ -1632,22 +1714,40 @@ function ClientAccordion({
   }
 
   const knownCountRef = useRef<number | null>(null);
+  const prevApplyCountRef = useRef<number>(0);
+  const prevLevelUpCountRef = useRef<number>(0);
 
   useEffect(() => {
     if (!selfMode) return;
     let interval: ReturnType<typeof setInterval> | null = null;
-    fetchCombinedOffers().then(result => {
+    fetchCombinedOffers(1).then(result => {
       knownCountRef.current = result.count;
+      prevApplyCountRef.current = result.apply_now.count;
+      prevLevelUpCountRef.current = result.level_up.count;
       interval = setInterval(async () => {
-        const polled = await fetchCombinedOffers();
-        const count = polled.count;
-        if (count > knownCountRef.current!) {
-          knownCountRef.current = count;
+        const polled = await fetchCombinedOffers(1);
+        const newTotal = polled.count;
+        const newApplyCount = polled.apply_now.count;
+        const newLevelUpCount = polled.level_up.count;
+
+        if (newTotal > (knownCountRef.current ?? 0)) {
           setHasNewOffers(true);
-          if (!hasOffersRef.current) {
-            void handleRefreshRef.current();
-          }
         }
+        knownCountRef.current = newTotal;
+
+        if (prevApplyCountRef.current === 0 && newApplyCount > 0) {
+          setApplyOffers(polled.apply_now.offers ?? []);
+          setApplyHasMore(polled.apply_now.has_more ?? false);
+          setApplyPage(1);
+        }
+        prevApplyCountRef.current = newApplyCount;
+
+        if (prevLevelUpCountRef.current === 0 && newLevelUpCount > 0) {
+          setLevelUpOffers(polled.level_up.offers ?? []);
+          setLevelUpHasMore(polled.level_up.has_more ?? false);
+          setLevelUpPage(1);
+        }
+        prevLevelUpCountRef.current = newLevelUpCount;
       }, 30000);
     });
     return () => {
@@ -2202,6 +2302,26 @@ function ClientAccordion({
                               />
                             ),
                           )}
+                          {applyHasMore && (
+                            <div className="flex justify-center py-2 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => void handleLoadMoreApply()}
+                                disabled={applyLoadingMore}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                              >
+                                {applyLoadingMore && (
+                                  <Spinner
+                                    size={11}
+                                    className="text-gray-500"
+                                  />
+                                )}
+                                {applyLoadingMore
+                                  ? 'Loading…'
+                                  : `Show more (${applyOffers.length} shown, ${(applyNowCount ?? applyOffers.length) - applyOffers.length} remaining)`}
+                              </button>
+                            </div>
+                          )}
                           {!isPro &&
                             applyNowCount !== null &&
                             applyOffers.length < applyNowCount && (
@@ -2309,6 +2429,26 @@ function ClientAccordion({
                                 hideActions={true}
                               />
                             ),
+                          )}
+                          {levelUpHasMore && (
+                            <div className="flex justify-center py-2 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => void handleLoadMoreLevelUp()}
+                                disabled={levelUpLoadingMore}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                              >
+                                {levelUpLoadingMore && (
+                                  <Spinner
+                                    size={11}
+                                    className="text-gray-500"
+                                  />
+                                )}
+                                {levelUpLoadingMore
+                                  ? 'Loading…'
+                                  : `Show more (${levelUpOffers.length} shown, ${(levelUpCount ?? levelUpOffers.length) - levelUpOffers.length} remaining)`}
+                              </button>
+                            </div>
                           )}
                           {!isPro &&
                             levelUpCount !== null &&
@@ -2445,6 +2585,24 @@ function ClientAccordion({
                                 }
                               />
                             ),
+                          )}
+                          {statusHasMore && (
+                            <div className="flex justify-center py-2 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => void handleLoadMoreStatus()}
+                                disabled={statusLoadingMore}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                              >
+                                {statusLoadingMore && (
+                                  <Spinner
+                                    size={11}
+                                    className="text-gray-500"
+                                  />
+                                )}
+                                {statusLoadingMore ? 'Loading…' : 'Show more'}
+                              </button>
+                            </div>
                           )}
                         </div>
                       )}

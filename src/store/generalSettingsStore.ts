@@ -22,8 +22,14 @@ export interface GeneralSettings {
   cv_package_price?: { formatted: string } | null;
   cl_package_amount?: number;
   cl_package_price?: { formatted: string } | null;
+  listing_page_size?: number;
   plans?: {
-    free: { max_apply_now: number; max_scan_page: number; max_cv: number; max_cl: number };
+    free: {
+      max_apply_now: number;
+      max_scan_page: number;
+      max_cv: number;
+      max_cl: number;
+    };
     pro: { max_scan_page: number; max_cv: number; max_cl: number };
     premium: { max_scan_page: number; max_cv: number; max_cl: number };
   };
