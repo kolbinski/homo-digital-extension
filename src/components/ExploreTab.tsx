@@ -1754,6 +1754,7 @@ function ClientAccordion({
         if (prevApplyCountRef.current === 0 && newApplyCount > 0) {
           setApplyOffers(polled.apply_now.offers ?? []);
           setApplyHasMore(polled.apply_now.has_more ?? false);
+          setApplyNowCount(newApplyCount);
           setApplyPage(1);
         }
         prevApplyCountRef.current = newApplyCount;
@@ -1761,6 +1762,7 @@ function ClientAccordion({
         if (prevLevelUpCountRef.current === 0 && newLevelUpCount > 0) {
           setLevelUpOffers(polled.level_up.offers ?? []);
           setLevelUpHasMore(polled.level_up.has_more ?? false);
+          setLevelUpCount(newLevelUpCount);
           setLevelUpPage(1);
         }
         prevLevelUpCountRef.current = newLevelUpCount;
