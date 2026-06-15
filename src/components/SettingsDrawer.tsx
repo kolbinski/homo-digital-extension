@@ -423,20 +423,32 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                               subscription.plan_name.slice(1)
                             : 'Free'}
                         </span>
-                        {subscription.current_period_end && (
-                          <span className="text-xs text-gray-500">
-                            Ends at{' '}
-                            {subscription.current_period_end.slice(0, 10)}
-                          </span>
+                        {subscription.plan_name.toLowerCase() === 'free' ? (
+                          <button
+                            type="button"
+                            onClick={() => setManagePlanOpen(true)}
+                            className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                          >
+                            Upgrade
+                          </button>
+                        ) : (
+                          subscription.current_period_end && (
+                            <span className="text-xs text-gray-500">
+                              Ends at{' '}
+                              {subscription.current_period_end.slice(0, 10)}
+                            </span>
+                          )
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setManagePlanOpen(true)}
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-start"
-                      >
-                        Manage your plan
-                      </button>
+                      {subscription.plan_name.toLowerCase() !== 'free' && (
+                        <button
+                          type="button"
+                          onClick={() => setManagePlanOpen(true)}
+                          className="text-sm text-gray-500 hover:text-gray-700 transition-colors self-start"
+                        >
+                          Manage your plan
+                        </button>
+                      )}
                     </>
                   ) : null}
                 </div>
