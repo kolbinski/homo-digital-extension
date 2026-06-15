@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from '@phosphor-icons/react';
+import { CheckFatIcon, X } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { useGeneralSettings } from '../store/generalSettingsStore';
@@ -13,6 +13,33 @@ interface Props {
   currentPeriodEnd?: string | null;
   onCancelSuccess?: () => void;
   status?: 'active' | 'cancelling' | 'free';
+}
+
+function CheckItem({
+  label,
+  muted = false,
+}: {
+  label: string;
+  muted?: boolean;
+}) {
+  return (
+    <li className="flex items-start gap-1.5 text-xs">
+      {muted ? (
+        <CheckFatIcon
+          size={14}
+          weight="fill"
+          className="text-gray-500 shrink-0 mt-px"
+        />
+      ) : (
+        <CheckFatIcon
+          size={14}
+          weight="fill"
+          className="text-green-500 shrink-0 mt-px"
+        />
+      )}
+      <span className={muted ? 'text-gray-500' : 'text-gray-700'}>{label}</span>
+    </li>
+  );
 }
 
 export default function PlanDrawer({
@@ -132,6 +159,47 @@ export default function PlanDrawer({
   }
 
   const endDate = currentPeriodEnd ? currentPeriodEnd.slice(0, 10) : null;
+  const plans = generalSettings?.plans;
+
+  const freeItems = [
+    plans?.free.max_apply_now != null
+      ? `${plans.free.max_apply_now} matches per sync`
+      : 'Limited matches per sync',
+    plans?.free.max_scan_page != null
+      ? `${plans.free.max_scan_page} page scans`
+      : null,
+    plans?.free.max_cv != null ? `${plans.free.max_cv} CV generations` : null,
+    plans?.free.max_cl != null
+      ? `${plans.free.max_cl} cover letter generations`
+      : null,
+  ].filter(Boolean) as string[];
+
+  const proItems = [
+    'Unlimited matches',
+    plans?.pro.max_scan_page != null
+      ? `${plans.pro.max_scan_page} page scans`
+      : null,
+    plans?.pro.max_cv != null ? `${plans.pro.max_cv} CV generations` : null,
+    plans?.pro.max_cl != null
+      ? `${plans.pro.max_cl} cover letter generations`
+      : null,
+    'Push notifications via mobile app',
+    'Priority sync',
+  ].filter(Boolean) as string[];
+
+  const premiumItems = [
+    'Everything in Pro',
+    plans?.premium.max_scan_page != null
+      ? `${plans.premium.max_scan_page} page scans`
+      : null,
+    plans?.premium.max_cv != null
+      ? `${plans.premium.max_cv} CV generations`
+      : null,
+    plans?.premium.max_cl != null
+      ? `${plans.premium.max_cl} cover letter generations`
+      : null,
+    'Your personal agent',
+  ].filter(Boolean) as string[];
 
   return createPortal(
     <div className="fixed inset-0" style={{ zIndex }}>
@@ -159,7 +227,7 @@ export default function PlanDrawer({
 
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
           {/* Free */}
-          <div className="rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2">
+          <div className="rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700">Free</span>
               {!isPro && (
@@ -168,23 +236,29 @@ export default function PlanDrawer({
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500">
-              Limited matches per sync cycle
-            </p>
+            <ul className="flex flex-col gap-1.5">
+              {freeItems.map(item => (
+                <CheckItem key={item} label={item} muted />
+              ))}
+            </ul>
           </div>
 
           {/* Pro */}
-          <div className="rounded-lg border-2 border-green-500 bg-white px-4 py-4 flex flex-col gap-3">
+          <div
+            className={`rounded-lg border-2 px-4 py-4 flex flex-col gap-3 ${
+              !isPro
+                ? 'border-green-500 bg-white'
+                : 'border-green-400 bg-green-50'
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-gray-900">Pro</span>
-              </div>
-              <div className="flex gap-1.5 items-center">
+              <span className="text-sm font-semibold text-gray-900">Pro</span>
+              <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-green-700">
-                  {generalSettings?.pro_price?.formatted ?? '$100,01'}/month
+                  {generalSettings?.pro_price?.formatted ?? '…'}/month
                 </span>
                 {isPro && (
-                  <span className="text-xs font-medium bg-green-600 text-white px-2 py-0.5 rounded-full self-center">
+                  <span className="text-xs font-medium bg-green-600 text-white px-2 py-0.5 rounded-full">
                     Current plan
                   </span>
                 )}
@@ -194,18 +268,8 @@ export default function PlanDrawer({
               <span className="text-xs text-gray-500">Ends at {endDate}</span>
             )}
             <ul className="flex flex-col gap-1.5">
-              {[
-                'Unlimited matches',
-                'Push notifications via mobile app',
-                'Priority sync',
-              ].map(f => (
-                <li
-                  key={f}
-                  className="flex items-start gap-1.5 text-xs text-gray-700"
-                >
-                  <span className="text-green-500 shrink-0 mt-px">✓</span>
-                  {f}
-                </li>
+              {proItems.map(item => (
+                <CheckItem key={item} label={item} />
               ))}
             </ul>
             {!isPro && (
@@ -299,18 +363,27 @@ export default function PlanDrawer({
           </div>
 
           {/* Premium */}
-          <div className="rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-2">
+          <div className="rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-500">
                 Premium
               </span>
-              <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-medium bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">
                 Coming soon
               </span>
             </div>
-            <p className="text-xs text-gray-500">
-              Advanced features coming soon
-            </p>
+            <ul className="flex flex-col gap-1.5">
+              {premiumItems.map(item => (
+                <CheckItem key={item} label={item} muted />
+              ))}
+            </ul>
+            <button
+              type="button"
+              disabled
+              className="w-full py-2 px-4 rounded-md text-sm font-medium text-gray-400 border border-gray-200 bg-gray-100 cursor-not-allowed"
+            >
+              Coming soon
+            </button>
           </div>
         </div>
       </div>

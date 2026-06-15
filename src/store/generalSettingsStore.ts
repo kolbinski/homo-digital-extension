@@ -22,6 +22,11 @@ export interface GeneralSettings {
   cv_package_price?: { formatted: string } | null;
   cl_package_amount?: number;
   cl_package_price?: { formatted: string } | null;
+  plans?: {
+    free: { max_apply_now: number; max_scan_page: number; max_cv: number; max_cl: number };
+    pro: { max_scan_page: number; max_cv: number; max_cl: number };
+    premium: { max_scan_page: number; max_cv: number; max_cl: number };
+  };
 }
 
 interface StoreState {
