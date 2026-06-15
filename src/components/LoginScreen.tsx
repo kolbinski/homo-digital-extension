@@ -172,7 +172,8 @@ function LoginView({
       try {
         const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
         });
         if (socialRes.ok) {
           const { token: internalToken } = (await socialRes.json()) as {
@@ -210,7 +211,8 @@ function LoginView({
     try {
       const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
       if (socialRes.ok) {
         const { token: internalToken } = (await socialRes.json()) as {
