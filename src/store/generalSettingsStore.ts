@@ -26,6 +26,7 @@ export interface GeneralSettings {
   plans?: {
     free: {
       max_apply_now: number;
+      max_level_up: number;
       max_scan_page: number;
       max_cv: number;
       max_cl: number;

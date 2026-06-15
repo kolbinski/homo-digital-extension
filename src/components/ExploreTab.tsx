@@ -1557,7 +1557,8 @@ function ClientAccordion({
     params.append('min_score', String(minScore));
     if (cvGenerated) params.append('generated_cv', 'true');
     if (clGenerated) params.append('generated_cl', 'true');
-    if (!(sortBy === 'salary_delta' && !isPro)) params.append('sort_by', sortBy);
+    if (!(sortBy === 'salary_delta' && !isPro))
+      params.append('sort_by', sortBy);
     params.append('page', String(page));
     params.append('page_size', String(pageSize));
     try {
@@ -1588,7 +1589,8 @@ function ClientAccordion({
     params.append('min_score', String(minScore));
     if (cvGenerated) params.append('generated_cv', 'true');
     if (clGenerated) params.append('generated_cl', 'true');
-    if (!(sortBy === 'salary_delta' && !isPro)) params.append('sort_by', sortBy);
+    if (!(sortBy === 'salary_delta' && !isPro))
+      params.append('sort_by', sortBy);
     params.append('page', String(page));
     params.append('page_size', String(pageSize));
     try {
@@ -2181,39 +2183,39 @@ function ClientAccordion({
                   </button>
                   {pageOfferOpen && (
                     <div ref={pageOfferCardRef}>
-                    <OfferCard
-                      key={pageOffer.user_offer_id}
-                      offer={pageOffer}
-                      clientId={client.id}
-                      clientFirstName={client.first_name}
-                      clientLastName={client.last_name}
-                      isOpen={true}
-                      onToggle={() => {}}
-                      activeTabId={activeTabId}
-                      onRemove={() => setPageOffer(null)}
-                      onRollback={() => {}}
-                      onError={setStatusError}
-                      onCvUpdate={handleCvUpdate}
-                      onClUpdate={handleClUpdate}
-                      onSalaryUpdate={handleSalaryUpdate}
-                      candidateSkills={candidateSkills}
-                      isOfferLoading={false}
-                      selfMode={selfMode}
-                      onCvLimitReached={() => void handleBuyCvPackage()}
-                      onClLimitReached={() => void handleBuyClPackage()}
-                      cvPackageBuyLoading={cvPackageBuyLoading}
-                      cvPackageBuyError={cvPackageBuyError}
-                      clPackageBuyLoading={clPackageBuyLoading}
-                      clPackageBuyError={clPackageBuyError}
-                      cvPackageAmount={generalSettings?.cv_package_amount}
-                      cvPackagePrice={
-                        generalSettings?.cv_package_price?.formatted
-                      }
-                      clPackageAmount={generalSettings?.cl_package_amount}
-                      clPackagePrice={
-                        generalSettings?.cl_package_price?.formatted
-                      }
-                    />
+                      <OfferCard
+                        key={pageOffer.user_offer_id}
+                        offer={pageOffer}
+                        clientId={client.id}
+                        clientFirstName={client.first_name}
+                        clientLastName={client.last_name}
+                        isOpen={true}
+                        onToggle={() => {}}
+                        activeTabId={activeTabId}
+                        onRemove={() => setPageOffer(null)}
+                        onRollback={() => {}}
+                        onError={setStatusError}
+                        onCvUpdate={handleCvUpdate}
+                        onClUpdate={handleClUpdate}
+                        onSalaryUpdate={handleSalaryUpdate}
+                        candidateSkills={candidateSkills}
+                        isOfferLoading={false}
+                        selfMode={selfMode}
+                        onCvLimitReached={() => void handleBuyCvPackage()}
+                        onClLimitReached={() => void handleBuyClPackage()}
+                        cvPackageBuyLoading={cvPackageBuyLoading}
+                        cvPackageBuyError={cvPackageBuyError}
+                        clPackageBuyLoading={clPackageBuyLoading}
+                        clPackageBuyError={clPackageBuyError}
+                        cvPackageAmount={generalSettings?.cv_package_amount}
+                        cvPackagePrice={
+                          generalSettings?.cv_package_price?.formatted
+                        }
+                        clPackageAmount={generalSettings?.cl_package_amount}
+                        clPackagePrice={
+                          generalSettings?.cl_package_price?.formatted
+                        }
+                      />
                     </div>
                   )}
                 </div>
@@ -2323,29 +2325,37 @@ function ClientAccordion({
                               />
                             ),
                           )}
-                          {applyHasMore && (
-                            <div className="flex justify-center py-2 border-t border-gray-100">
-                              <button
-                                type="button"
-                                onClick={() => void handleLoadMoreApply()}
-                                disabled={applyLoadingMore}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
-                              >
-                                {applyLoadingMore && (
-                                  <Spinner
-                                    size={11}
-                                    className="text-gray-500"
-                                  />
-                                )}
-                                {applyLoadingMore
-                                  ? 'Loading…'
-                                  : `Show more (${applyOffers.length} shown, ${(applyNowCount ?? applyOffers.length) - applyOffers.length} remaining)`}
-                              </button>
-                            </div>
-                          )}
+                          {applyHasMore &&
+                            (isPro ||
+                              applyOffers.length <
+                                (generalSettings?.plans?.free?.max_apply_now ??
+                                  Infinity)) && (
+                              <div className="flex justify-center py-2 border-t border-gray-100">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleLoadMoreApply()}
+                                  disabled={applyLoadingMore}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                                >
+                                  {applyLoadingMore && (
+                                    <Spinner
+                                      size={11}
+                                      className="text-gray-500"
+                                    />
+                                  )}
+                                  {applyLoadingMore
+                                    ? 'Loading…'
+                                    : `Show more (${applyOffers.length} shown, ${(applyNowCount ?? applyOffers.length) - applyOffers.length} remaining)`}
+                                </button>
+                              </div>
+                            )}
                           {!isPro &&
-                            applyNowCount !== null &&
-                            applyOffers.length < applyNowCount && (
+                            generalSettings?.plans?.free?.max_apply_now !=
+                              null &&
+                            applyOffers.length >=
+                              generalSettings.plans.free.max_apply_now &&
+                            (applyNowCount ?? 0) >
+                              generalSettings.plans.free.max_apply_now && (
                               <PlanLimitBanner
                                 onButtonClick={() => setUpgradeDrawerOpen(true)}
                                 buttonText="Upgrade to Pro"
@@ -2354,7 +2364,10 @@ function ClientAccordion({
                                   You've reached your free plan limit. Upgrade
                                   to unlock{' '}
                                   <span className="font-medium text-gray-700">
-                                    {applyNowCount - applyOffers.length} more
+                                    {(applyNowCount ?? 0) -
+                                      generalSettings.plans.free
+                                        .max_apply_now}{' '}
+                                    more
                                   </span>{' '}
                                   matches.
                                 </p>
@@ -2451,29 +2464,37 @@ function ClientAccordion({
                               />
                             ),
                           )}
-                          {levelUpHasMore && (
-                            <div className="flex justify-center py-2 border-t border-gray-100">
-                              <button
-                                type="button"
-                                onClick={() => void handleLoadMoreLevelUp()}
-                                disabled={levelUpLoadingMore}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
-                              >
-                                {levelUpLoadingMore && (
-                                  <Spinner
-                                    size={11}
-                                    className="text-gray-500"
-                                  />
-                                )}
-                                {levelUpLoadingMore
-                                  ? 'Loading…'
-                                  : `Show more (${levelUpOffers.length} shown, ${(levelUpCount ?? levelUpOffers.length) - levelUpOffers.length} remaining)`}
-                              </button>
-                            </div>
-                          )}
+                          {levelUpHasMore &&
+                            (isPro ||
+                              levelUpOffers.length <
+                                (generalSettings?.plans?.free?.max_level_up ??
+                                  Infinity)) && (
+                              <div className="flex justify-center py-2 border-t border-gray-100">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleLoadMoreLevelUp()}
+                                  disabled={levelUpLoadingMore}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                                >
+                                  {levelUpLoadingMore && (
+                                    <Spinner
+                                      size={11}
+                                      className="text-gray-500"
+                                    />
+                                  )}
+                                  {levelUpLoadingMore
+                                    ? 'Loading…'
+                                    : `Show more (${levelUpOffers.length} shown, ${(levelUpCount ?? levelUpOffers.length) - levelUpOffers.length} remaining)`}
+                                </button>
+                              </div>
+                            )}
                           {!isPro &&
-                            levelUpCount !== null &&
-                            levelUpOffers.length < levelUpCount && (
+                            generalSettings?.plans?.free?.max_level_up !=
+                              null &&
+                            levelUpOffers.length >=
+                              generalSettings.plans.free.max_level_up &&
+                            (levelUpCount ?? 0) >
+                              generalSettings.plans.free.max_level_up && (
                               <PlanLimitBanner
                                 onButtonClick={() => setUpgradeDrawerOpen(true)}
                                 buttonText="Upgrade to Pro"
@@ -2482,7 +2503,10 @@ function ClientAccordion({
                                   You've reached your free plan limit. Upgrade
                                   to unlock{' '}
                                   <span className="font-medium text-gray-700">
-                                    {levelUpCount - levelUpOffers.length} more
+                                    {(levelUpCount ?? 0) -
+                                      generalSettings.plans.free
+                                        .max_level_up}{' '}
+                                    more
                                   </span>{' '}
                                   matches.
                                 </p>
@@ -2723,7 +2747,9 @@ export default function ExploreTab({
   const [clGenerated, setClGenerated] = useState(false);
   const [minScore, setMinScore] = useState(75);
   const [debouncedMinScore, setDebouncedMinScore] = useState(75);
-  const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -2765,7 +2791,8 @@ export default function ExploreTab({
 
   useEffect(() => {
     return () => {
-      if (minScoreDebounceRef.current) clearTimeout(minScoreDebounceRef.current);
+      if (minScoreDebounceRef.current)
+        clearTimeout(minScoreDebounceRef.current);
     };
   }, []);
 
