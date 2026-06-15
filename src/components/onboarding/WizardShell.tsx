@@ -11,6 +11,8 @@ import {
 } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
+import { useGeneralSettings } from '../../store/generalSettingsStore';
+import PlanLimitBanner from '../PlanLimitBanner';
 import Spinner from '../Spinner';
 import SettingsDrawer from '../SettingsDrawer';
 import type { Profile, WizardTabId } from './types';
@@ -37,6 +39,7 @@ interface Props {
   onRematch?: () => void;
   onCancelEdit?: () => void;
   onSyncTriggered?: () => void;
+  profileRematchPending?: boolean;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
 }
@@ -52,10 +55,12 @@ export default function WizardShell({
   onRematch,
   onCancelEdit,
   onSyncTriggered,
+  profileRematchPending = false,
   isOnboarding = false,
   onCloseComplete,
 }: Props) {
   const { getToken } = useAuth();
+  const { settings: generalSettings } = useGeneralSettings();
   const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('saved');
   const [submitting, setSubmitting] = useState(false);
@@ -313,6 +318,24 @@ export default function WizardShell({
     })();
   }
 
+  async function handleBuyRematch() {
+    try {
+      const token = await getAuthTokenRef.current();
+      const res = await fetch(
+        `${API_BASE_URL}/v1/subscription/profile-rematch-checkout`,
+        {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = (await res.json()) as { url: string };
+      await chrome.tabs.create({ url: data.url });
+    } catch (err) {
+      console.error('[handleBuyRematch]', err);
+    }
+  }
+
   const isEditMode = !isOnboarding && !!onClose;
 
   return (
@@ -490,6 +513,19 @@ export default function WizardShell({
         />
       )}
 
+      {/* Rematch limit banner */}
+      {isEditMode && profileRematchPending && (
+        <PlanLimitBanner
+          onButtonClick={() => void handleBuyRematch()}
+          buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
+          withMX={false}
+        >
+          <p className="text-xs text-gray-500">
+            You've reached your profile re-match limit. Buy more edits to keep
+            matching offers.
+          </p>
+        </PlanLimitBanner>
+      )}
       {/* Footer */}
       <div className="shrink-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-2">
         {/* Left: error / all-clear indicator */}

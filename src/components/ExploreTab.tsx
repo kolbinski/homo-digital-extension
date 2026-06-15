@@ -1238,6 +1238,7 @@ function ClientAccordion({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [profileRematchPending, setProfileRematchPending] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -1280,12 +1281,14 @@ function ClientAccordion({
         const data = (await res.json()) as {
           subscribed_to: string | null;
           expires_at?: string | null;
+          profile_relevant_change_pending?: boolean;
         };
         const active =
           data.subscribed_to !== null &&
           (!data.expires_at ||
             new Date(data.expires_at).getTime() > Date.now());
         setIsPro(active);
+        setProfileRematchPending(data.profile_relevant_change_pending ?? false);
       } catch {
         // ignore
       }
@@ -1320,6 +1323,46 @@ function ClientAccordion({
         changes.cl_package_purchased.newValue !== undefined
       ) {
         void checkSubscription();
+      }
+      if (
+        'profile_rematch_purchased' in changes &&
+        changes.profile_rematch_purchased.newValue !== undefined
+      ) {
+        setProfileRematchPending(false);
+        void (async () => {
+          try {
+            const token = await getToken();
+            const res = await fetch(`${API_BASE_URL}/v1/profile`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                profile_ready: true,
+                client_id: client.id,
+              }),
+            });
+            if (!res.ok) return;
+            const patchData = (await res.json()) as {
+              matching_relevant_change?: boolean;
+            };
+            if (patchData.matching_relevant_change === true) {
+              await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+            }
+            setApplyOffers([]);
+            setLevelUpOffers([]);
+            setApplyNowCount(null);
+            setLevelUpCount(null);
+            setApplyPage(1);
+            setLevelUpPage(1);
+          } catch (err) {
+            console.error('[profile_rematch_purchased]', err);
+          }
+        })();
       }
     }
 
@@ -2693,6 +2736,7 @@ function ClientAccordion({
                 onClose={() => setProfileOpen(false)}
                 onRematch={() => setProfileReady(true)}
                 onCancelEdit={() => setProfileReady(true)}
+                profileRematchPending={profileRematchPending}
                 onSyncTriggered={() => {
                   setApplyOffers([]);
                   setLevelUpOffers([]);
