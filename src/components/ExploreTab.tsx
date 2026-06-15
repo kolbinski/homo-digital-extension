@@ -1221,6 +1221,7 @@ function ClientAccordion({
   const [isOpen, setIsOpen] = useState(defaultExpanded);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
   const [wizardProfile, setWizardProfile] = useState<Profile | null>(null);
   const [wizardProfileLoading, setWizardProfileLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(
@@ -1329,7 +1330,8 @@ function ClientAccordion({
         changes.profile_rematch_purchased.newValue !== undefined
       ) {
         setProfileRematchPending(false);
-        setProfileOpen(false);
+        setProfileVisible(false);
+        setTimeout(() => setProfileOpen(false), 200);
         void (async () => {
           try {
             const token = await getToken();
@@ -1744,10 +1746,16 @@ function ClientAccordion({
     setStatusLoadingMore(false);
   }
 
+  function closeWizard() {
+    setProfileVisible(false);
+    setTimeout(() => setProfileOpen(false), 200);
+  }
+
   async function openWizard() {
     setWizardProfile(null);
     setWizardProfileLoading(true);
     setProfileOpen(true);
+    requestAnimationFrame(() => setProfileVisible(true));
     try {
       const token = await getToken();
       const params = new URLSearchParams({ client_id: client.id });
@@ -2710,64 +2718,73 @@ function ClientAccordion({
       {profileOpen &&
         createPortal(
           <div className="fixed inset-0 z-50">
-            {wizardProfileLoading || !wizardProfile ? (
-              <div className="flex flex-col h-screen bg-gray-50">
-                <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-                  <span className="text-sm font-semibold text-gray-900">
-                    Great jobs start with a great profile
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setProfileOpen(false)}
-                    aria-label="Close"
-                    className="text-gray-800 hover:text-gray-700 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                </header>
-                <div className="flex-1 flex items-center justify-center">
-                  <Spinner size={24} className="text-indigo-600" />
+            <div
+              className={`absolute inset-0 bg-black/20 transition-opacity duration-200 ${profileVisible ? 'opacity-100' : 'opacity-0'}`}
+              onClick={closeWizard}
+            />
+            <div
+              className={`absolute inset-y-0 right-0 w-full flex flex-col shadow-xl transition-transform duration-200 ${profileVisible ? 'translate-x-0' : 'translate-x-full'}`}
+            >
+              {wizardProfileLoading || !wizardProfile ? (
+                <div className="flex flex-col h-full bg-gray-50">
+                  <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+                    <span className="text-sm font-semibold text-gray-900">
+                      Great jobs start with a great profile
+                    </span>
+                    <button
+                      type="button"
+                      onClick={closeWizard}
+                      aria-label="Close"
+                      className="text-gray-800 hover:text-gray-700 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </header>
+                  <div className="flex-1 flex items-center justify-center">
+                    <Spinner size={24} className="text-indigo-600" />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <WizardShell
-                profile={wizardProfile}
-                onChange={setWizardProfile}
-                clientId={client.id}
-                onClose={() => setProfileOpen(false)}
-                onRematch={() => setProfileReady(true)}
-                onCancelEdit={() => setProfileReady(true)}
-                profileRematchPending={profileRematchPending}
-                onRematchLimitReached={() => {
-                  setProfileRematchPending(true);
-                  setProfileOpen(true);
-                }}
-                onSyncTriggered={() => {
-                  setApplyOffers([]);
-                  setLevelUpOffers([]);
-                  setApplyNowCount(null);
-                  setLevelUpCount(null);
-                  setApplyPage(1);
-                  setLevelUpPage(1);
-                }}
-                onSubmitted={() => setProfileOpen(false)}
-                onSaved={saved => {
-                  const fn = saved.basic_info?.first_name ?? '';
-                  const ln = saved.basic_info?.last_name ?? '';
-                  onClientUpdate?.(client.id, fn, ln);
-                }}
-                onCloseComplete={(ready, syncTriggered) => {
-                  setProfileReady(ready);
-                  if (syncTriggered) {
-                    knownCountRef.current = 0;
-                    console.log(
-                      '[poll] baseline reset to 0 after trigger-sync',
-                    );
-                    void handleRefresh();
-                  }
-                }}
-              />
-            )}
+              ) : (
+                <WizardShell
+                  profile={wizardProfile}
+                  onChange={setWizardProfile}
+                  clientId={client.id}
+                  onClose={closeWizard}
+                  onRematch={() => setProfileReady(true)}
+                  onCancelEdit={() => setProfileReady(true)}
+                  profileRematchPending={profileRematchPending}
+                  onRematchLimitReached={() => {
+                    setProfileRematchPending(true);
+                    setProfileOpen(true);
+                    requestAnimationFrame(() => setProfileVisible(true));
+                  }}
+                  onSyncTriggered={() => {
+                    setApplyOffers([]);
+                    setLevelUpOffers([]);
+                    setApplyNowCount(null);
+                    setLevelUpCount(null);
+                    setApplyPage(1);
+                    setLevelUpPage(1);
+                  }}
+                  onSubmitted={closeWizard}
+                  onSaved={saved => {
+                    const fn = saved.basic_info?.first_name ?? '';
+                    const ln = saved.basic_info?.last_name ?? '';
+                    onClientUpdate?.(client.id, fn, ln);
+                  }}
+                  onCloseComplete={(ready, syncTriggered) => {
+                    setProfileReady(ready);
+                    if (syncTriggered) {
+                      knownCountRef.current = 0;
+                      console.log(
+                        '[poll] baseline reset to 0 after trigger-sync',
+                      );
+                      void handleRefresh();
+                    }
+                  }}
+                />
+              )}
+            </div>
           </div>,
           document.body,
         )}
