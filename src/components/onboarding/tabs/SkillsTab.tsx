@@ -377,8 +377,18 @@ export default function SkillsTab({ skills, onChange }: Props) {
     return <p className="text-sm text-red-500">{fetchError}</p>;
   }
 
+  const totalSkillsCount = Object.values(skills).flat().length;
+
   return (
     <div className="flex flex-col gap-2">
+      {totalSkillsCount < 5 && (
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-gray-500">
+            You have to add at least 5 skills to get matched with job offers.
+          </p>
+          <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
+        </div>
+      )}
       {categories.map(cat => (
         <CategorySection
           key={cat}

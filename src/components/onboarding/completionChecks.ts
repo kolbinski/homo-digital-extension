@@ -48,9 +48,12 @@ function countMissingWorkExperience(p: Profile): number {
   return missing;
 }
 
+const MIN_SKILLS = 5;
+
 function countMissingSkills(p: Profile): number {
   const allSkills = Object.values(p.skills ?? {}).flat();
-  if (allSkills.length === 0) return 1;
+  const total = allSkills.length;
+  if (total < MIN_SKILLS) return MIN_SKILLS - total;
   return allSkills.filter(s => s.since === null).length;
 }
 
