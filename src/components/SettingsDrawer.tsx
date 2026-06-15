@@ -17,6 +17,8 @@ interface SubscriptionStatus {
   cv_counter_max?: number;
   cl_counter?: number;
   cl_counter_max?: number;
+  profile_relevant_change_counter?: number;
+  profile_relevant_change_counter_max?: number;
 }
 
 interface BillingData {
@@ -466,6 +468,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         label: 'Cover letters',
                         counter: subscription.cl_counter ?? 0,
                         max: subscription.cl_counter_max ?? 0,
+                      },
+                      {
+                        label: 'Profile re-matches',
+                        counter:
+                          subscription.profile_relevant_change_counter ?? 0,
+                        max:
+                          subscription.profile_relevant_change_counter_max ?? 0,
                       },
                     ].map(({ label, counter, max }) => {
                       const pct =
