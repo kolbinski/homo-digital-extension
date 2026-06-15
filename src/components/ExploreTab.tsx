@@ -2737,6 +2737,10 @@ function ClientAccordion({
                 onRematch={() => setProfileReady(true)}
                 onCancelEdit={() => setProfileReady(true)}
                 profileRematchPending={profileRematchPending}
+                onRematchLimitReached={() => {
+                  setProfileRematchPending(true);
+                  setProfileOpen(true);
+                }}
                 onSyncTriggered={() => {
                   setApplyOffers([]);
                   setLevelUpOffers([]);

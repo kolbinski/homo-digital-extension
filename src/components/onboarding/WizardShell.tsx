@@ -39,6 +39,7 @@ interface Props {
   onRematch?: () => void;
   onCancelEdit?: () => void;
   onSyncTriggered?: () => void;
+  onRematchLimitReached?: () => void;
   profileRematchPending?: boolean;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
@@ -55,6 +56,7 @@ export default function WizardShell({
   onRematch,
   onCancelEdit,
   onSyncTriggered,
+  onRematchLimitReached,
   profileRematchPending = false,
   isOnboarding = false,
   onCloseComplete,
@@ -77,6 +79,8 @@ export default function WizardShell({
   onSavedRef.current = onSaved;
   const onSyncTriggeredRef = useRef(onSyncTriggered);
   onSyncTriggeredRef.current = onSyncTriggered;
+  const onRematchLimitReachedRef = useRef(onRematchLimitReached);
+  onRematchLimitReachedRef.current = onRematchLimitReached;
 
   const completions = getTabCompletions(profile);
   const allComplete = allRequiredComplete(completions);
@@ -284,11 +288,15 @@ export default function WizardShell({
           matching_relevant_change?: boolean;
         };
         if (patchData.matching_relevant_change === true) {
-          await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+          const syncRes = await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
-          onSyncTriggeredRef.current?.();
+          if (syncRes.status === 402) {
+            onRematchLimitReachedRef.current?.();
+          } else {
+            onSyncTriggeredRef.current?.();
+          }
         }
       } catch (err) {
         console.error('[handleRematch]', err);
