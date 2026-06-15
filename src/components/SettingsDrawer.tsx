@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowSquareOut, X } from '@phosphor-icons/react';
+import { ArrowSquareOut, CheckCircle, X } from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import type { OAuthData } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
+import { useGeneralSettings } from '../store/generalSettingsStore';
 import PlanDrawer from './PlanDrawer';
 
 interface SubscriptionStatus {
@@ -67,6 +68,7 @@ function formatDate(date: string | number): string {
 
 export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const { getToken, getOAuthData } = useAuth();
+  const { settings: generalSettings } = useGeneralSettings();
   const [visible, setVisible] = useState(false);
 
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
@@ -93,6 +95,18 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     [],
   );
   const [billingHistoryLoading, setBillingHistoryLoading] = useState(true);
+
+  const [accountSettings, setAccountSettings] = useState<{
+    timezone: string | null;
+    preferred_currency: string | null;
+  } | null>(null);
+  const [currencySaved, setCurrencySaved] = useState(false);
+  const [timezoneSaved, setTimezoneSaved] = useState(false);
+  const [tzQuery, setTzQuery] = useState('');
+  const [tzDropdownOpen, setTzDropdownOpen] = useState(false);
+  const tzWrapperRef = useRef<HTMLDivElement>(null);
+  const currencySavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timezoneSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -175,6 +189,75 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       }
     })();
   }, [getToken]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE_URL}/v1/account/settings`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          timezone: string | null;
+          preferred_currency: string | null;
+        };
+        setAccountSettings(data);
+        setTzQuery(data.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [getToken]);
+
+  useEffect(() => {
+    if (!tzDropdownOpen) return;
+    function handler(e: MouseEvent) {
+      if (tzWrapperRef.current && !tzWrapperRef.current.contains(e.target as Node)) {
+        setTzDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [tzDropdownOpen]);
+
+  async function handleCurrencyChange(value: string) {
+    setAccountSettings(prev => prev ? { ...prev, preferred_currency: value } : prev);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/account/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ preferred_currency: value }),
+      });
+      if (!res.ok) return;
+      if (currencySavedTimerRef.current) clearTimeout(currencySavedTimerRef.current);
+      setCurrencySaved(true);
+      currencySavedTimerRef.current = setTimeout(() => setCurrencySaved(false), 1000);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleTimezoneChange(value: string) {
+    setAccountSettings(prev => prev ? { ...prev, timezone: value } : prev);
+    setTzQuery(value);
+    setTzDropdownOpen(false);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/account/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ timezone: value }),
+      });
+      if (!res.ok) return;
+      if (timezoneSavedTimerRef.current) clearTimeout(timezoneSavedTimerRef.current);
+      setTimezoneSaved(true);
+      timezoneSavedTimerRef.current = setTimeout(() => setTimezoneSaved(false), 1000);
+    } catch {
+      // ignore
+    }
+  }
 
   function handleClose() {
     setVisible(false);
@@ -351,6 +434,82 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  <div className="border-t border-gray-200" />
+
+                  {/* General settings */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-xs font-semibold text-gray-700">
+                      General settings
+                    </span>
+
+                    {/* Currency */}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-gray-500">
+                          Show offer salaries in currency
+                        </label>
+                        {currencySaved && (
+                          <CheckCircle size={13} weight="fill" className="text-green-500 shrink-0" />
+                        )}
+                      </div>
+                      <select
+                        value={accountSettings?.preferred_currency ?? 'USD'}
+                        onChange={e => void handleCurrencyChange(e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      >
+                        {(generalSettings?.currencies ?? ['USD']).map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Timezone */}
+                    <div className="flex flex-col gap-1" ref={tzWrapperRef}>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-gray-500">
+                          My timezone
+                        </label>
+                        {timezoneSaved && (
+                          <CheckCircle size={13} weight="fill" className="text-green-500 shrink-0" />
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={tzQuery}
+                          onChange={e => {
+                            setTzQuery(e.target.value);
+                            setTzDropdownOpen(true);
+                          }}
+                          onFocus={() => setTzDropdownOpen(true)}
+                          placeholder="Search timezone…"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                        />
+                        {tzDropdownOpen && (() => {
+                          const all = Intl.supportedValuesOf('timeZone');
+                          const q = tzQuery.toLowerCase();
+                          const starts = q ? all.filter(z => z.toLowerCase().startsWith(q)) : all;
+                          const contains = q ? all.filter(z => !z.toLowerCase().startsWith(q) && z.toLowerCase().includes(q)) : [];
+                          const options = [...starts, ...contains].slice(0, 60);
+                          return options.length > 0 ? (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto z-10">
+                              {options.map(tz => (
+                                <button
+                                  key={tz}
+                                  type="button"
+                                  onMouseDown={() => void handleTimezoneChange(tz)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-blue-50 transition-colors"
+                                >
+                                  {tz}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="border-t border-gray-200" />
