@@ -7,6 +7,7 @@ import type { OAuthData } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import { useGeneralSettings } from '../store/generalSettingsStore';
 import PlanDrawer from './PlanDrawer';
+import PlanLimitBanner from './PlanLimitBanner';
 
 interface SubscriptionStatus {
   plan_name: string;
@@ -107,6 +108,11 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const tzWrapperRef = useRef<HTMLDivElement>(null);
   const currencySavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timezoneSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevCurrencyRef = useRef<string>('USD');
+  const [pendingCurrency, setPendingCurrency] = useState<string | null>(null);
+  const pendingCurrencyRef = useRef<string | null>(null);
+  pendingCurrencyRef.current = pendingCurrency;
+  const [showCurrencyLimitBanner, setShowCurrencyLimitBanner] = useState(false);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -204,6 +210,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         };
         setAccountSettings(data);
         setTzQuery(data.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+        prevCurrencyRef.current = data.preferred_currency ?? 'USD';
       } catch {
         // ignore
       }
@@ -221,19 +228,85 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     return () => document.removeEventListener('mousedown', handler);
   }, [tzDropdownOpen]);
 
+  useEffect(() => {
+    function listener(changes: Record<string, chrome.storage.StorageChange>) {
+      if (!('profile_rematch_purchased' in changes) || changes.profile_rematch_purchased.newValue === undefined) return;
+      const pending = pendingCurrencyRef.current;
+      if (pending === null) return;
+      setPendingCurrency(null);
+      setShowCurrencyLimitBanner(false);
+      void (async () => {
+        try {
+          const token = await getToken();
+          const patchRes = await fetch(`${API_BASE_URL}/v1/account/settings`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ preferred_currency: pending }),
+          });
+          if (!patchRes.ok) return;
+          setAccountSettings(s => s ? { ...s, preferred_currency: pending } : s);
+          await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          prevCurrencyRef.current = pending;
+        } catch {
+          // ignore
+        }
+      })();
+    }
+    chrome.storage.local.onChanged.addListener(listener);
+    return () => chrome.storage.local.onChanged.removeListener(listener);
+  }, [getToken]);
+
+  async function handleBuyRematchFromSettings() {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/subscription/profile-rematch-checkout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { url: string };
+      await chrome.tabs.create({ url: data.url });
+    } catch {
+      // ignore
+    }
+  }
+
   async function handleCurrencyChange(value: string) {
     setAccountSettings(prev => prev ? { ...prev, preferred_currency: value } : prev);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/v1/account/settings`, {
+      const patchRes = await fetch(`${API_BASE_URL}/v1/account/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ preferred_currency: value }),
       });
-      if (!res.ok) return;
-      if (currencySavedTimerRef.current) clearTimeout(currencySavedTimerRef.current);
-      setCurrencySaved(true);
-      currencySavedTimerRef.current = setTimeout(() => setCurrencySaved(false), 1000);
+      if (!patchRes.ok) return;
+      const syncRes = await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (syncRes.status === 402) {
+        const prev = prevCurrencyRef.current;
+        setAccountSettings(s => s ? { ...s, preferred_currency: prev } : s);
+        await fetch(`${API_BASE_URL}/v1/account/settings`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ preferred_currency: prev }),
+        });
+        setPendingCurrency(value);
+        setShowCurrencyLimitBanner(true);
+      } else if (syncRes.ok) {
+        prevCurrencyRef.current = value;
+        setPendingCurrency(null);
+        setShowCurrencyLimitBanner(false);
+        chrome.storage.local.set({ offers_cleared: Date.now() });
+        if (currencySavedTimerRef.current) clearTimeout(currencySavedTimerRef.current);
+        setCurrencySaved(true);
+        currencySavedTimerRef.current = setTimeout(() => setCurrencySaved(false), 1000);
+      }
     } catch {
       // ignore
     }
@@ -463,6 +536,19 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           <option key={c} value={c}>{c}</option>
                         ))}
                       </select>
+                      {showCurrencyLimitBanner && (
+                        <PlanLimitBanner
+                          onButtonClick={() => void handleBuyRematchFromSettings()}
+                          buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
+                          withMX={false}
+                          closable
+                          onClose={() => setShowCurrencyLimitBanner(false)}
+                        >
+                          <p className="text-xs text-gray-500">
+                            You've reached your profile re-match limit. Buy more edits to keep matching offers.
+                          </p>
+                        </PlanLimitBanner>
+                      )}
                     </div>
 
                     {/* Timezone */}

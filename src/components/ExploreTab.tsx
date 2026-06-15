@@ -1326,6 +1326,17 @@ function ClientAccordion({
         void checkSubscription();
       }
       if (
+        'offers_cleared' in changes &&
+        changes.offers_cleared.newValue !== undefined
+      ) {
+        setApplyOffers([]);
+        setLevelUpOffers([]);
+        setApplyNowCount(null);
+        setLevelUpCount(null);
+        setApplyPage(1);
+        setLevelUpPage(1);
+      }
+      if (
         'profile_rematch_purchased' in changes &&
         changes.profile_rematch_purchased.newValue !== undefined
       ) {

@@ -389,7 +389,7 @@ function ProjectCard({
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(isOnly);
   const nameInvalid = requireName && !project.name.trim();
   const roleInvalid = !project.role?.trim();
   const achievementsInvalid =
