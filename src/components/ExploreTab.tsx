@@ -581,10 +581,7 @@ function OfferCard({
             {onShowOffer && (
               <button
                 type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  onShowOffer();
-                }}
+                onClick={onShowOffer}
                 className="ml-auto text-xs text-blue-600 hover:text-blue-700 transition-colors shrink-0"
               >
                 Show offer
@@ -1269,6 +1266,7 @@ function ClientAccordion({
   const manualPageOfferRef = useRef(false);
   const manualPageOfferUrlRef = useRef<string | null>(null);
   const pageOfferSectionRef = useRef<HTMLButtonElement>(null);
+  const pageOfferCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1476,9 +1474,20 @@ function ClientAccordion({
 
   useEffect(() => {
     if (!pageOffer) return;
+    console.log('[scroll] pageOffer changed:', pageOffer?.user_offer_id);
+    setExpandedOfferId(null);
     setTimeout(() => {
-      pageOfferSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 150);
+      const el = pageOfferCardRef.current;
+      console.log('[scroll] pageOfferCardRef.current:', el);
+      if (!el) return;
+      const scrollContainer = document.getElementById('main-scroll');
+      if (!scrollContainer) return;
+      const elTop = el.getBoundingClientRect().top;
+      const containerTop = scrollContainer.getBoundingClientRect().top;
+      const offset = elTop - containerTop - 40;
+      console.log('[scroll] scrolling by offset:', offset);
+      scrollContainer.scrollBy({ top: offset, behavior: 'smooth' });
+    }, 200);
   }, [pageOffer]);
 
   useEffect(() => {
@@ -2169,6 +2178,7 @@ function ClientAccordion({
                     </svg>
                   </button>
                   {pageOfferOpen && (
+                    <div ref={pageOfferCardRef}>
                     <OfferCard
                       key={pageOffer.user_offer_id}
                       offer={pageOffer}
@@ -2202,6 +2212,7 @@ function ClientAccordion({
                         generalSettings?.cl_package_price?.formatted
                       }
                     />
+                    </div>
                   )}
                 </div>
               )}
