@@ -184,29 +184,31 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     })();
   }, [getToken]);
 
-  useEffect(() => {
-    void (async () => {
-      setBillingHistoryLoading(true);
-      try {
-        const token = await getToken();
-        const res = await fetch(`${API_BASE_URL}/v1/billing/history`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) {
-          setBillingHistory([]);
-          return;
-        }
-        const data = (await res.json()) as
-          | { history: BillingHistoryItem[] }
-          | BillingHistoryItem[];
-        setBillingHistory(Array.isArray(data) ? data : (data.history ?? []));
-      } catch {
+  const fetchBillingHistory = useCallback(async () => {
+    setBillingHistoryLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/billing/history`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
         setBillingHistory([]);
-      } finally {
-        setBillingHistoryLoading(false);
+        return;
       }
-    })();
+      const data = (await res.json()) as
+        | { history: BillingHistoryItem[] }
+        | BillingHistoryItem[];
+      setBillingHistory(Array.isArray(data) ? data : (data.history ?? []));
+    } catch {
+      setBillingHistory([]);
+    } finally {
+      setBillingHistoryLoading(false);
+    }
   }, [getToken]);
+
+  useEffect(() => {
+    void fetchBillingHistory();
+  }, [fetchBillingHistory]);
 
   useEffect(() => {
     void (async () => {
@@ -247,12 +249,19 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   useEffect(() => {
     function listener(changes: Record<string, chrome.storage.StorageChange>) {
+      const anyPurchase = (
+        ['scan_package_purchased', 'cv_package_purchased', 'cl_package_purchased', 'profile_rematch_purchased'] as const
+      ).some(key => key in changes && changes[key].newValue !== undefined);
+      if (!anyPurchase) return;
+
+      void fetchSubscription();
+      void fetchBillingHistory();
+
       if (
         !('profile_rematch_purchased' in changes) ||
         changes.profile_rematch_purchased.newValue === undefined
       )
         return;
-      void fetchSubscription();
       const pending = pendingCurrencyRef.current;
       if (pending === null) return;
       setPendingCurrency(null);
@@ -284,7 +293,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     }
     chrome.storage.local.onChanged.addListener(listener);
     return () => chrome.storage.local.onChanged.removeListener(listener);
-  }, [getToken, fetchSubscription]);
+  }, [getToken, fetchSubscription, fetchBillingHistory]);
 
   useEffect(() => {
     function onUpdated(tabId: number, changeInfo: { url?: string }) {
