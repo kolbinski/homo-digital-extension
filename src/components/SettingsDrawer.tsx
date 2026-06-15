@@ -24,6 +24,7 @@ interface BillingData {
   email: string | null;
   address: {
     line1: string | null;
+    line2: string | null;
     city: string | null;
     postal_code: string | null;
     country: string | null;
@@ -45,7 +46,6 @@ interface Props {
   onClose: () => void;
   onLogout: () => void;
 }
-
 
 function formatAmount(amount: number, currency: string): string {
   try {
@@ -234,7 +234,11 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const billingViewRows: { label: string; value: string | null | undefined }[] =
     [
       { label: 'Name', value: billingData?.name },
-      { label: 'Address', value: billingData?.address?.line1 },
+      {
+        label: 'Address',
+        value:
+          `${billingData?.address?.line1} ${billingData?.address?.line2}`.trim(),
+      },
       { label: 'City', value: billingData?.address?.city },
       { label: 'Postal code', value: billingData?.address?.postal_code },
       { label: 'Country', value: billingData?.address?.country },
