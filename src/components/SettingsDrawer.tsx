@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowSquareOut, CheckCircle, CloudCheck, X } from '@phosphor-icons/react';
+import {
+  ArrowSquareOut,
+  CheckCircle,
+  CloudCheck,
+  X,
+} from '@phosphor-icons/react';
 import Spinner from './Spinner';
 import { useAuth } from '../hooks/useAuth';
 import type { OAuthData } from '../hooks/useAuth';
@@ -107,13 +112,19 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [tzQuery, setTzQuery] = useState('');
   const [tzDropdownOpen, setTzDropdownOpen] = useState(false);
   const tzWrapperRef = useRef<HTMLDivElement>(null);
-  const currencySavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const timezoneSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currencySavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const timezoneSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const prevCurrencyRef = useRef<string>('USD');
   const [pendingCurrency, setPendingCurrency] = useState<string | null>(null);
   const pendingCurrencyRef = useRef<string | null>(null);
   pendingCurrencyRef.current = pendingCurrency;
   const [showCurrencyLimitBanner, setShowCurrencyLimitBanner] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const checkoutTabIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -210,7 +221,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           preferred_currency: string | null;
         };
         setAccountSettings(data);
-        setTzQuery(data.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+        setTzQuery(
+          data.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+        );
         prevCurrencyRef.current = data.preferred_currency ?? 'USD';
       } catch {
         // ignore
@@ -221,7 +234,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   useEffect(() => {
     if (!tzDropdownOpen) return;
     function handler(e: MouseEvent) {
-      if (tzWrapperRef.current && !tzWrapperRef.current.contains(e.target as Node)) {
+      if (
+        tzWrapperRef.current &&
+        !tzWrapperRef.current.contains(e.target as Node)
+      ) {
         setTzDropdownOpen(false);
       }
     }
@@ -231,7 +247,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   useEffect(() => {
     function listener(changes: Record<string, chrome.storage.StorageChange>) {
-      if (!('profile_rematch_purchased' in changes) || changes.profile_rematch_purchased.newValue === undefined) return;
+      if (
+        !('profile_rematch_purchased' in changes) ||
+        changes.profile_rematch_purchased.newValue === undefined
+      )
+        return;
+      void fetchSubscription();
       const pending = pendingCurrencyRef.current;
       if (pending === null) return;
       setPendingCurrency(null);
@@ -241,11 +262,16 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           const token = await getToken();
           const patchRes = await fetch(`${API_BASE_URL}/v1/account/settings`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({ preferred_currency: pending }),
           });
           if (!patchRes.ok) return;
-          setAccountSettings(s => s ? { ...s, preferred_currency: pending } : s);
+          setAccountSettings(s =>
+            s ? { ...s, preferred_currency: pending } : s,
+          );
           await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -258,45 +284,88 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     }
     chrome.storage.local.onChanged.addListener(listener);
     return () => chrome.storage.local.onChanged.removeListener(listener);
-  }, [getToken]);
+  }, [getToken, fetchSubscription]);
+
+  useEffect(() => {
+    function onUpdated(tabId: number, changeInfo: { url?: string }) {
+      if (tabId !== checkoutTabIdRef.current) return;
+      if (changeInfo.url?.includes('upgrade=profile_rematch_package')) {
+        setCheckoutLoading(false);
+        checkoutTabIdRef.current = null;
+      }
+    }
+    function onRemoved(tabId: number) {
+      if (tabId !== checkoutTabIdRef.current) return;
+      setCheckoutLoading(false);
+      checkoutTabIdRef.current = null;
+    }
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.onUpdated.addListener(onUpdated);
+      chrome.tabs.onRemoved.addListener(onRemoved);
+    }
+    return () => {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        chrome.tabs.onRemoved.removeListener(onRemoved);
+      }
+    };
+  }, []);
 
   async function handleBuyRematchFromSettings() {
+    setCheckoutLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/v1/subscription/profile-rematch-checkout`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) return;
+      const res = await fetch(
+        `${API_BASE_URL}/v1/subscription/profile-rematch-checkout`,
+        {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = (await res.json()) as { url: string };
-      await chrome.tabs.create({ url: data.url });
+      const tab = await chrome.tabs.create({ url: data.url });
+      checkoutTabIdRef.current = tab.id ?? null;
     } catch {
       // ignore
+    } finally {
+      if (checkoutTabIdRef.current === null) setCheckoutLoading(false);
     }
   }
 
   async function handleCurrencyChange(value: string) {
-    setAccountSettings(prev => prev ? { ...prev, preferred_currency: value } : prev);
+    setAccountSettings(prev =>
+      prev ? { ...prev, preferred_currency: value } : prev,
+    );
     setCurrencyLoading(true);
     try {
       const token = await getToken();
       const patchRes = await fetch(`${API_BASE_URL}/v1/account/settings`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ preferred_currency: value }),
       });
       if (!patchRes.ok) return;
       const syncRes = await fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ force_relevant_change: true }),
       });
       if (syncRes.status === 402) {
         const prev = prevCurrencyRef.current;
-        setAccountSettings(s => s ? { ...s, preferred_currency: prev } : s);
+        setAccountSettings(s => (s ? { ...s, preferred_currency: prev } : s));
         await fetch(`${API_BASE_URL}/v1/account/settings`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ preferred_currency: prev }),
         });
         setPendingCurrency(value);
@@ -306,9 +375,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         setPendingCurrency(null);
         setShowCurrencyLimitBanner(false);
         chrome.storage.local.set({ offers_cleared: Date.now() });
-        if (currencySavedTimerRef.current) clearTimeout(currencySavedTimerRef.current);
+        if (currencySavedTimerRef.current)
+          clearTimeout(currencySavedTimerRef.current);
         setCurrencySaved(true);
-        currencySavedTimerRef.current = setTimeout(() => setCurrencySaved(false), 5000);
+        currencySavedTimerRef.current = setTimeout(
+          () => setCurrencySaved(false),
+          5000,
+        );
       }
     } catch {
       // ignore
@@ -318,20 +391,27 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   }
 
   async function handleTimezoneChange(value: string) {
-    setAccountSettings(prev => prev ? { ...prev, timezone: value } : prev);
+    setAccountSettings(prev => (prev ? { ...prev, timezone: value } : prev));
     setTzQuery(value);
     setTzDropdownOpen(false);
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/v1/account/settings`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ timezone: value }),
       });
       if (!res.ok) return;
-      if (timezoneSavedTimerRef.current) clearTimeout(timezoneSavedTimerRef.current);
+      if (timezoneSavedTimerRef.current)
+        clearTimeout(timezoneSavedTimerRef.current);
       setTimezoneSaved(true);
-      timezoneSavedTimerRef.current = setTimeout(() => setTimezoneSaved(false), 1000);
+      timezoneSavedTimerRef.current = setTimeout(
+        () => setTimezoneSaved(false),
+        1000,
+      );
     } catch {
       // ignore
     }
@@ -529,36 +609,47 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           Show offer salaries in currency
                         </label>
                         {currencySaved && (
-                          <CloudCheck size={13} weight="fill" className="text-green-500 shrink-0" />
+                          <CloudCheck
+                            size={20}
+                            weight="fill"
+                            className="text-green-500 shrink-0"
+                          />
                         )}
                       </div>
                       <div className="relative">
                         <select
                           value={accountSettings?.preferred_currency ?? 'USD'}
-                          onChange={e => void handleCurrencyChange(e.target.value)}
-                          disabled={currencyLoading}
+                          onChange={e =>
+                            void handleCurrencyChange(e.target.value)
+                          }
+                          disabled={currencyLoading || checkoutLoading}
                           className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {(generalSettings?.currencies ?? ['USD']).map(c => (
-                            <option key={c} value={c}>{c}</option>
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
                           ))}
                         </select>
                         {currencyLoading && (
-                          <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                          <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none">
                             <Spinner size={12} className="text-gray-400" />
                           </div>
                         )}
                       </div>
                       {showCurrencyLimitBanner && (
                         <PlanLimitBanner
-                          onButtonClick={() => void handleBuyRematchFromSettings()}
+                          onButtonClick={() =>
+                            void handleBuyRematchFromSettings()
+                          }
                           buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
                           withMX={false}
                           closable
                           onClose={() => setShowCurrencyLimitBanner(false)}
                         >
                           <p className="text-xs text-gray-500">
-                            You've reached your profile re-match limit. Buy more edits to keep matching offers.
+                            You've reached your profile re-match limit. Buy more
+                            edits to keep matching offers.
                           </p>
                         </PlanLimitBanner>
                       )}
@@ -571,7 +662,11 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           My timezone
                         </label>
                         {timezoneSaved && (
-                          <CheckCircle size={13} weight="fill" className="text-green-500 shrink-0" />
+                          <CheckCircle
+                            size={13}
+                            weight="fill"
+                            className="text-green-500 shrink-0"
+                          />
                         )}
                       </div>
                       <div className="relative">
@@ -586,27 +681,41 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           placeholder="Search timezone…"
                           className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                         />
-                        {tzDropdownOpen && (() => {
-                          const all = Intl.supportedValuesOf('timeZone');
-                          const q = tzQuery.toLowerCase();
-                          const starts = q ? all.filter(z => z.toLowerCase().startsWith(q)) : all;
-                          const contains = q ? all.filter(z => !z.toLowerCase().startsWith(q) && z.toLowerCase().includes(q)) : [];
-                          const options = [...starts, ...contains].slice(0, 60);
-                          return options.length > 0 ? (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto z-10">
-                              {options.map(tz => (
-                                <button
-                                  key={tz}
-                                  type="button"
-                                  onMouseDown={() => void handleTimezoneChange(tz)}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-blue-50 transition-colors"
-                                >
-                                  {tz}
-                                </button>
-                              ))}
-                            </div>
-                          ) : null;
-                        })()}
+                        {tzDropdownOpen &&
+                          (() => {
+                            const all = Intl.supportedValuesOf('timeZone');
+                            const q = tzQuery.toLowerCase();
+                            const starts = q
+                              ? all.filter(z => z.toLowerCase().startsWith(q))
+                              : all;
+                            const contains = q
+                              ? all.filter(
+                                  z =>
+                                    !z.toLowerCase().startsWith(q) &&
+                                    z.toLowerCase().includes(q),
+                                )
+                              : [];
+                            const options = [...starts, ...contains].slice(
+                              0,
+                              60,
+                            );
+                            return options.length > 0 ? (
+                              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto z-10">
+                                {options.map(tz => (
+                                  <button
+                                    key={tz}
+                                    type="button"
+                                    onMouseDown={() =>
+                                      void handleTimezoneChange(tz)
+                                    }
+                                    className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-blue-50 transition-colors"
+                                  >
+                                    {tz}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null;
+                          })()}
                       </div>
                     </div>
                   </div>
