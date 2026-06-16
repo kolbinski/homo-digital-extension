@@ -3083,41 +3083,27 @@ export default function ExploreTab({
               {minScore}%
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={e => handleStatusFilterChange(e.target.value)}
-              className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value="pending_apply">Pending apply</option>
-              <option value="applied">Applied</option>
-              {!selfMode && (
-                <option value="agent_withdrawn">Agent withdrawn</option>
-              )}
-              <option value="client_withdrawn">
-                {selfMode ? 'Withdrawn' : 'Client withdrawn'}
-              </option>
-              <option value="recruiter_rejected">Recruiter rejected</option>
-              <option value="offer_received">Offer received</option>
-              <option value="accepted">Accepted</option>
-            </select>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            {generalSettings?.show_source_filter && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-500">Source:</span>
-                <select
-                  value={sourceFilter}
-                  onChange={e => handleSourceFilterChange(e.target.value)}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="all">All</option>
-                  <option value="justjoin">JustJoin</option>
-                  <option value="nofluffjobs">NoFluffJobs</option>
-                </select>
-              </div>
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={e => handleStatusFilterChange(e.target.value)}
+                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="pending_apply">Pending apply</option>
+                <option value="applied">Applied</option>
+                {!selfMode && (
+                  <option value="agent_withdrawn">Agent withdrawn</option>
+                )}
+                <option value="client_withdrawn">
+                  {selfMode ? 'Withdrawn' : 'Client withdrawn'}
+                </option>
+                <option value="recruiter_rejected">Recruiter rejected</option>
+                <option value="offer_received">Offer received</option>
+                <option value="accepted">Accepted</option>
+              </select>
+            </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">With:</span>
               <label className="flex items-center gap-1 cursor-pointer">
@@ -3139,6 +3125,22 @@ export default function ExploreTab({
                 <span className="text-xs text-gray-700">CL</span>
               </label>
             </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            {generalSettings?.show_source_filter && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-500">Source:</span>
+                <select
+                  value={sourceFilter}
+                  onChange={e => handleSourceFilterChange(e.target.value)}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="all">All</option>
+                  <option value="justjoin">JustJoin</option>
+                  <option value="nofluffjobs">NoFluffJobs</option>
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-500">Sort by:</span>
               <select
