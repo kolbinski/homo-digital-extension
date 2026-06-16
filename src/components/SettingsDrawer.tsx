@@ -294,6 +294,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
       const anyPurchase = (
         [
+          'upgrade_success',
           'scan_package_purchased',
           'cv_package_purchased',
           'cl_package_purchased',
@@ -545,16 +546,16 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   }
 
   async function handleDeleteAccount() {
-    setIsDeleting(true);
     setDeleteError('');
     const token = await getToken();
     await chrome.storage.local.clear();
     await chrome.storage.session?.clear?.();
-    onLogout();
+    setIsDeleting(true);
     void fetch(`${API_BASE_URL}/v1/account`, {
       method: 'DELETE',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+    setTimeout(() => onLogout(), 5000);
   }
 
   const isPro =
@@ -590,14 +591,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       >
         {isDeleting ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4">
-            <Spinner size={28} className="text-red-500" />
             <p className="text-base font-semibold text-gray-900">
               Your account is being deleted.
             </p>
-            <p className="text-sm text-gray-500">
-              Please wait while we securely remove your data. This may take a
-              moment.
-            </p>
+            <Spinner size={20} className="text-gray-400" />
           </div>
         ) : (
           <>
@@ -652,47 +649,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     <button
                       type="button"
                       onClick={() => void handleLogout()}
-                      className="shrink-0 font-medium py-1.5 px-3 rounded-md text-xs transition-colors bg-gray-800 hover:bg-gray-900 text-white"
+                      className="shrink-0 font-medium px-3 py-1 rounded-md text-xs transition-colors bg-gray-800 hover:bg-gray-900 text-white"
                     >
                       Log out
                     </button>
-                  </div>
-
-                  <div className="border-t border-gray-200" />
-
-                  {/* Your billing data */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-gray-700">
-                      Your billing data
-                    </span>
-                    {billingLoading ? (
-                      <div className="flex justify-center py-1">
-                        <Spinner size={14} className="text-gray-400" />
-                      </div>
-                    ) : billingData === null ? (
-                      <p className="text-xs text-gray-400">
-                        You haven't made any purchases yet. Your billing data
-                        will appear here after your first purchase.
-                      </p>
-                    ) : (
-                      <div className="flex flex-col gap-1">
-                        {billingViewRows.map(({ label, value }) => (
-                          <div
-                            key={label}
-                            className="flex justify-between gap-2 text-xs"
-                          >
-                            <span className="text-gray-500 shrink-0">
-                              {label}
-                            </span>
-                            <span
-                              className={`text-right ${value ? 'text-gray-900' : 'text-gray-400'}`}
-                            >
-                              {value ?? 'Not set'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   <div className="border-t border-gray-200" />
@@ -823,6 +783,42 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     </div>
                   </div>
 
+                  <div className="border-t border-gray-200" />
+
+                  {/* Your billing data */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-gray-700">
+                      Your billing data
+                    </span>
+                    {billingLoading ? (
+                      <div className="flex justify-center py-1">
+                        <Spinner size={14} className="text-gray-400" />
+                      </div>
+                    ) : billingData === null ? (
+                      <p className="text-xs text-gray-400">
+                        You haven't made any purchases yet. Your billing data
+                        will appear here after your first purchase.
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {billingViewRows.map(({ label, value }) => (
+                          <div
+                            key={label}
+                            className="flex justify-between gap-2 text-xs"
+                          >
+                            <span className="text-gray-500 shrink-0">
+                              {label}
+                            </span>
+                            <span
+                              className={`text-right ${value ? 'text-gray-900' : 'text-gray-400'}`}
+                            >
+                              {value ?? 'Not set'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </section>
 
@@ -903,7 +899,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         max: subscription.cv_counter_max ?? 0,
                       },
                       {
-                        label: 'Cover letters',
+                        label: 'Cover letter generations',
                         counter: subscription.cl_counter ?? 0,
                         max: subscription.cl_counter_max ?? 0,
                       },
