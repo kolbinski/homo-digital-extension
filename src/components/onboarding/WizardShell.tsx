@@ -43,9 +43,6 @@ interface Props {
   profileRematchPending?: boolean;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
-  reviewByAiCounter?: number;
-  reviewByAiCounterMax?: number;
-  onReviewByAiUsed?: () => void;
 }
 
 export default function WizardShell({
@@ -63,9 +60,6 @@ export default function WizardShell({
   profileRematchPending = false,
   isOnboarding = false,
   onCloseComplete,
-  reviewByAiCounter,
-  reviewByAiCounterMax,
-  onReviewByAiUsed,
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -74,7 +68,7 @@ export default function WizardShell({
   const [submitting, setSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
-  const [reviewBannerClosed, setReviewBannerClosed] = useState(false);
+  const [reviewLimitReached, setReviewLimitReached] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -254,7 +248,12 @@ export default function WizardShell({
         },
         body: JSON.stringify({ profile }),
       });
+      if (res.status === 402) {
+        setReviewLimitReached(true);
+        return;
+      }
       if (!res.ok) throw new Error(`Server error ${res.status}`);
+      setReviewLimitReached(false);
       const html = await res.text();
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -282,8 +281,8 @@ export default function WizardShell({
           await chrome.storage.local.set({ review_tab_id: tab.id });
         }
       }
-      onReviewByAiUsed?.();
     } catch {
+      setReviewLimitReached(false);
       setReviewError('Review failed. Please try again.');
     } finally {
       setIsReviewing(false);
@@ -390,11 +389,6 @@ export default function WizardShell({
       console.error('[handleBuyReviewPackage]', err);
     }
   }
-
-  const reviewLimitReached =
-    reviewByAiCounterMax !== undefined &&
-    reviewByAiCounterMax > 0 &&
-    (reviewByAiCounter ?? 0) >= reviewByAiCounterMax;
 
   const isEditMode = !isOnboarding && !!onClose;
 
@@ -598,6 +592,18 @@ export default function WizardShell({
             </p>
           </PlanLimitBanner>
         )}
+        {reviewLimitReached && (
+          <PlanLimitBanner
+            onButtonClick={() => void handleBuyReviewPackage()}
+            buttonText={`Buy ${generalSettings?.profile_review_package_amount ?? '...'} reviews for ${generalSettings?.profile_review_package_price?.formatted ?? '...'}`}
+            closable
+            onClose={() => setReviewLimitReached(false)}
+          >
+            <p className="text-xs text-gray-500">
+              You've reached your AI profile review limit.
+            </p>
+          </PlanLimitBanner>
+        )}
         <div className="px-4 py-3 flex items-center gap-2">
           {/* Left: error / all-clear indicator */}
           <div className="flex items-center">
@@ -693,18 +699,6 @@ export default function WizardShell({
             )}
           </div>
         </div>
-        {reviewLimitReached && !reviewBannerClosed && (
-          <PlanLimitBanner
-            onButtonClick={() => void handleBuyReviewPackage()}
-            buttonText={`Buy ${generalSettings?.profile_review_package_amount ?? '...'} reviews for ${generalSettings?.profile_review_package_price?.formatted ?? '...'}`}
-            closable
-            onClose={() => setReviewBannerClosed(true)}
-          >
-            <p className="text-xs text-gray-500">
-              You've reached your AI profile review limit.
-            </p>
-          </PlanLimitBanner>
-        )}
       </div>
     </div>
   );

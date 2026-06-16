@@ -1268,8 +1268,6 @@ function ClientAccordion({
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
-  const generalSettingsRef = useRef(generalSettings);
-  generalSettingsRef.current = generalSettings;
   const pageSize = generalSettings?.listing_page_size ?? 10;
 
   const [isOpen, setIsOpen] = useState(defaultExpanded);
@@ -1294,8 +1292,6 @@ function ClientAccordion({
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [profileRematchPending, setProfileRematchPending] = useState(false);
-  const [reviewByAiCounter, setReviewByAiCounter] = useState<number | undefined>(undefined);
-  const [reviewByAiCounterMax, setReviewByAiCounterMax] = useState<number | undefined>(undefined);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -1339,8 +1335,6 @@ function ClientAccordion({
           subscribed_to: string | null;
           expires_at?: string | null;
           profile_relevant_change_pending?: boolean;
-          review_by_ai_counter?: number;
-          review_by_ai_counter_max?: number;
         };
         const active =
           data.subscribed_to !== null &&
@@ -1348,8 +1342,6 @@ function ClientAccordion({
             new Date(data.expires_at).getTime() > Date.now());
         setIsPro(active);
         setProfileRematchPending(data.profile_relevant_change_pending ?? false);
-        if (data.review_by_ai_counter !== undefined) setReviewByAiCounter(data.review_by_ai_counter);
-        if (data.review_by_ai_counter_max !== undefined) setReviewByAiCounterMax(data.review_by_ai_counter_max);
       } catch {
         // ignore
       }
@@ -1401,13 +1393,6 @@ function ClientAccordion({
         setLevelUpCount(null);
         setApplyPage(1);
         setLevelUpPage(1);
-      }
-      if (
-        'review_package_purchased' in changes &&
-        changes.review_package_purchased.newValue !== undefined
-      ) {
-        const amount = generalSettingsRef.current?.profile_review_package_amount ?? 0;
-        setReviewByAiCounterMax(prev => (prev ?? 0) + amount);
       }
       if (
         'profile_rematch_purchased' in changes &&
@@ -2863,9 +2848,6 @@ function ClientAccordion({
                   onRematch={() => setProfileReady(true)}
                   onCancelEdit={() => setProfileReady(true)}
                   profileRematchPending={profileRematchPending}
-                  reviewByAiCounter={reviewByAiCounter}
-                  reviewByAiCounterMax={reviewByAiCounterMax}
-                  onReviewByAiUsed={() => setReviewByAiCounter(prev => (prev ?? 0) + 1)}
                   onRematchLimitReached={() => {
                     setProfileRematchPending(true);
                     setProfileOpen(true);
