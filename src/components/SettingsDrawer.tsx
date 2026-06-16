@@ -29,11 +29,12 @@ interface SubscriptionStatus {
   is_admin?: boolean;
 }
 
-interface AiUsageEntry {
-  user_id: string;
-  email: string;
-  total_cost: number;
-  models: { model: string; cost: number }[];
+interface AiUsageResponse {
+  total_cost_all_time: number;
+  total_cost_this_month: number;
+  by_type: { type: string; count: number; cost: number }[];
+  by_model: { model: string; count: number; cost: number }[];
+  top_users: { user_id: string; email: string; cost: number; by_model: { model: string; count: number; cost: number }[] }[];
 }
 
 interface BillingData {
@@ -133,7 +134,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [showCurrencyLimitBanner, setShowCurrencyLimitBanner] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const checkoutTabIdRef = useRef<number | null>(null);
-  const [aiUsage, setAiUsage] = useState<AiUsageEntry[] | null>(null);
+  const [aiUsage, setAiUsage] = useState<AiUsageResponse | null>(null);
   const [aiUsageLoading, setAiUsageLoading] = useState(false);
 
   useEffect(() => {
@@ -161,7 +162,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           if (usageRes.ok) {
-            const usageData = (await usageRes.json()) as AiUsageEntry[];
+            const usageData = (await usageRes.json()) as AiUsageResponse;
             setAiUsage(usageData);
           }
         } catch {
@@ -1070,27 +1071,68 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       <div className="flex justify-center">
                         <Spinner size={16} className="text-gray-400" />
                       </div>
-                    ) : !aiUsage || aiUsage.length === 0 ? (
+                    ) : !aiUsage ? (
                       <p className="text-xs text-gray-400">No data yet.</p>
                     ) : (
-                      [...aiUsage]
-                        .sort((a, b) => b.total_cost - a.total_cost)
-                        .map((user, i, arr) => (
-                          <div key={user.user_id} className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-900 font-medium truncate">{user.email}</span>
-                              <span className="text-gray-700 font-medium shrink-0 ml-2">${user.total_cost.toFixed(4)}</span>
-                            </div>
-                            <p className="text-xs text-gray-400 truncate">{user.user_id}</p>
-                            {user.models.map(m => (
-                              <div key={m.model} className="flex items-center justify-between text-xs text-gray-500 pl-2">
-                                <span className="truncate">{m.model}</span>
-                                <span className="shrink-0 ml-2">${m.cost.toFixed(4)}</span>
+                      <>
+                        <div className="flex items-center justify-between text-xs font-medium">
+                          <span className="text-gray-700">Total (all time)</span>
+                          <span className="text-gray-900">${aiUsage.total_cost_all_time.toFixed(4)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-500">This month</span>
+                          <span className="text-gray-700">${aiUsage.total_cost_this_month.toFixed(4)}</span>
+                        </div>
+
+                        {aiUsage.top_users.length > 0 && (
+                          <>
+                            <div className="border-t border-gray-200" />
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Top users</p>
+                            {aiUsage.top_users.map((u, i, arr) => (
+                              <div key={u.user_id} className="flex flex-col gap-0.5">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-900 font-medium truncate">{u.email}</span>
+                                  <span className="text-gray-700 shrink-0 ml-2">${u.cost.toFixed(4)}</span>
+                                </div>
+                                <p className="text-xs text-gray-400 truncate">{u.user_id}</p>
+                                {u.by_model.map(m => (
+                                  <div key={m.model} className="flex items-center justify-between text-xs text-gray-500 pl-2">
+                                    <span className="truncate">{m.model} ({m.count}×)</span>
+                                    <span className="shrink-0 ml-2">${m.cost.toFixed(4)}</span>
+                                  </div>
+                                ))}
+                                {i < arr.length - 1 && <div className="border-t border-gray-200 mt-1" />}
                               </div>
                             ))}
-                            {i < arr.length - 1 && <div className="border-t border-gray-200 mt-1" />}
-                          </div>
-                        ))
+                          </>
+                        )}
+
+                        {aiUsage.by_model.length > 0 && (
+                          <>
+                            <div className="border-t border-gray-200" />
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">By model</p>
+                            {aiUsage.by_model.map(item => (
+                              <div key={item.model} className="flex items-center justify-between text-xs">
+                                <span className="text-gray-600 truncate">{item.model}</span>
+                                <span className="text-gray-700 shrink-0 ml-2">${item.cost.toFixed(4)}</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+
+                        {aiUsage.by_type.length > 0 && (
+                          <>
+                            <div className="border-t border-gray-200" />
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">By type</p>
+                            {aiUsage.by_type.map(item => (
+                              <div key={item.type} className="flex items-center justify-between text-xs">
+                                <span className="text-gray-600 truncate">{item.type}</span>
+                                <span className="text-gray-700 shrink-0 ml-2">${item.cost.toFixed(4)}</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </>
                     )}
                   </div>
                 </section>
