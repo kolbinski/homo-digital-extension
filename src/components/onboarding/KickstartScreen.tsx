@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  UploadSimpleIcon,
   CheckCircle,
   CircleDashed,
   CloudCheck,
@@ -35,7 +36,7 @@ const PROGRESS_ITEMS = [
   'Finalizing',
 ];
 
-const PROGRESS_DELAY = 96000;
+const PROGRESS_DELAY = 6000;
 
 interface Props {
   onPrepared: (profile: Partial<Profile>) => void;
@@ -310,19 +311,7 @@ export default function KickstartScreen({
                   if (f) handleFile(f);
                 }}
               />
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                />
-              </svg>
+              <UploadSimpleIcon size={32} className="text-gray-400" />
               <p className="text-sm text-gray-500 text-center">
                 {file ? (
                   <span className="font-medium text-green-700">

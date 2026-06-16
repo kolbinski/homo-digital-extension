@@ -4,6 +4,7 @@ import { useAuth, type OAuthData } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { API_BASE_URL, CONFIG } from '../config';
 import Spinner from './Spinner';
+import { CaretLeft } from '@phosphor-icons/react';
 
 type UserMeta = Record<string, unknown>;
 
@@ -53,8 +54,10 @@ interface Props {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const LOGIN_BULLETS = [
-  'Thousands of offers scanned and scored for your profile every day',
+  'Thousands of offers scanned, scored and matched to your profile daily',
+  'AI-powered profile review with actionable recommendations',
   'Tailored CVs and cover letters generated in one click',
+  'Scan any job posting and instantly match it to your profile',
   'Track every application and stay updated in real time',
   'Let your dedicated agent apply and negotiate on your behalf',
 ];
@@ -162,8 +165,13 @@ function LoginView({
       try {
         const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
         });
         if (socialRes.ok) {
           const { token: internalToken } = (await socialRes.json()) as {
@@ -174,7 +182,7 @@ function LoginView({
           await setToken(token);
         }
       } catch (err) {
-          await setToken(token);
+        await setToken(token);
       }
       onLogin('client');
       return;
@@ -200,8 +208,13 @@ function LoginView({
     try {
       const socialRes = await fetch(`${API_BASE_URL}/v1/auth/social-login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
       if (socialRes.ok) {
         const { token: internalToken } = (await socialRes.json()) as {
@@ -245,7 +258,10 @@ function LoginView({
         <img
           src="/icons/logo.png"
           alt="Homo Digital"
-          style={{ width: 160, marginBottom: 12 }}
+          style={{
+            width: 100,
+            marginBottom: 12,
+          }}
         />
         <h1
           className="text-2xl font-semibold text-gray-900 text-center tracking-tight"
@@ -498,19 +514,7 @@ function JoinView({ onBack }: { onBack: () => void }) {
             className="text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Back"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
+            <CaretLeft size={20} />
           </button>
           <h2 className="text-base font-semibold text-gray-900">
             Become an agent
