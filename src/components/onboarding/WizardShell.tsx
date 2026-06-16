@@ -131,6 +131,7 @@ export default function WizardShell({
         'upgrade_cancelled' in changes &&
         changes.upgrade_cancelled.newValue !== undefined
       ) {
+        setReviewLimitReached(false);
         setReviewCheckoutLoading(false);
       }
     }
