@@ -1292,6 +1292,7 @@ function ClientAccordion({
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [profileRematchPending, setProfileRematchPending] = useState(false);
+  const [autoTriggerReview, setAutoTriggerReview] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -1352,6 +1353,15 @@ function ClientAccordion({
     function handleStorageChange(
       changes: Record<string, chrome.storage.StorageChange>,
     ) {
+      console.log('[ExploreTab] storage changed keys:', Object.keys(changes));
+      console.log('[ExploreTab] review_package_purchased:', changes.review_package_purchased);
+      if (
+        'review_package_purchased' in changes &&
+        changes.review_package_purchased.newValue !== undefined
+      ) {
+        console.log('[ExploreTab] autoTriggerReview set to true');
+        setAutoTriggerReview(true);
+      }
       if (
         'upgrade_success' in changes &&
         changes.upgrade_success.newValue !== undefined
@@ -2848,6 +2858,8 @@ function ClientAccordion({
                   onRematch={() => setProfileReady(true)}
                   onCancelEdit={() => setProfileReady(true)}
                   profileRematchPending={profileRematchPending}
+                  autoTriggerReview={autoTriggerReview}
+                  onAutoTriggerReviewConsumed={() => setAutoTriggerReview(false)}
                   onRematchLimitReached={() => {
                     setProfileRematchPending(true);
                     setProfileOpen(true);

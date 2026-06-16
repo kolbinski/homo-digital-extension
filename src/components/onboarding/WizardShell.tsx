@@ -43,6 +43,8 @@ interface Props {
   profileRematchPending?: boolean;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
+  autoTriggerReview?: boolean;
+  onAutoTriggerReviewConsumed?: () => void;
 }
 
 export default function WizardShell({
@@ -60,6 +62,8 @@ export default function WizardShell({
   profileRematchPending = false,
   isOnboarding = false,
   onCloseComplete,
+  autoTriggerReview = false,
+  onAutoTriggerReviewConsumed,
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -88,7 +92,6 @@ export default function WizardShell({
   const handleReviewRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const reviewCheckoutTabIdRef = useRef<number | undefined>(undefined);
   const reviewTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
-  const reviewTabUpdatedListenerRef = useRef<((tabId: number, changeInfo: chrome.tabs.OnUpdatedInfo, tab: chrome.tabs.Tab) => void) | null>(null);
 
   const [preferredCurrency, setPreferredCurrency] = useState<string | undefined>(undefined);
 
@@ -125,7 +128,6 @@ export default function WizardShell({
       ) {
         setReviewLimitReached(false);
         setReviewCheckoutLoading(false);
-        void handleReviewRef.current();
       }
       if (
         'upgrade_cancelled' in changes &&
@@ -319,6 +321,14 @@ export default function WizardShell({
   }
   handleReviewRef.current = handleReview;
 
+  useEffect(() => {
+    console.log('[WizardShell] autoTriggerReview changed:', autoTriggerReview);
+    if (autoTriggerReview) {
+      onAutoTriggerReviewConsumed?.();
+      void handleReviewRef.current();
+    }
+  }, [autoTriggerReview]);
+
   function handleRematch() {
     onRematch?.();
     onClose?.();
@@ -407,10 +417,6 @@ export default function WizardShell({
       chrome.tabs.onRemoved.removeListener(reviewTabRemovedListenerRef.current);
       reviewTabRemovedListenerRef.current = null;
     }
-    if (reviewTabUpdatedListenerRef.current) {
-      chrome.tabs.onUpdated.removeListener(reviewTabUpdatedListenerRef.current);
-      reviewTabUpdatedListenerRef.current = null;
-    }
     setReviewCheckoutLoading(true);
     try {
       const token = await getAuthTokenRef.current();
@@ -426,45 +432,21 @@ export default function WizardShell({
       const tab = await chrome.tabs.create({ url: data.url });
       reviewCheckoutTabIdRef.current = tab.id;
 
-      function cleanupTabListeners() {
-        if (reviewTabRemovedListenerRef.current) {
-          chrome.tabs.onRemoved.removeListener(reviewTabRemovedListenerRef.current);
-          reviewTabRemovedListenerRef.current = null;
-        }
-        if (reviewTabUpdatedListenerRef.current) {
-          chrome.tabs.onUpdated.removeListener(reviewTabUpdatedListenerRef.current);
-          reviewTabUpdatedListenerRef.current = null;
-        }
-      }
-
       function onTabRemoved(tabId: number) {
+        console.log('[review] tab removed, reviewCheckoutTabIdRef:', reviewCheckoutTabIdRef.current, 'tabId:', tabId);
         if (tabId === reviewCheckoutTabIdRef.current) {
           reviewCheckoutTabIdRef.current = undefined;
           setReviewCheckoutLoading(false);
-          cleanupTabListeners();
-        }
-      }
-
-      function onTabUpdated(
-        tabId: number,
-        _changeInfo: chrome.tabs.OnUpdatedInfo,
-        updatedTab: chrome.tabs.Tab,
-      ) {
-        if (
-          tabId === reviewCheckoutTabIdRef.current &&
-          updatedTab.url?.includes('upgrade=review_package')
-        ) {
-          reviewCheckoutTabIdRef.current = undefined;
-          setReviewCheckoutLoading(false);
-          void chrome.tabs.remove(tabId);
-          cleanupTabListeners();
+          setReviewLimitReached(false);
+          if (reviewTabRemovedListenerRef.current) {
+            chrome.tabs.onRemoved.removeListener(reviewTabRemovedListenerRef.current);
+            reviewTabRemovedListenerRef.current = null;
+          }
         }
       }
 
       reviewTabRemovedListenerRef.current = onTabRemoved;
-      reviewTabUpdatedListenerRef.current = onTabUpdated;
       chrome.tabs.onRemoved.addListener(onTabRemoved);
-      chrome.tabs.onUpdated.addListener(onTabUpdated);
     } catch (err) {
       console.error('[handleBuyReviewPackage]', err);
       setReviewCheckoutLoading(false);
