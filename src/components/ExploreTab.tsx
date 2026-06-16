@@ -144,11 +144,17 @@ function getPageText(tabId: number): Promise<string> {
 }
 
 function clientToProfile(raw: Record<string, unknown> | undefined): Profile {
-  const profile = { ...emptyProfile, ...((raw as Partial<Profile>) ?? {}) } as Profile;
+  const profile = {
+    ...emptyProfile,
+    ...((raw as Partial<Profile>) ?? {}),
+  } as Profile;
   if (profile.preferences?.salary?.length) {
     profile.preferences = {
       ...profile.preferences,
-      salary: profile.preferences.salary.map(s => ({ ...s, unit: s.unit ?? 'month' })),
+      salary: profile.preferences.salary.map(s => ({
+        ...s,
+        unit: s.unit ?? 'month',
+      })),
     };
   }
   return profile;
@@ -209,6 +215,12 @@ interface OfferCardProps {
   cvPackagePrice?: string;
   clPackageAmount?: number;
   clPackagePrice?: string;
+  preferenceSalaries?: {
+    type: string;
+    min: number;
+    currency: string;
+    unit?: string;
+  }[];
 }
 
 function OfferCard({
@@ -243,6 +255,7 @@ function OfferCard({
   cvPackagePrice,
   clPackageAmount,
   clPackagePrice,
+  preferenceSalaries,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
@@ -559,8 +572,6 @@ function OfferCard({
         />
       </button>
 
-      <div>{offer.offer_id}</div>
-
       {/* Always visible: tags + salary + skills */}
       <div className="px-3 flex flex-col gap-1">
         {(offer.city || offer.work_model || onShowOffer) && (
@@ -609,6 +620,10 @@ function OfferCard({
                 s.delta >= 0 ? 'text-orange-500' : 'text-red-500';
               const deltaStr =
                 s.delta >= 0 ? `+${formatNum(s.delta)}` : formatNum(s.delta);
+              const matchingPref = preferenceSalaries?.find(
+                p => p.type === s.type,
+              );
+              const salaryUnit = matchingPref?.unit ?? 'month';
               return (
                 <span
                   key={i}
@@ -618,6 +633,8 @@ function OfferCard({
                   {s.currency} {formatSalaryType(s.type)} {formatNum(s.min)} –{' '}
                   {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
+                  {' / '}
+                  {salaryUnit}
                 </span>
               );
             })}
@@ -1440,6 +1457,22 @@ function ClientAccordion({
       .flat()
       .map(s => s.name.toLowerCase());
   }, [client.profile]);
+
+  const preferenceSalaries =
+    (
+      client.profile as
+        | {
+            preferences?: {
+              salary?: {
+                type: string;
+                min: number;
+                currency: string;
+                unit?: string;
+              }[];
+            };
+          }
+        | undefined
+    )?.preferences?.salary ?? [];
 
   async function handleCardToggle(offer: UserOffer, offerUrl?: string) {
     const offerId = offer.user_offer_id;
@@ -2319,6 +2352,7 @@ function ClientAccordion({
                         clPackagePrice={
                           generalSettings?.cl_package_price?.formatted
                         }
+                        preferenceSalaries={preferenceSalaries}
                       />
                     </div>
                   )}
@@ -2426,6 +2460,7 @@ function ClientAccordion({
                                   pageOffer?.user_offer_id
                                 }
                                 hideActions={true}
+                                preferenceSalaries={preferenceSalaries}
                               />
                             ),
                           )}
@@ -2565,6 +2600,7 @@ function ClientAccordion({
                                   pageOffer?.user_offer_id
                                 }
                                 hideActions={true}
+                                preferenceSalaries={preferenceSalaries}
                               />
                             ),
                           )}
@@ -2732,6 +2768,7 @@ function ClientAccordion({
                                 clPackagePrice={
                                   generalSettings?.cl_package_price?.formatted
                                 }
+                                preferenceSalaries={preferenceSalaries}
                               />
                             ),
                           )}
