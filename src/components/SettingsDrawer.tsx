@@ -1080,7 +1080,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     AI Usage
                   </h2>
-                  <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-3">
+                  <div
+                    className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col"
+                    style={{ gap: 6 }}
+                  >
                     {aiUsageLoading ? (
                       <div className="flex justify-center">
                         <Spinner size={16} className="text-gray-400" />
