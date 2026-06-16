@@ -85,7 +85,7 @@ function formatAmount(amount: number, currency: string): string {
 
 function formatDate(date: string | number): string {
   const d = typeof date === 'number' ? new Date(date * 1000) : new Date(date);
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString(navigator.language);
 }
 
 export default function SettingsDrawer({ onClose, onLogout }: Props) {
@@ -857,7 +857,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           subscription.current_period_end && (
                             <span className="text-xs text-gray-500">
                               Ends at{' '}
-                              {subscription.current_period_end.slice(0, 10)}
+                              {new Date(subscription.current_period_end).toLocaleDateString(navigator.language)}
                             </span>
                           )
                         )}

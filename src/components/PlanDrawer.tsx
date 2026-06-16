@@ -158,7 +158,9 @@ export default function PlanDrawer({
     }
   }
 
-  const endDate = currentPeriodEnd ? currentPeriodEnd.slice(0, 10) : null;
+  const endDate = currentPeriodEnd
+    ? new Date(currentPeriodEnd).toLocaleDateString(navigator.language)
+    : null;
   const plans = generalSettings?.plans;
 
   const freeItems = [
