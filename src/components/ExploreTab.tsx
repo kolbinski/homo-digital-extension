@@ -808,8 +808,7 @@ function OfferCard({
             <span key={i} className="flex items-center gap-0.5">
               <CurrencyCircleDollar size={16} className="shrink-0" />
               {s.currency} {formatSalaryType(s.type)}{' '}
-              {formatNum(Math.round(s.from))} –{' '}
-              {formatNum(Math.round(s.to))}
+              {formatNum(Math.round(s.from))} – {formatNum(Math.round(s.to))}
               {' / '}
               {s.unit}
             </span>
@@ -2519,7 +2518,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setApplyOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2653,7 +2652,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setLevelUpOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
