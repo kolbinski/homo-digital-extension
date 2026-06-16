@@ -974,8 +974,7 @@ function OfferCard({
                 ))}
               </div>
             )}
-          {!isPageOffer &&
-            !hideActions &&
+          {!hideActions &&
             statusLoading !== offer.user_offer_id && (
               <div className="flex flex-col gap-1">
                 <div className="flex gap-2">
@@ -1213,7 +1212,7 @@ function OfferCard({
             </div>
           )}
 
-          {!isPageOffer && !hideActions && !isGenerating && !isClGenerating && (
+          {!hideActions && !isGenerating && !isClGenerating && (
             <div ref={dropdownRef}>
               <button
                 type="button"
@@ -2758,7 +2757,7 @@ function ClientAccordion({
                   )}
                   {filteredApplyOffers.length === 0 &&
                     filteredLevelUpOffers.length === 0 && (
-                      <p className="px-3 py-3 text-gray-400 text-xs">
+                      <p className="py-3 text-gray-400 text-xs">
                         {selfMode
                           ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
                           : 'No offers found.'}
@@ -2885,7 +2884,7 @@ function ClientAccordion({
                       )}
                     </div>
                   ) : (
-                    <p className="px-3 py-3 text-gray-400 text-xs">
+                    <p className="py-3 text-gray-400 text-xs">
                       No offers found.
                     </p>
                   )}
