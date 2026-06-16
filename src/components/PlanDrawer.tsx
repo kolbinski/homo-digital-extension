@@ -241,6 +241,55 @@ export default function PlanDrawer({
                 <CheckItem key={item} label={item} muted />
               ))}
             </ul>
+            {isPro && status === 'active' && (
+              <div className="mt-1">
+                {!showCancelConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelConfirm(true)}
+                    disabled={isCancelling}
+                    className="w-full py-2 px-4 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Downgrade to Free
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
+                    <p className="text-sm text-gray-700">
+                      Are you sure? You'll keep Pro access
+                      {endDate ? ` until ${endDate}` : ''}. After that, your
+                      account will revert to Free.
+                    </p>
+                    {cancelError && (
+                      <p className="text-xs text-red-600">{cancelError}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCancelConfirm(false);
+                          setCancelError(null);
+                        }}
+                        disabled={isCancelling}
+                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Keep Pro
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelSubscription}
+                        disabled={isCancelling}
+                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isCancelling && (
+                          <Spinner size={14} className="text-white" />
+                        )}
+                        Yes, downgrade
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pro */}
@@ -287,56 +336,6 @@ export default function PlanDrawer({
                   <p className="text-xs text-red-600 text-center">{error}</p>
                 )}
               </>
-            )}
-            {/* Cancel subscription (active) */}
-            {isPro && status === 'active' && (
-              <div className="mt-1">
-                {!showCancelConfirm ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowCancelConfirm(true)}
-                    disabled={isCancelling}
-                    className="w-full py-2 px-4 rounded-md text-sm font-medium text-red-600 border border-red-300 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel subscription
-                  </button>
-                ) : (
-                  <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
-                    <p className="text-sm text-gray-700">
-                      Are you sure? You'll keep Pro plan
-                      {endDate ? ` until ${endDate}` : ''}. After that, your
-                      account will revert to Free.
-                    </p>
-                    {cancelError && (
-                      <p className="text-xs text-red-600">{cancelError}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowCancelConfirm(false);
-                          setCancelError(null);
-                        }}
-                        disabled={isCancelling}
-                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Keep Pro
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCancelSubscription}
-                        disabled={isCancelling}
-                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isCancelling && (
-                          <Spinner size={14} className="text-white" />
-                        )}
-                        Yes, cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             )}
             {/* Renew subscription (cancelling) */}
             {isPro && status === 'cancelling' && (
