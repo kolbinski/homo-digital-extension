@@ -159,7 +159,12 @@ export default function PreferencesTab({
         ...prefs,
         salary: [
           ...without,
-          { type: 'contract', min: contractMin, currency: sharedCurrency, unit: contractUnit },
+          {
+            type: 'contract',
+            min: contractMin,
+            currency: sharedCurrency,
+            unit: contractUnit,
+          },
         ],
       });
     } else {
@@ -177,7 +182,12 @@ export default function PreferencesTab({
         ...prefs,
         salary: [
           ...without,
-          { type: 'permanent', min: permanentMin, currency: sharedCurrency, unit: permanentUnit },
+          {
+            type: 'permanent',
+            min: permanentMin,
+            currency: sharedCurrency,
+            unit: permanentUnit,
+          },
         ],
       });
     } else {
@@ -421,8 +431,8 @@ export default function PreferencesTab({
         <div className="flex flex-col gap-2">
           {(
             [
-              ['contract', 'Contract'],
-              ['permanent', 'Permanent'],
+              ['contract', 'Contr.'],
+              ['permanent', 'Perm.'],
             ] as const
           ).map(([type, label]) => {
             const isChecked =
@@ -437,7 +447,7 @@ export default function PreferencesTab({
               type === 'contract' ? handleContractUnit : handlePermanentUnit;
             const hasMinError = isChecked && minVal <= 0;
             return (
-              <div key={type} className="flex items-center gap-2 flex-wrap">
+              <div key={type} className="flex items-center gap-1 flex-wrap">
                 <input
                   type="checkbox"
                   id={`salary-${type}`}
@@ -447,7 +457,8 @@ export default function PreferencesTab({
                 />
                 <label
                   htmlFor={`salary-${type}`}
-                  className="text-sm text-gray-700 shrink-0 cursor-pointer w-20"
+                  className="text-sm text-gray-700 shrink-0 cursor-pointer"
+                  style={{ width: 40 }}
                 >
                   {label}
                 </label>
@@ -479,7 +490,9 @@ export default function PreferencesTab({
                       className={selectClass}
                     >
                       {['hour', 'day', 'month', 'year'].map(u => (
-                        <option key={u} value={u}>{u}</option>
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
                       ))}
                     </select>
                     {hasMinError && (

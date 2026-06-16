@@ -757,7 +757,7 @@ function OfferCard({
                 Math.round(r.to) === s.max &&
                 r.currency === s.currency &&
                 r.type === s.type &&
-                r.unit === s.unit
+                r.unit === 'month'
               );
             }) ?? [];
           return filteredRawSalaries.length > 0 ? (
