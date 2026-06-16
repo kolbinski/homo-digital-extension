@@ -144,7 +144,14 @@ function getPageText(tabId: number): Promise<string> {
 }
 
 function clientToProfile(raw: Record<string, unknown> | undefined): Profile {
-  return { ...emptyProfile, ...((raw as Partial<Profile>) ?? {}) } as Profile;
+  const profile = { ...emptyProfile, ...((raw as Partial<Profile>) ?? {}) } as Profile;
+  if (profile.preferences?.salary?.length) {
+    profile.preferences = {
+      ...profile.preferences,
+      salary: profile.preferences.salary.map(s => ({ ...s, unit: s.unit ?? 'month' })),
+    };
+  }
+  return profile;
 }
 
 interface Props {
@@ -763,14 +770,14 @@ function OfferCard({
           return filteredRawSalaries.length > 0 ? (
             <div className="text-xs text-gray-400">
               {filteredRawSalaries.map((s, i) => (
-                <p key={i} className="flex flex-wrap gap-1">
+                <span key={i} className="flex items-center gap-0.5">
                   <CurrencyCircleDollar size={16} className="shrink-0" />
                   {s.currency} {formatSalaryType(s.type)}{' '}
                   {formatNum(Math.round(s.from))} –{' '}
                   {formatNum(Math.round(s.to))}
                   {' / '}
                   {s.unit}
-                </p>
+                </span>
               ))}
             </div>
           ) : null;

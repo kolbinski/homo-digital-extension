@@ -34,7 +34,14 @@ function mergeProfile(base: Profile, override: Partial<Profile>): Profile {
     certifications: override.certifications ?? base.certifications,
     own_projects: override.own_projects ?? base.own_projects,
     red_flags: override.red_flags ?? base.red_flags,
-    preferences: { ...base.preferences, ...(override.preferences ?? {}) },
+    preferences: {
+      ...base.preferences,
+      ...(override.preferences ?? {}),
+      salary: (override.preferences?.salary ?? base.preferences.salary).map(s => ({
+        ...s,
+        unit: s.unit ?? 'month',
+      })),
+    },
   };
 }
 
