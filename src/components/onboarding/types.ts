@@ -82,6 +82,7 @@ export interface SalaryEntry {
   type: 'contract' | 'permanent';
   currency: string;
   min: number;
+  unit?: string;
 }
 
 export interface ProfilePreferences {

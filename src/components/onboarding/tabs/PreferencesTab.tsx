@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  DotsSixVertical,
-  Plus,
-  Trash,
-  XCircle,
-} from '@phosphor-icons/react';
+import { DotsSixVertical, Plus, Trash, XCircle } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
 import { useGeneralSettings } from '../../../store/generalSettingsStore';
 import Spinner from '../../Spinner';
@@ -134,12 +129,15 @@ export default function PreferencesTab({
   const permanentEntry = prefs.salary.find(s => s.type === 'permanent');
   const contractChecked = !!contractEntry;
   const contractMin = contractEntry?.min ?? 0;
+  const contractUnit = contractEntry?.unit ?? 'month';
   const permanentChecked = !!permanentEntry;
   const permanentMin = permanentEntry?.min ?? 0;
+  const permanentUnit = permanentEntry?.unit ?? 'month';
   const noneChecked = !contractChecked && !permanentChecked;
 
   const [sharedCurrency, setSharedCurrency] = useState<string>(
-    () => prefs.salary[0]?.currency ?? preferredCurrency ?? currencies[0] ?? 'USD',
+    () =>
+      prefs.salary[0]?.currency ?? preferredCurrency ?? currencies[0] ?? 'USD',
   );
 
   useEffect(() => {
@@ -157,32 +155,81 @@ export default function PreferencesTab({
   function handleContractCheck(checked: boolean) {
     if (checked) {
       const without = prefs.salary.filter(s => s.type !== 'contract');
-      onChange({ ...prefs, salary: [...without, { type: 'contract', min: contractMin, currency: sharedCurrency }] });
+      onChange({
+        ...prefs,
+        salary: [
+          ...without,
+          { type: 'contract', min: contractMin, currency: sharedCurrency, unit: contractUnit },
+        ],
+      });
     } else {
-      onChange({ ...prefs, salary: prefs.salary.filter(s => s.type !== 'contract') });
+      onChange({
+        ...prefs,
+        salary: prefs.salary.filter(s => s.type !== 'contract'),
+      });
     }
   }
 
   function handlePermanentCheck(checked: boolean) {
     if (checked) {
       const without = prefs.salary.filter(s => s.type !== 'permanent');
-      onChange({ ...prefs, salary: [...without, { type: 'permanent', min: permanentMin, currency: sharedCurrency }] });
+      onChange({
+        ...prefs,
+        salary: [
+          ...without,
+          { type: 'permanent', min: permanentMin, currency: sharedCurrency, unit: permanentUnit },
+        ],
+      });
     } else {
-      onChange({ ...prefs, salary: prefs.salary.filter(s => s.type !== 'permanent') });
+      onChange({
+        ...prefs,
+        salary: prefs.salary.filter(s => s.type !== 'permanent'),
+      });
     }
   }
 
   function handleContractMin(val: number) {
-    onChange({ ...prefs, salary: prefs.salary.map(s => s.type === 'contract' ? { ...s, min: val } : s) });
+    onChange({
+      ...prefs,
+      salary: prefs.salary.map(s =>
+        s.type === 'contract' ? { ...s, min: val } : s,
+      ),
+    });
   }
 
   function handlePermanentMin(val: number) {
-    onChange({ ...prefs, salary: prefs.salary.map(s => s.type === 'permanent' ? { ...s, min: val } : s) });
+    onChange({
+      ...prefs,
+      salary: prefs.salary.map(s =>
+        s.type === 'permanent' ? { ...s, min: val } : s,
+      ),
+    });
+  }
+
+  function handleContractUnit(val: string) {
+    onChange({
+      ...prefs,
+      salary: prefs.salary.map(s =>
+        s.type === 'contract' ? { ...s, unit: val } : s,
+      ),
+    });
+  }
+
+  function handlePermanentUnit(val: string) {
+    onChange({
+      ...prefs,
+      salary: prefs.salary.map(s =>
+        s.type === 'permanent' ? { ...s, unit: val } : s,
+      ),
+    });
   }
 
   function handleSalaryCurrency(val: string) {
     setSharedCurrency(val);
-    onChange({ ...prefs, salary: prefs.salary.map(s => ({ ...s, currency: val })) });
+    onChange({
+      ...prefs,
+      salary: prefs.salary.map(s => ({ ...s, currency: val })),
+    });
   }
 
   // ── Target role ──────────────────────────────────────────────────────────
@@ -363,16 +410,31 @@ export default function PreferencesTab({
         title="Salary expectations"
         badge={
           noneChecked ? (
-            <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+            <XCircle
+              size={16}
+              weight="fill"
+              className="text-red-400 shrink-0"
+            />
           ) : undefined
         }
       >
         <div className="flex flex-col gap-2">
-          {([['contract', 'Contract'], ['permanent', 'Permanent']] as const).map(([type, label]) => {
-            const isChecked = type === 'contract' ? contractChecked : permanentChecked;
+          {(
+            [
+              ['contract', 'Contract'],
+              ['permanent', 'Permanent'],
+            ] as const
+          ).map(([type, label]) => {
+            const isChecked =
+              type === 'contract' ? contractChecked : permanentChecked;
             const minVal = type === 'contract' ? contractMin : permanentMin;
-            const handleCheck = type === 'contract' ? handleContractCheck : handlePermanentCheck;
-            const handleMin = type === 'contract' ? handleContractMin : handlePermanentMin;
+            const unitVal = type === 'contract' ? contractUnit : permanentUnit;
+            const handleCheck =
+              type === 'contract' ? handleContractCheck : handlePermanentCheck;
+            const handleMin =
+              type === 'contract' ? handleContractMin : handlePermanentMin;
+            const handleUnit =
+              type === 'contract' ? handleContractUnit : handlePermanentUnit;
             const hasMinError = isChecked && minVal <= 0;
             return (
               <div key={type} className="flex items-center gap-2 flex-wrap">
@@ -391,6 +453,17 @@ export default function PreferencesTab({
                 </label>
                 {isChecked && (
                   <>
+                    <select
+                      value={sharedCurrency}
+                      onChange={e => handleSalaryCurrency(e.target.value)}
+                      className={selectClass}
+                    >
+                      {(currencies.length > 0 ? currencies : ['USD']).map(c => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       type="number"
                       value={minVal || ''}
@@ -398,19 +471,23 @@ export default function PreferencesTab({
                       placeholder="Min salary"
                       min={1}
                       className={`px-2.5 py-1.5 border ${hasMinError ? 'border-red-400' : 'border-gray-300'} rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      style={{ width: 110 }}
+                      style={{ width: 90 }}
                     />
                     <select
-                      value={sharedCurrency}
-                      onChange={e => handleSalaryCurrency(e.target.value)}
+                      value={unitVal}
+                      onChange={e => handleUnit(e.target.value)}
                       className={selectClass}
                     >
-                      {(currencies.length > 0 ? currencies : ['USD']).map(c => (
-                        <option key={c} value={c}>{c}</option>
+                      {['hour', 'day', 'month', 'year'].map(u => (
+                        <option key={u} value={u}>{u}</option>
                       ))}
                     </select>
                     {hasMinError && (
-                      <XCircle size={16} weight="fill" className="text-red-400 shrink-0" />
+                      <XCircle
+                        size={16}
+                        weight="fill"
+                        className="text-red-400 shrink-0"
+                      />
                     )}
                   </>
                 )}
@@ -418,7 +495,9 @@ export default function PreferencesTab({
             );
           })}
           {noneChecked && (
-            <p className="text-xs text-red-500">Select at least one salary type</p>
+            <p className="text-xs text-red-500">
+              Select at least one salary type
+            </p>
           )}
         </div>
       </Section>

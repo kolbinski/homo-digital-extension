@@ -45,6 +45,13 @@ interface UserOffer {
   required_skills?: string[];
   nice_to_have_skills?: string[];
   salary?: OfferSalary[];
+  raw_salaries?: {
+    from: number;
+    to: number;
+    currency: string;
+    unit: string;
+    type: string;
+  }[];
   source?: string;
   cv_language?: string | null;
   cv_status?: string | null;
@@ -62,13 +69,13 @@ function formatNum(n: number): string {
     sign +
     Math.abs(Math.round(n))
       .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   );
 }
 
 function formatSalaryType(type: string): string {
-  if (type === 'contract') return 'Contr.';
-  if (type === 'permanent') return 'Perm.';
+  if (type === 'contract') return 'contr.';
+  if (type === 'permanent') return 'perm.';
   return '';
 }
 
@@ -544,6 +551,8 @@ function OfferCard({
         />
       </button>
 
+      <div>{offer.offer_id}</div>
+
       {/* Always visible: tags + salary + skills */}
       <div className="px-3 flex flex-col gap-1">
         {(offer.city || offer.work_model || onShowOffer) && (
@@ -607,7 +616,7 @@ function OfferCard({
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <span className="text-gray-500 text-xs flex items-center gap-0.5">
+            <span className="text-black text-xs flex items-center gap-0.5">
               <CurrencyCircleDollar size={16} className="shrink-0" /> Salary not
               disclosed
               {offer.source === 'manual' && (
@@ -735,6 +744,19 @@ function OfferCard({
                 </div>
               </form>
             )}
+          </div>
+        )}
+        {offer.raw_salaries && offer.raw_salaries.length > 0 && (
+          <div className="text-xs text-gray-400">
+            {offer.raw_salaries.map((s, i) => (
+              <p key={i} className="flex flex-wrap gap-1">
+                <CurrencyCircleDollar size={16} className="shrink-0" />
+                {s.currency} {formatSalaryType(s.type)}{' '}
+                {formatNum(Math.round(s.from))} – {formatNum(Math.round(s.to))}
+                {' / '}
+                {s.unit}
+              </p>
+            ))}
           </div>
         )}
         {offer.required_skills && offer.required_skills.length > 0 && (
@@ -2772,17 +2794,27 @@ function ClientAccordion({
                     setLevelUpCount(null);
                     setApplyPage(1);
                     setLevelUpPage(1);
-                    const currency = wizardProfile?.preferences?.salary[0]?.currency;
+                    const currency =
+                      wizardProfile?.preferences?.salary[0]?.currency;
                     if (currency) {
                       void (async () => {
                         try {
                           const token = await getToken();
                           await fetch(`${API_BASE_URL}/v1/account/settings`, {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                            body: JSON.stringify({ preferred_currency: currency }),
+                            headers: {
+                              'Content-Type': 'application/json',
+                              ...(token
+                                ? { Authorization: `Bearer ${token}` }
+                                : {}),
+                            },
+                            body: JSON.stringify({
+                              preferred_currency: currency,
+                            }),
                           });
-                        } catch { /* ignore */ }
+                        } catch {
+                          /* ignore */
+                        }
                       })();
                     }
                   }}
