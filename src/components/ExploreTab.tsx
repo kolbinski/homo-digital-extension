@@ -1679,6 +1679,8 @@ function ClientAccordion({
 
   async function fetchCombinedOffers(
     page = 1,
+    knownApplyCount?: number,
+    knownLevelUpCount?: number,
   ): Promise<CombinedOffersResponse> {
     const token = await getToken();
     if (!token) return EMPTY_COMBINED;
@@ -1691,6 +1693,10 @@ function ClientAccordion({
     if (!(sortBy === 'salary_delta' && !isPro))
       params.append('sort_by', sortBy);
     params.append('page', String(page));
+    if (knownApplyCount !== undefined)
+      params.append('known_apply_count', String(knownApplyCount));
+    if (knownLevelUpCount !== undefined)
+      params.append('known_level_up_count', String(knownLevelUpCount));
     params.append('page_size', String(pageSize));
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
@@ -1880,7 +1886,7 @@ function ClientAccordion({
       prevApplyCountRef.current = result.apply_now.count;
       prevLevelUpCountRef.current = result.level_up.count;
       interval = setInterval(async () => {
-        const polled = await fetchCombinedOffers(1);
+        const polled = await fetchCombinedOffers(1, applyNowCount ?? 0, levelUpCount ?? 0);
         const newTotal = polled.count;
         const newApplyCount = polled.apply_now.count;
         const newLevelUpCount = polled.level_up.count;
