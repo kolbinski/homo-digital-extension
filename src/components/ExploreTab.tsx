@@ -181,6 +181,7 @@ interface ClientAccordionProps {
   onSortByOverride?: (value: string) => void;
   defaultExpanded?: boolean;
   selfMode?: boolean;
+  iconsPortalTarget?: HTMLDivElement | null;
 }
 
 interface OfferCardProps {
@@ -543,14 +544,14 @@ function OfferCard({
 
   return (
     <div
-      className="border-b border-gray-100 last:border-0"
+      className="rounded-md border border-gray-200 bg-white my-2 py-2.5"
       data-user-offer-id={offer.user_offer_id}
     >
       {/* Header row — click to toggle collapse */}
       <button
         type="button"
         onClick={onToggle}
-        className="w-full px-3 py-2.5 text-left flex items-center gap-2 hover:bg-gray-50 transition-colors group"
+        className="w-full px-3 text-left flex items-center gap-2 group mb-1"
       >
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {offer.claude_score != null && (
@@ -868,7 +869,7 @@ function OfferCard({
           );
         })()}
         {offer.required_skills && offer.required_skills.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 items-center">
             <span className="text-xs text-gray-500">Required skills:</span>
             {[
               ...offer.required_skills.filter(s =>
@@ -899,7 +900,7 @@ function OfferCard({
           </div>
         )}
         {offer.nice_to_have_skills && offer.nice_to_have_skills.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 items-center">
             <span className="text-xs text-gray-500">Nice to have skills:</span>
             {[
               ...offer.nice_to_have_skills.filter(s =>
@@ -933,7 +934,7 @@ function OfferCard({
 
       {/* Expanded: role fit + pros/cons + CV generation + Withdraw */}
       {isOpen && (
-        <div className="px-3 pb-3 flex flex-col gap-2 border-t border-gray-100">
+        <div className="px-3 flex flex-col gap-2">
           {offer.claude_role_fit && (
             <p className="text-xs text-gray-600 leading-relaxed">
               {offer.claude_role_fit}
@@ -1017,7 +1018,10 @@ function OfferCard({
                             )}
                             CV
                           </span>
-                          <CaretDown size={16} className={`text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`} />
+                          <CaretDown
+                            size={16}
+                            className={`text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
+                          />
                         </button>
                       )}
                       {isCvDropdownOpen &&
@@ -1104,7 +1108,10 @@ function OfferCard({
                             )}
                             CL
                           </span>
-                          <CaretDown size={16} className={`text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`} />
+                          <CaretDown
+                            size={16}
+                            className={`text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
+                          />
                         </button>
                       )}
                       {isClDropdownOpen &&
@@ -1224,7 +1231,10 @@ function OfferCard({
                 className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
               >
                 <span>Change status</span>
-                <CaretDown size={16} className={`text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <CaretDown
+                  size={16}
+                  className={`text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                />
               </button>
               {isDropdownOpen &&
                 createPortal(
@@ -1297,6 +1307,7 @@ function ClientAccordion({
   onSortByOverride,
   defaultExpanded = false,
   selfMode = false,
+  iconsPortalTarget,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -2208,100 +2219,136 @@ function ClientAccordion({
   );
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-clip">
-      <div
-        role={selfMode ? undefined : 'button'}
-        tabIndex={selfMode ? undefined : 0}
-        onClick={selfMode ? undefined : handleToggle}
-        onKeyDown={
-          selfMode
-            ? undefined
-            : e => {
-                if (e.key === 'Enter' || e.key === ' ') handleToggle();
-              }
-        }
-        className={`w-full flex items-center justify-between px-3 py-2.5 bg-white transition-colors ${selfMode ? '' : 'hover:bg-gray-50 cursor-pointer'}`}
-      >
-        <div className="flex items-center gap-2">
-          {client.photo_url ? (
-            <img
-              src={client.photo_url}
-              alt=""
-              className="w-6 h-6 rounded-full object-cover shrink-0"
-            />
-          ) : (
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-white text-[10px] font-medium shrink-0 leading-none">
-              {(client.first_name?.[0] ?? '').toUpperCase()}
-              {(client.last_name?.[0] ?? '').toUpperCase()}
-            </span>
-          )}
-          <span className="text-sm font-medium text-gray-900">
-            {client.first_name} {client.last_name}
-          </span>
-          {!selfMode &&
-            (!hasLoaded || isLoading ? (
-              <Spinner size={12} className="text-gray-400" />
+    <div
+      className={
+        selfMode ? '' : 'border border-gray-200 rounded-md overflow-clip'
+      }
+    >
+      {selfMode &&
+        iconsPortalTarget &&
+        createPortal(
+          <div className="flex items-center gap-1 ml-1.5">
+            <button
+              type="button"
+              onClick={() => void openWizard()}
+              title="Edit profile"
+              className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-600"
+            >
+              <AddressBook size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing || !hasLoaded}
+              title="Refresh"
+              className="relative p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-600 disabled:opacity-40"
+            >
+              {isRefreshing || !hasLoaded ? (
+                <Spinner size={14} />
+              ) : (
+                <ArrowsClockwise size={14} />
+              )}
+              {hasNewOffers && hasLoaded && !isRefreshing && (
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />
+              )}
+            </button>
+          </div>,
+          iconsPortalTarget,
+        )}
+      {!selfMode && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={handleToggle}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') handleToggle();
+          }}
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-white transition-colors hover:bg-gray-50 cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            {client.photo_url ? (
+              <img
+                src={client.photo_url}
+                alt=""
+                className="w-6 h-6 rounded-full object-cover shrink-0"
+              />
             ) : (
-              <>
-                {filteredApplyOffers.length > 0 && (
-                  <span
-                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                      statusFilter === 'pending_apply'
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {applyNowCount ?? filteredApplyOffers.length}
-                  </span>
-                )}
-                {statusFilter === 'pending_apply' &&
-                  filteredLevelUpOffers.length > 0 && (
-                    <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
-                      {levelUpCount ?? filteredLevelUpOffers.length}
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-white text-[10px] font-medium shrink-0 leading-none">
+                {(client.first_name?.[0] ?? '').toUpperCase()}
+                {(client.last_name?.[0] ?? '').toUpperCase()}
+              </span>
+            )}
+            <span className="text-sm font-medium text-gray-900">
+              {client.first_name} {client.last_name}
+            </span>
+            {!selfMode &&
+              (!hasLoaded || isLoading ? (
+                <Spinner size={12} className="text-gray-400" />
+              ) : (
+                <>
+                  {filteredApplyOffers.length > 0 && (
+                    <span
+                      className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                        statusFilter === 'pending_apply'
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {applyNowCount ?? filteredApplyOffers.length}
                     </span>
                   )}
-              </>
-            ))}
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={async e => {
-              e.stopPropagation();
-              void openWizard();
-            }}
-            title="Edit profile"
-            className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
-          >
-            <AddressBook size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation();
-              handleRefresh();
-            }}
-            disabled={isRefreshing || !hasLoaded}
-            title="Refresh"
-            className="relative text-gray-800 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
-          >
-            {isRefreshing || !hasLoaded ? (
-              <Spinner size={14} />
-            ) : (
-              <ArrowsClockwise size={14} />
+                  {statusFilter === 'pending_apply' &&
+                    filteredLevelUpOffers.length > 0 && (
+                      <span className="text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                        {levelUpCount ?? filteredLevelUpOffers.length}
+                      </span>
+                    )}
+                </>
+              ))}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={async e => {
+                e.stopPropagation();
+                void openWizard();
+              }}
+              title="Edit profile"
+              className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
+            >
+              <AddressBook size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation();
+                handleRefresh();
+              }}
+              disabled={isRefreshing || !hasLoaded}
+              title="Refresh"
+              className="relative text-gray-800 hover:text-gray-600 disabled:opacity-40 p-0.5 leading-none"
+            >
+              {isRefreshing || !hasLoaded ? (
+                <Spinner size={14} />
+              ) : (
+                <ArrowsClockwise size={14} />
+              )}
+              {hasNewOffers && hasLoaded && !isRefreshing && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
+              )}
+            </button>
+            {!selfMode && (
+              <CaretDown
+                size={16}
+                className={`text-gray-800 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              />
             )}
-            {hasNewOffers && hasLoaded && !isRefreshing && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
-            )}
-          </button>
-          {!selfMode && (
-            <CaretDown size={16} className={`text-gray-800 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {(isOpen || selfMode) && (
-        <div className="border-t border-gray-200">
+        <div className={selfMode ? '' : 'border-t border-gray-200'}>
           {statusError && (
             <div className="mx-3 mt-2 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
               <span>{statusError}</span>
@@ -2343,7 +2390,7 @@ function ClientAccordion({
                 </PlanLimitBanner>
               ) : (
                 !pageOffer && (
-                  <div className="mx-3 my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center">
+                  <div className="my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center">
                     <p className="text-xs font-medium text-gray-700">
                       Scan this page for a job offer
                     </p>
@@ -2379,12 +2426,15 @@ function ClientAccordion({
                     id="offer-on-this-page-section"
                     type="button"
                     onClick={() => setPageOfferOpen(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
+                    className="w-full flex items-center justify-between py-2 transition-colors text-left sticky top-0 z-10 bg-gray-50"
                   >
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Offer on this page
                     </span>
-                    <CaretDown size={14} className={`text-gray-400 transition-transform ${pageOfferOpen ? 'rotate-180' : ''}`} />
+                    <CaretDown
+                      size={14}
+                      className={`text-gray-400 transition-transform ${pageOfferOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
                   {pageOfferOpen && (
                     <div ref={pageOfferCardRef}>
@@ -2458,7 +2508,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setApplyOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
+                        className="w-full flex items-center justify-between py-2 transition-colors text-left sticky top-0 z-10 bg-gray-50"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2468,7 +2518,10 @@ function ClientAccordion({
                             {applyNowCount ?? filteredApplyOffers.length}
                           </span>
                         </div>
-                        <CaretDown size={14} className={`text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`} />
+                        <CaretDown
+                          size={14}
+                          className={`text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
+                        />
                       </button>
                       {applyOpen && (
                         <div>
@@ -2526,7 +2579,7 @@ function ClientAccordion({
                               applyOffers.length <
                                 (generalSettings?.plans?.free?.max_apply_now ??
                                   Infinity)) && (
-                              <div className="flex justify-center py-2 border-t border-gray-100">
+                              <div className="flex justify-center py-2">
                                 <button
                                   type="button"
                                   onClick={() => void handleLoadMoreApply()}
@@ -2539,9 +2592,7 @@ function ClientAccordion({
                                       className="text-gray-500"
                                     />
                                   )}
-                                  {applyLoadingMore
-                                    ? 'Loading…'
-                                    : `Show more (${applyOffers.length} shown, ${(applyNowCount ?? applyOffers.length) - applyOffers.length} remaining)`}
+                                  {applyLoadingMore ? 'Loading…' : 'Show more'}
                                 </button>
                               </div>
                             )}
@@ -2580,7 +2631,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setLevelUpOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-100 transition-colors text-left sticky top-0 z-10 border-b border-gray-200"
+                        className="w-full flex items-center justify-between py-2 transition-colors text-left sticky top-0 z-10 bg-gray-50"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2590,7 +2641,10 @@ function ClientAccordion({
                             {levelUpCount ?? filteredLevelUpOffers.length}
                           </span>
                         </div>
-                        <CaretDown size={14} className={`text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`} />
+                        <CaretDown
+                          size={14}
+                          className={`text-gray-400 transition-transform ${levelUpOpen ? 'rotate-180' : ''}`}
+                        />
                       </button>
                       {levelUpOpen && (
                         <div>
@@ -2648,7 +2702,7 @@ function ClientAccordion({
                               levelUpOffers.length <
                                 (generalSettings?.plans?.free?.max_level_up ??
                                   Infinity)) && (
-                              <div className="flex justify-center py-2 border-t border-gray-100">
+                              <div className="flex justify-center py-2">
                                 <button
                                   type="button"
                                   onClick={() => void handleLoadMoreLevelUp()}
@@ -2663,7 +2717,7 @@ function ClientAccordion({
                                   )}
                                   {levelUpLoadingMore
                                     ? 'Loading…'
-                                    : `Show more (${levelUpOffers.length} shown, ${(levelUpCount ?? levelUpOffers.length) - levelUpOffers.length} remaining)`}
+                                    : 'Show more'}
                                 </button>
                               </div>
                             )}
@@ -2712,7 +2766,7 @@ function ClientAccordion({
                       <button
                         type="button"
                         onClick={() => setApplyOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                        className="w-full flex items-center justify-between py-2 transition-colors text-left"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2724,7 +2778,10 @@ function ClientAccordion({
                             {filteredApplyOffers.length}
                           </span>
                         </div>
-                        <CaretDown size={14} className={`text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`} />
+                        <CaretDown
+                          size={14}
+                          className={`text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
+                        />
                       </button>
                       {applyOpen && (
                         <div>
@@ -2959,6 +3016,7 @@ export default function ExploreTab({
     null,
   );
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [iconsSlotEl, setIconsSlotEl] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) return;
@@ -3175,6 +3233,9 @@ export default function ExploreTab({
                 <option value="score">Score</option>
                 <option value="salary_delta">Biggest pay raise</option>
               </select>
+              {selfMode && (
+                <div ref={setIconsSlotEl} className="flex items-center gap-1" />
+              )}
             </div>
           </div>
         </div>
@@ -3199,6 +3260,7 @@ export default function ExploreTab({
               onSortByOverride={handleSortChange}
               defaultExpanded={true}
               selfMode={true}
+              iconsPortalTarget={iconsSlotEl}
             />
           )
         ) : clients.length === 0 ? (

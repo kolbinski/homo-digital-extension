@@ -92,11 +92,17 @@ export default function WizardShell({
   generalSettingsRef.current = generalSettings;
   const handleReviewRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const reviewCheckoutTabIdRef = useRef<number | undefined>(undefined);
-  const reviewTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
+  const reviewTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(
+    null,
+  );
   const rematchCheckoutTabIdRef = useRef<number | undefined>(undefined);
-  const rematchTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
+  const rematchTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(
+    null,
+  );
 
-  const [preferredCurrency, setPreferredCurrency] = useState<string | undefined>(undefined);
+  const [preferredCurrency, setPreferredCurrency] = useState<
+    string | undefined
+  >(undefined);
 
   useEffect(() => {
     void (async () => {
@@ -106,8 +112,11 @@ export default function WizardShell({
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) return;
-        const data = (await res.json()) as { preferred_currency: string | null };
-        if (data.preferred_currency) setPreferredCurrency(data.preferred_currency);
+        const data = (await res.json()) as {
+          preferred_currency: string | null;
+        };
+        if (data.preferred_currency)
+          setPreferredCurrency(data.preferred_currency);
       } catch {
         // ignore
       }
@@ -124,7 +133,9 @@ export default function WizardShell({
   }, [activeTab]);
 
   useEffect(() => {
-    function handleStorageChange(changes: Record<string, chrome.storage.StorageChange>) {
+    function handleStorageChange(
+      changes: Record<string, chrome.storage.StorageChange>,
+    ) {
       if (
         'review_package_purchased' in changes &&
         changes.review_package_purchased.newValue !== undefined
@@ -148,7 +159,8 @@ export default function WizardShell({
       }
     }
     chrome.storage.local.onChanged.addListener(handleStorageChange);
-    return () => chrome.storage.local.onChanged.removeListener(handleStorageChange);
+    return () =>
+      chrome.storage.local.onChanged.removeListener(handleStorageChange);
   }, []);
 
   useEffect(() => {
@@ -365,8 +377,7 @@ export default function WizardShell({
             onSyncTriggeredRef.current?.();
           }
         }
-      } catch (err) {
-        }
+      } catch (err) {}
     })();
   }
 
@@ -386,14 +397,15 @@ export default function WizardShell({
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
-      } catch (err) {
-        }
+      } catch (err) {}
     })();
   }
 
   async function handleBuyRematch() {
     if (rematchTabRemovedListenerRef.current) {
-      chrome.tabs.onRemoved.removeListener(rematchTabRemovedListenerRef.current);
+      chrome.tabs.onRemoved.removeListener(
+        rematchTabRemovedListenerRef.current,
+      );
       rematchTabRemovedListenerRef.current = null;
     }
     setRematchCheckoutLoading(true);
@@ -416,7 +428,9 @@ export default function WizardShell({
           rematchCheckoutTabIdRef.current = undefined;
           setRematchCheckoutLoading(false);
           if (rematchTabRemovedListenerRef.current) {
-            chrome.tabs.onRemoved.removeListener(rematchTabRemovedListenerRef.current);
+            chrome.tabs.onRemoved.removeListener(
+              rematchTabRemovedListenerRef.current,
+            );
             rematchTabRemovedListenerRef.current = null;
           }
         }
@@ -455,7 +469,9 @@ export default function WizardShell({
           setReviewCheckoutLoading(false);
           setReviewLimitReached(false);
           if (reviewTabRemovedListenerRef.current) {
-            chrome.tabs.onRemoved.removeListener(reviewTabRemovedListenerRef.current);
+            chrome.tabs.onRemoved.removeListener(
+              reviewTabRemovedListenerRef.current,
+            );
             reviewTabRemovedListenerRef.current = null;
           }
         }
@@ -525,7 +541,7 @@ export default function WizardShell({
             aria-label="Settings"
             className="text-gray-800 hover:text-gray-700 transition-colors"
           >
-            <Gear size={16} />
+            <Gear size={24} />
           </button>
         ) : null}
       </header>

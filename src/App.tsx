@@ -7,20 +7,21 @@ import TabBar, { type Tab } from './components/TabBar';
 import ExploreTab from './components/ExploreTab';
 import SyncTab from './components/SyncTab';
 import SettingsDrawer from './components/SettingsDrawer';
-import { useAuth } from './hooks/useAuth';
+import { useAuth, type OAuthData } from './hooks/useAuth';
 import { API_BASE_URL, SHOW_TABS } from './config';
 import { generalSettingsStore } from './store/generalSettingsStore';
 
 type AuthState = 'checking' | 'logged_out' | 'logged_in' | 'client';
 
 function App() {
-  const { getToken, getRole, logout } = useAuth();
+  const { getToken, getRole, logout, getOAuthData } = useAuth();
   const [authState, setAuthState] = useState<AuthState>('checking');
   const [activeTabId, setActiveTabId] = useState<number | undefined>();
   const [activeTab, setActiveTab] = useState<Tab>('explore');
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [oauthData, setOauthData] = useState<OAuthData | null>(null);
   const [settings, setSettings] = useState<{
     show_sync_tab_in_extension: boolean;
   }>({
@@ -29,6 +30,14 @@ function App() {
 
   useEffect(() => {
     generalSettingsStore.fetch();
+  }, []);
+
+  useEffect(() => {
+    getOAuthData()
+      .then(data => {
+        if (data) setOauthData(data);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -178,7 +187,32 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-        <span />
+        {oauthData ? (
+          <div className="flex items-center gap-2">
+            {oauthData.oauth_photo_url ? (
+              <img
+                src={oauthData.oauth_photo_url}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-xs font-medium shrink-0">
+                {(oauthData.oauth_first_name?.[0] ?? '').toUpperCase()}
+                {(oauthData.oauth_last_name?.[0] ?? '').toUpperCase()}
+              </span>
+            )}
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-900 leading-tight">
+                {oauthData.oauth_first_name} {oauthData.oauth_last_name}
+              </span>
+              <span className="text-xs text-gray-400 leading-tight">
+                {oauthData.oauth_email}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <span />
+        )}
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -186,7 +220,7 @@ function App() {
             className="text-gray-800 hover:text-gray-700 transition-colors"
             aria-label="Settings"
           >
-            <Gear size={16} />
+            <Gear size={24} />
           </button>
         </div>
       </header>

@@ -247,7 +247,7 @@ export default function KickstartScreen({
           aria-label="Settings"
           className="text-gray-800 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Gear size={16} />
+          <Gear size={24} />
         </button>
       </header>
 
