@@ -2767,30 +2767,35 @@ function ClientAccordion({
               ) : (
                 <>
                   {/* Single section for non-pending_apply statuses */}
-                  {filteredApplyOffers.length > 0 ? (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setApplyOpen(v => !v)}
-                        className="w-full flex items-center justify-between py-2 transition-colors text-left"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                            {selfMode && statusFilter === 'client_withdrawn'
-                              ? 'Withdrawn'
-                              : (STATUS_LABELS[statusFilter] ?? statusFilter)}
-                          </span>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setApplyOpen(v => !v)}
+                      className="w-full flex items-center justify-between py-2 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                          {selfMode && statusFilter === 'client_withdrawn'
+                            ? 'Withdrawn'
+                            : (STATUS_LABELS[statusFilter] ?? statusFilter)}
+                        </span>
+                        {filteredApplyOffers.length > 0 && (
                           <span className="text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                             {filteredApplyOffers.length}
                           </span>
-                        </div>
-                        <CaretDown
-                          size={14}
-                          className={`text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                      {applyOpen && (
-                        <div>
+                        )}
+                      </div>
+                      <CaretDown
+                        size={14}
+                        className={`text-gray-400 transition-transform ${applyOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    {applyOpen && (
+                      <div>
+                        {filteredApplyOffers.length === 0 ? (
+                          <p className="py-3 text-gray-400 text-xs">No offers found.</p>
+                        ) : (
+                          <div>
                           {sortOffers(filteredApplyOffers, sortBy).map(
                             offer => (
                               <OfferCard
@@ -2880,14 +2885,11 @@ function ClientAccordion({
                               </button>
                             </div>
                           )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="py-3 text-gray-400 text-xs">
-                      No offers found.
-                    </p>
-                  )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </>
