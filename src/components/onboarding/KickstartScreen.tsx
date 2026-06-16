@@ -1,10 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle, CircleDashed, Gear } from '@phosphor-icons/react';
+import {
+  CheckCircle,
+  CircleDashed,
+  CloudCheck,
+  Gear,
+} from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
 import Spinner from '../Spinner';
 import SettingsDrawer from '../SettingsDrawer';
+import { useGeneralSettings } from '../../store/generalSettingsStore';
 import type { Profile } from './types';
+
+function getDefaultCurrency(): string {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (tz === 'Europe/Warsaw') return 'PLN';
+  if (tz === 'Europe/London') return 'GBP';
+  if (tz === 'Europe/Zurich' || tz === 'Europe/Geneva') return 'CHF';
+  if (tz === 'Europe/Oslo') return 'NOK';
+  if (tz === 'Europe/Stockholm') return 'SEK';
+  if (tz === 'Europe/Copenhagen') return 'DKK';
+  if (tz.startsWith('America/')) return 'USD';
+  if (tz.startsWith('Australia/')) return 'AUD';
+  return 'USD';
+}
 
 const PROGRESS_ITEMS = [
   'Your basic data',
@@ -16,7 +35,7 @@ const PROGRESS_ITEMS = [
   'Finalizing',
 ];
 
-const PROGRESS_DELAY = 6000;
+const PROGRESS_DELAY = 96000;
 
 interface Props {
   onPrepared: (profile: Partial<Profile>) => void;
@@ -30,6 +49,7 @@ export default function KickstartScreen({
   onLogout,
 }: Props) {
   const { getToken } = useAuth();
+  const { settings: generalSettings } = useGeneralSettings();
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,18 +57,87 @@ export default function KickstartScreen({
   const [displayStep, setDisplayStep] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const DEFAULT_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const DEFAULT_CURRENCY = getDefaultCurrency();
+  const [selectedCurrency, setSelectedCurrency] = useState(DEFAULT_CURRENCY);
+  const [tzQuery, setTzQuery] = useState(DEFAULT_TZ);
+  const [tzDropdownOpen, setTzDropdownOpen] = useState(false);
+  const [currencySaved, setCurrencySaved] = useState(false);
+  const [timezoneSaved, setTimezoneSaved] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentStepRef = useRef(0);
   const apiResultRef = useRef<Partial<Profile> | 'pending'>('pending');
   const onPreparedRef = useRef(onPrepared);
   onPreparedRef.current = onPrepared;
+  const tzWrapperRef = useRef<HTMLDivElement>(null);
+  const currencySavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const timezoneSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (currencySavedTimerRef.current)
+        clearTimeout(currencySavedTimerRef.current);
+      if (timezoneSavedTimerRef.current)
+        clearTimeout(timezoneSavedTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!tzDropdownOpen) return;
+    function handler(e: MouseEvent) {
+      if (
+        tzWrapperRef.current &&
+        !tzWrapperRef.current.contains(e.target as Node)
+      ) {
+        setTzDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [tzDropdownOpen]);
+
+  async function patchAccountSetting(body: Record<string, string>) {
+    try {
+      const token = await getToken();
+      await fetch(`${API_BASE_URL}/v1/account/settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  function showCurrencySaved() {
+    setCurrencySaved(true);
+    if (currencySavedTimerRef.current)
+      clearTimeout(currencySavedTimerRef.current);
+    currencySavedTimerRef.current = setTimeout(
+      () => setCurrencySaved(false),
+      2000,
+    );
+  }
+
+  function showTimezoneSaved() {
+    setTimezoneSaved(true);
+    if (timezoneSavedTimerRef.current)
+      clearTimeout(timezoneSavedTimerRef.current);
+    timezoneSavedTimerRef.current = setTimeout(
+      () => setTimezoneSaved(false),
+      2000,
+    );
+  }
 
   function scheduleNext(delay: number) {
     timerRef.current = setTimeout(() => {
@@ -116,6 +205,10 @@ export default function KickstartScreen({
     apiResultRef.current = 'pending';
     currentStepRef.current = 0;
     setDisplayStep(0);
+    void patchAccountSetting({
+      preferred_currency: DEFAULT_CURRENCY,
+      timezone: DEFAULT_TZ,
+    });
     scheduleNext(PROGRESS_DELAY);
     try {
       const token = await getToken();
@@ -246,43 +339,146 @@ export default function KickstartScreen({
 
           {/* Animated progress — shown while loading */}
           {loading && (
-            <div className="w-full flex flex-col gap-2.5">
-              {PROGRESS_ITEMS.map((item, i) => {
-                const isDone = i < displayStep;
-                const isActive = i === displayStep;
-                const isLast = i === PROGRESS_ITEMS.length - 1;
-                return (
-                  <div key={item} className="flex items-center gap-2">
-                    {isDone ? (
-                      <>
-                        <CheckCircle
-                          size={16}
-                          weight="fill"
-                          className="text-green-500 shrink-0"
-                        />
-                        <span className="text-sm text-gray-700">{item}</span>
-                      </>
-                    ) : isActive ? (
-                      <>
-                        <Spinner className="text-gray-400" />
-                        <span className="text-sm text-gray-500">
-                          {isLast
-                            ? 'Finalizing...'
-                            : `Reading ${item.toLowerCase()}...`}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <CircleDashed
-                          size={16}
-                          className="text-gray-300 shrink-0"
-                        />
-                        <span className="text-sm text-gray-300">{item}</span>
-                      </>
+            <div className="w-full flex flex-col gap-5">
+              <div className="flex flex-col gap-2.5">
+                {PROGRESS_ITEMS.map((item, i) => {
+                  const isDone = i < displayStep;
+                  const isActive = i === displayStep;
+                  const isLast = i === PROGRESS_ITEMS.length - 1;
+                  return (
+                    <div key={item} className="flex items-center gap-2">
+                      {isDone ? (
+                        <>
+                          <CheckCircle
+                            size={24}
+                            weight="fill"
+                            className="text-green-500 shrink-0"
+                          />
+                          <span className="text-sm text-gray-700">{item}</span>
+                        </>
+                      ) : isActive ? (
+                        <>
+                          <Spinner className="text-gray-400" />
+                          <span className="text-sm text-gray-500">
+                            {isLast
+                              ? 'Finalizing...'
+                              : `Reading ${item.toLowerCase()}...`}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <CircleDashed
+                            size={24}
+                            className="text-gray-300 shrink-0"
+                          />
+                          <span className="text-sm text-gray-300">{item}</span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Preferences section */}
+              <div className="w-full flex flex-col gap-3 pt-3 border-t border-gray-200">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  In the meantime, set your preferences
+                </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-600">
+                      Show offer salaries in currency
+                    </label>
+                    {currencySaved && (
+                      <CloudCheck
+                        size={14}
+                        weight="fill"
+                        className="text-green-500 shrink-0"
+                      />
                     )}
                   </div>
-                );
-              })}
+                  <select
+                    value={selectedCurrency}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setSelectedCurrency(val);
+                      void patchAccountSetting({
+                        preferred_currency: val,
+                      }).then(showCurrencySaved);
+                    }}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  >
+                    {(generalSettings?.currencies ?? [DEFAULT_CURRENCY]).map(
+                      c => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-600">My timezone</label>
+                    {timezoneSaved && (
+                      <CloudCheck
+                        size={14}
+                        weight="fill"
+                        className="text-green-500 shrink-0"
+                      />
+                    )}
+                  </div>
+                  <div className="relative" ref={tzWrapperRef}>
+                    <input
+                      type="text"
+                      value={tzQuery}
+                      onChange={e => {
+                        setTzQuery(e.target.value);
+                        setTzDropdownOpen(true);
+                      }}
+                      onFocus={() => setTzDropdownOpen(true)}
+                      placeholder="Search timezone…"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                    />
+                    {tzDropdownOpen &&
+                      (() => {
+                        const all = Intl.supportedValuesOf('timeZone');
+                        const q = tzQuery.toLowerCase();
+                        const starts = q
+                          ? all.filter(z => z.toLowerCase().startsWith(q))
+                          : all;
+                        const contains = q
+                          ? all.filter(
+                              z =>
+                                !z.toLowerCase().startsWith(q) &&
+                                z.toLowerCase().includes(q),
+                            )
+                          : [];
+                        const options = [...starts, ...contains].slice(0, 60);
+                        return options.length > 0 ? (
+                          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-44 overflow-y-auto z-10">
+                            {options.map(tz => (
+                              <button
+                                key={tz}
+                                type="button"
+                                onMouseDown={() => {
+                                  setTzQuery(tz);
+                                  setTzDropdownOpen(false);
+                                  void patchAccountSetting({
+                                    timezone: tz,
+                                  }).then(showTimezoneSaved);
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-blue-50 transition-colors"
+                              >
+                                {tz}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
