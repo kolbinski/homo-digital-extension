@@ -276,6 +276,7 @@ function OfferCard({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
+  const [showAllRaw, setShowAllRaw] = useState(false);
   const [clLimitHit, setClLimitHit] = useState(false);
   const [cvLimitBannerClosed, setCvLimitBannerClosed] = useState(false);
   const [clLimitBannerClosed, setClLimitBannerClosed] = useState(false);
@@ -629,7 +630,11 @@ function OfferCard({
                   key={i}
                   className="text-xs text-gray-500 flex items-center gap-0.5"
                 >
-                  <CurrencyCircleDollar size={16} className="shrink-0" />{' '}
+                  <CurrencyCircleDollar
+                    size={16}
+                    weight="fill"
+                    className="shrink-0"
+                  />{' '}
                   {s.currency} {formatSalaryType(s.type)} {formatNum(s.min)} –{' '}
                   {formatNum(s.max)}{' '}
                   <span className={deltaColor}>{deltaStr}</span>
@@ -784,7 +789,9 @@ function OfferCard({
                 r.unit === 'month'
               );
             }) ?? [];
-          return filteredRawSalaries.length > 0 ? (
+          if (filteredRawSalaries.length === 0) return null;
+
+          const renderAll = (
             <div className="text-xs text-gray-400">
               {filteredRawSalaries.map((s, i) => (
                 <span key={i} className="flex items-center gap-0.5">
@@ -797,7 +804,49 @@ function OfferCard({
                 </span>
               ))}
             </div>
-          ) : null;
+          );
+
+          if (isPageOffer || showAllRaw) return renderAll;
+
+          const preferredType =
+            preferenceSalaries?.some(p => p.type === 'contract')
+              ? 'contract'
+              : preferenceSalaries?.some(p => p.type === 'permanent')
+              ? 'permanent'
+              : 'contract';
+
+          const typeFiltered = filteredRawSalaries.filter(r => r.type === preferredType);
+          const candidates = typeFiltered.length > 0 ? typeFiltered : filteredRawSalaries;
+
+          const CURRENCY_PRIORITY = ['USD', 'EUR', 'GBP', 'CHF'];
+          let picked = candidates[0];
+          for (const cur of CURRENCY_PRIORITY) {
+            const found = candidates.find(r => r.currency === cur);
+            if (found) { picked = found; break; }
+          }
+
+          const remaining = filteredRawSalaries.length - 1;
+          return (
+            <div className="text-xs text-gray-400">
+              <span className="flex items-center gap-0.5">
+                <CurrencyCircleDollar size={16} className="shrink-0" />
+                {picked.currency} {formatSalaryType(picked.type)}{' '}
+                {formatNum(Math.round(picked.from))} –{' '}
+                {formatNum(Math.round(picked.to))}
+                {' / '}
+                {picked.unit}
+              </span>
+              {remaining > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllRaw(true)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
+                >
+                  show {remaining} more
+                </button>
+              )}
+            </div>
+          );
         })()}
         {offer.required_skills && offer.required_skills.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -1323,7 +1372,9 @@ function ClientAccordion({
   const pageOfferSectionRef = useRef<HTMLButtonElement>(null);
   const pageOfferCardRef = useRef<HTMLDivElement>(null);
   const scanCheckoutTabIdRef = useRef<number | undefined>(undefined);
-  const scanTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
+  const scanTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(
+    null,
+  );
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1894,7 +1945,11 @@ function ClientAccordion({
       prevApplyCountRef.current = result.apply_now.count;
       prevLevelUpCountRef.current = result.level_up.count;
       interval = setInterval(async () => {
-        const polled = await fetchCombinedOffers(1, applyNowCount ?? 0, levelUpCount ?? 0);
+        const polled = await fetchCombinedOffers(
+          1,
+          applyNowCount ?? 0,
+          levelUpCount ?? 0,
+        );
         const newTotal = polled.count;
         const newApplyCount = polled.apply_now.count;
         const newLevelUpCount = polled.level_up.count;
@@ -2064,7 +2119,9 @@ function ClientAccordion({
           scanCheckoutTabIdRef.current = undefined;
           setScanPackageLoading(false);
           if (scanTabRemovedListenerRef.current) {
-            chrome.tabs.onRemoved.removeListener(scanTabRemovedListenerRef.current);
+            chrome.tabs.onRemoved.removeListener(
+              scanTabRemovedListenerRef.current,
+            );
             scanTabRemovedListenerRef.current = null;
           }
         }
@@ -2389,6 +2446,7 @@ function ClientAccordion({
                           generalSettings?.cl_package_price?.formatted
                         }
                         preferenceSalaries={preferenceSalaries}
+                        isPageOffer={true}
                       />
                     </div>
                   )}
@@ -2873,7 +2931,9 @@ function ClientAccordion({
                   onCancelEdit={() => setProfileReady(true)}
                   profileRematchPending={profileRematchPending}
                   autoTriggerReview={autoTriggerReview}
-                  onAutoTriggerReviewConsumed={() => setAutoTriggerReview(false)}
+                  onAutoTriggerReviewConsumed={() =>
+                    setAutoTriggerReview(false)
+                  }
                   onRematchLimitReached={() => {
                     setProfileRematchPending(true);
                     setProfileOpen(true);
