@@ -280,6 +280,11 @@ function OfferCard({
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
   const [showAllRaw, setShowAllRaw] = useState(false);
+  const [editingRoleFit, setEditingRoleFit] = useState(false);
+  const [roleFitSaved, setRoleFitSaved] = useState(offer.claude_role_fit ?? '');
+  const [roleFitValue, setRoleFitValue] = useState(offer.claude_role_fit ?? '');
+  const [roleFitSaving, setRoleFitSaving] = useState(false);
+  const [roleFitError, setRoleFitError] = useState<string | null>(null);
   const [clLimitHit, setClLimitHit] = useState(false);
   const [cvLimitBannerClosed, setCvLimitBannerClosed] = useState(false);
   const [clLimitBannerClosed, setClLimitBannerClosed] = useState(false);
@@ -937,10 +942,91 @@ function OfferCard({
       {/* Expanded: role fit + pros/cons + CV generation + Withdraw */}
       {isOpen && (
         <div className="px-3 flex flex-col gap-2">
-          {offer.claude_role_fit && (
-            <p className="text-xs text-gray-600 leading-relaxed">
-              {offer.claude_role_fit}
-            </p>
+          {(roleFitSaved || isPageOffer) && (
+            <div>
+              {editingRoleFit ? (
+                <div className="flex flex-col gap-1.5">
+                  <textarea
+                    value={roleFitValue}
+                    onChange={e => setRoleFitValue(e.target.value)}
+                    className="w-full text-xs border border-gray-200 rounded p-2 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    rows={3}
+                  />
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRoleFitValue(roleFitSaved);
+                        setEditingRoleFit(false);
+                      }}
+                      className="flex-1 py-1 text-xs font-medium border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={roleFitSaving}
+                      onClick={async () => {
+                        setRoleFitSaving(true);
+                        setRoleFitError(null);
+                        try {
+                          const token = await getToken();
+                          const res = await fetch(
+                            `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/role-fit`,
+                            {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                ...(token
+                                  ? { Authorization: `Bearer ${token}` }
+                                  : {}),
+                              },
+                              body: JSON.stringify({
+                                claude_role_fit: roleFitValue,
+                              }),
+                            },
+                          );
+                          if (!res.ok) throw new Error();
+                          setRoleFitSaved(roleFitValue);
+                          setRoleFitError(null);
+                          setEditingRoleFit(false);
+                        } catch {
+                          setRoleFitError('Failed to save. Please try again.');
+                        } finally {
+                          setRoleFitSaving(false);
+                        }
+                      }}
+                      className="flex-1 py-1 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                      {roleFitSaving && (
+                        <Spinner size={11} className="text-white" />
+                      )}
+                      {roleFitSaving ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
+                  {roleFitError && (
+                    <p className="text-xs text-red-500 mt-1">{roleFitError}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  {roleFitSaved}
+                  {isPageOffer && (
+                    <PencilSimple
+                      size={13}
+                      className="inline ml-1 cursor-pointer text-gray-400 hover:text-gray-600"
+                      onClick={() => {
+                        setRoleFitValue(roleFitSaved);
+                        setEditingRoleFit(true);
+                      }}
+                      style={{
+                        verticalAlign: 'text-top',
+                      }}
+                    />
+                  )}
+                </p>
+              )}
+            </div>
           )}
           {offer.claude_matched_reasons &&
             (offer.claude_matched_reasons.cons.length > 0 ||
