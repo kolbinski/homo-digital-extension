@@ -646,7 +646,7 @@ function OfferCard({
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <span className="text-black text-xs flex items-center gap-0.5">
+            <span className="text-gray-500 text-xs flex items-center gap-0.5">
               <CurrencyCircleDollar size={16} className="shrink-0" /> Salary not
               disclosed
               {offer.source === 'manual' && (
@@ -791,41 +791,49 @@ function OfferCard({
             }) ?? [];
           if (filteredRawSalaries.length === 0) return null;
 
-          const renderAll = (
-            <div className="text-xs text-gray-400">
-              {filteredRawSalaries.map((s, i) => (
-                <span key={i} className="flex items-center gap-0.5">
-                  <CurrencyCircleDollar size={16} className="shrink-0" />
-                  {s.currency} {formatSalaryType(s.type)}{' '}
-                  {formatNum(Math.round(s.from))} –{' '}
-                  {formatNum(Math.round(s.to))}
-                  {' / '}
-                  {s.unit}
-                </span>
-              ))}
-            </div>
-          );
-
-          if (isPageOffer || showAllRaw) return renderAll;
-
-          const preferredType =
-            preferenceSalaries?.some(p => p.type === 'contract')
-              ? 'contract'
-              : preferenceSalaries?.some(p => p.type === 'permanent')
+          const preferredType = preferenceSalaries?.some(
+            p => p.type === 'contract',
+          )
+            ? 'contract'
+            : preferenceSalaries?.some(p => p.type === 'permanent')
               ? 'permanent'
               : 'contract';
 
-          const typeFiltered = filteredRawSalaries.filter(r => r.type === preferredType);
-          const candidates = typeFiltered.length > 0 ? typeFiltered : filteredRawSalaries;
+          const currencyOrder: Record<string, number> = {
+            USD: 1,
+            EUR: 2,
+            GBP: 3,
+            CHF: 4,
+          };
+          const sorted = [...filteredRawSalaries].sort((a, b) => {
+            const typeA = a.type === preferredType ? 0 : 1;
+            const typeB = b.type === preferredType ? 0 : 1;
+            if (typeA !== typeB) return typeA - typeB;
+            return (
+              (currencyOrder[a.currency] ?? 5) -
+              (currencyOrder[b.currency] ?? 5)
+            );
+          });
 
-          const CURRENCY_PRIORITY = ['USD', 'EUR', 'GBP', 'CHF'];
-          let picked = candidates[0];
-          for (const cur of CURRENCY_PRIORITY) {
-            const found = candidates.find(r => r.currency === cur);
-            if (found) { picked = found; break; }
+          if (isPageOffer || showAllRaw) {
+            return (
+              <div className="text-xs text-gray-400">
+                {sorted.map((s, i) => (
+                  <span key={i} className="flex items-center gap-0.5">
+                    <CurrencyCircleDollar size={16} className="shrink-0" />
+                    {s.currency} {formatSalaryType(s.type)}{' '}
+                    {formatNum(Math.round(s.from))} –{' '}
+                    {formatNum(Math.round(s.to))}
+                    {' / '}
+                    {s.unit}
+                  </span>
+                ))}
+              </div>
+            );
           }
 
-          const remaining = filteredRawSalaries.length - 1;
+          const picked = sorted[0];
+          const remaining = sorted.length - 1;
           return (
             <div className="text-xs text-gray-400">
               <span className="flex items-center gap-0.5">
@@ -835,16 +843,16 @@ function OfferCard({
                 {formatNum(Math.round(picked.to))}
                 {' / '}
                 {picked.unit}
+                {remaining > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllRaw(true)}
+                    className="text-gray-500 hover:text-gray-600 transition-colors"
+                  >
+                    show {remaining} more
+                  </button>
+                )}
               </span>
-              {remaining > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllRaw(true)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
-                >
-                  show {remaining} more
-                </button>
-              )}
             </div>
           );
         })()}
