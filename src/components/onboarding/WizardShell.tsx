@@ -69,6 +69,7 @@ export default function WizardShell({
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewLimitReached, setReviewLimitReached] = useState(false);
+  const [reviewCheckoutLoading, setReviewCheckoutLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,6 +83,12 @@ export default function WizardShell({
   onSyncTriggeredRef.current = onSyncTriggered;
   const onRematchLimitReachedRef = useRef(onRematchLimitReached);
   onRematchLimitReachedRef.current = onRematchLimitReached;
+  const generalSettingsRef = useRef(generalSettings);
+  generalSettingsRef.current = generalSettings;
+  const handleReviewRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const reviewCheckoutTabIdRef = useRef<number | undefined>(undefined);
+  const reviewTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
+  const reviewTabUpdatedListenerRef = useRef<((tabId: number, changeInfo: chrome.tabs.OnUpdatedInfo, tab: chrome.tabs.Tab) => void) | null>(null);
 
   const [preferredCurrency, setPreferredCurrency] = useState<string | undefined>(undefined);
 
@@ -109,6 +116,27 @@ export default function WizardShell({
   useEffect(() => {
     if (tabBodyRef.current) tabBodyRef.current.scrollTop = 0;
   }, [activeTab]);
+
+  useEffect(() => {
+    function handleStorageChange(changes: Record<string, chrome.storage.StorageChange>) {
+      if (
+        'review_package_purchased' in changes &&
+        changes.review_package_purchased.newValue !== undefined
+      ) {
+        setReviewLimitReached(false);
+        setReviewCheckoutLoading(false);
+        void handleReviewRef.current();
+      }
+      if (
+        'upgrade_cancelled' in changes &&
+        changes.upgrade_cancelled.newValue !== undefined
+      ) {
+        setReviewCheckoutLoading(false);
+      }
+    }
+    chrome.storage.local.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.local.onChanged.removeListener(handleStorageChange);
+  }, []);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -288,6 +316,7 @@ export default function WizardShell({
       setIsReviewing(false);
     }
   }
+  handleReviewRef.current = handleReview;
 
   function handleRematch() {
     onRematch?.();
@@ -373,6 +402,15 @@ export default function WizardShell({
   }
 
   async function handleBuyReviewPackage() {
+    if (reviewTabRemovedListenerRef.current) {
+      chrome.tabs.onRemoved.removeListener(reviewTabRemovedListenerRef.current);
+      reviewTabRemovedListenerRef.current = null;
+    }
+    if (reviewTabUpdatedListenerRef.current) {
+      chrome.tabs.onUpdated.removeListener(reviewTabUpdatedListenerRef.current);
+      reviewTabUpdatedListenerRef.current = null;
+    }
+    setReviewCheckoutLoading(true);
     try {
       const token = await getAuthTokenRef.current();
       const res = await fetch(
@@ -384,9 +422,51 @@ export default function WizardShell({
       );
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = (await res.json()) as { url: string };
-      await chrome.tabs.create({ url: data.url });
+      const tab = await chrome.tabs.create({ url: data.url });
+      reviewCheckoutTabIdRef.current = tab.id;
+
+      function cleanupTabListeners() {
+        if (reviewTabRemovedListenerRef.current) {
+          chrome.tabs.onRemoved.removeListener(reviewTabRemovedListenerRef.current);
+          reviewTabRemovedListenerRef.current = null;
+        }
+        if (reviewTabUpdatedListenerRef.current) {
+          chrome.tabs.onUpdated.removeListener(reviewTabUpdatedListenerRef.current);
+          reviewTabUpdatedListenerRef.current = null;
+        }
+      }
+
+      function onTabRemoved(tabId: number) {
+        if (tabId === reviewCheckoutTabIdRef.current) {
+          reviewCheckoutTabIdRef.current = undefined;
+          setReviewCheckoutLoading(false);
+          cleanupTabListeners();
+        }
+      }
+
+      function onTabUpdated(
+        tabId: number,
+        _changeInfo: chrome.tabs.OnUpdatedInfo,
+        updatedTab: chrome.tabs.Tab,
+      ) {
+        if (
+          tabId === reviewCheckoutTabIdRef.current &&
+          updatedTab.url?.includes('upgrade=review_package')
+        ) {
+          reviewCheckoutTabIdRef.current = undefined;
+          setReviewCheckoutLoading(false);
+          void chrome.tabs.remove(tabId);
+          cleanupTabListeners();
+        }
+      }
+
+      reviewTabRemovedListenerRef.current = onTabRemoved;
+      reviewTabUpdatedListenerRef.current = onTabUpdated;
+      chrome.tabs.onRemoved.addListener(onTabRemoved);
+      chrome.tabs.onUpdated.addListener(onTabUpdated);
     } catch (err) {
       console.error('[handleBuyReviewPackage]', err);
+      setReviewCheckoutLoading(false);
     }
   }
 
@@ -596,6 +676,7 @@ export default function WizardShell({
           <PlanLimitBanner
             onButtonClick={() => void handleBuyReviewPackage()}
             buttonText={`Buy ${generalSettings?.profile_review_package_amount ?? '...'} reviews for ${generalSettings?.profile_review_package_price?.formatted ?? '...'}`}
+            isLoading={reviewCheckoutLoading}
             closable
             onClose={() => setReviewLimitReached(false)}
           >
