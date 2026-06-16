@@ -1685,6 +1685,7 @@ function ClientAccordion({
 
   useEffect(() => {
     setHasLoaded(false);
+    setExpandedOfferId(null);
     setApplyPage(1);
     setLevelUpPage(1);
     setStatusPage(1);
@@ -2368,7 +2369,7 @@ function ClientAccordion({
           )}
           {statusFilter === 'pending_apply' && (
             <>
-              {/* Salary delta upsell */}
+              {/* Salary delta upsell — pending_apply only */}
               {showSalaryDeltaBanner && !isPro && (
                 <PlanLimitBanner
                   onButtonClick={() => setUpgradeDrawerOpen(true)}
@@ -2423,66 +2424,66 @@ function ClientAccordion({
                   </div>
                 )
               )}
-              {/* Offer on this page sub-section */}
-              {pageOffer && (
-                <div className="border-b border-gray-100">
-                  <button
-                    ref={pageOfferSectionRef}
-                    id="offer-on-this-page-section"
-                    type="button"
-                    onClick={() => setPageOfferOpen(v => !v)}
-                    className="w-full flex items-center justify-between py-2 transition-colors text-left sticky top-0 z-10 bg-gray-50 border-b border-gray-200"
-                  >
-                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                      Offer on this page
-                    </span>
-                    <CaretDown
-                      size={14}
-                      className={`text-gray-400 transition-transform ${pageOfferOpen ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  {pageOfferOpen && (
-                    <div ref={pageOfferCardRef}>
-                      <OfferCard
-                        key={pageOffer.user_offer_id}
-                        offer={pageOffer}
-                        clientId={client.id}
-                        clientFirstName={client.first_name}
-                        clientLastName={client.last_name}
-                        isOpen={true}
-                        onToggle={() => {}}
-                        activeTabId={activeTabId}
-                        onRemove={() => setPageOffer(null)}
-                        onRollback={() => {}}
-                        onError={setStatusError}
-                        onCvUpdate={handleCvUpdate}
-                        onClUpdate={handleClUpdate}
-                        onSalaryUpdate={handleSalaryUpdate}
-                        candidateSkills={candidateSkills}
-                        isOfferLoading={false}
-                        selfMode={selfMode}
-                        onCvLimitReached={() => void handleBuyCvPackage()}
-                        onClLimitReached={() => void handleBuyClPackage()}
-                        cvPackageBuyLoading={cvPackageBuyLoading}
-                        cvPackageBuyError={cvPackageBuyError}
-                        clPackageBuyLoading={clPackageBuyLoading}
-                        clPackageBuyError={clPackageBuyError}
-                        cvPackageAmount={generalSettings?.cv_package_amount}
-                        cvPackagePrice={
-                          generalSettings?.cv_package_price?.formatted
-                        }
-                        clPackageAmount={generalSettings?.cl_package_amount}
-                        clPackagePrice={
-                          generalSettings?.cl_package_price?.formatted
-                        }
-                        preferenceSalaries={preferenceSalaries}
-                        isPageOffer={true}
-                      />
-                    </div>
-                  )}
+            </>
+          )}
+          {/* Offer on this page sub-section — shown for all status filters */}
+          {pageOffer && (
+            <div className="border-b border-gray-100">
+              <button
+                ref={pageOfferSectionRef}
+                id="offer-on-this-page-section"
+                type="button"
+                onClick={() => setPageOfferOpen(v => !v)}
+                className="w-full flex items-center justify-between py-2 transition-colors text-left sticky top-0 z-10 bg-gray-50 border-b border-gray-200"
+              >
+                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  Offer on this page
+                </span>
+                <CaretDown
+                  size={14}
+                  className={`text-gray-400 transition-transform ${pageOfferOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {pageOfferOpen && (
+                <div ref={pageOfferCardRef}>
+                  <OfferCard
+                    key={pageOffer.user_offer_id}
+                    offer={pageOffer}
+                    clientId={client.id}
+                    clientFirstName={client.first_name}
+                    clientLastName={client.last_name}
+                    isOpen={true}
+                    onToggle={() => {}}
+                    activeTabId={activeTabId}
+                    onRemove={() => setPageOffer(null)}
+                    onRollback={() => {}}
+                    onError={setStatusError}
+                    onCvUpdate={handleCvUpdate}
+                    onClUpdate={handleClUpdate}
+                    onSalaryUpdate={handleSalaryUpdate}
+                    candidateSkills={candidateSkills}
+                    isOfferLoading={false}
+                    selfMode={selfMode}
+                    onCvLimitReached={() => void handleBuyCvPackage()}
+                    onClLimitReached={() => void handleBuyClPackage()}
+                    cvPackageBuyLoading={cvPackageBuyLoading}
+                    cvPackageBuyError={cvPackageBuyError}
+                    clPackageBuyLoading={clPackageBuyLoading}
+                    clPackageBuyError={clPackageBuyError}
+                    cvPackageAmount={generalSettings?.cv_package_amount}
+                    cvPackagePrice={
+                      generalSettings?.cv_package_price?.formatted
+                    }
+                    clPackageAmount={generalSettings?.cl_package_amount}
+                    clPackagePrice={
+                      generalSettings?.cl_package_price?.formatted
+                    }
+                    preferenceSalaries={preferenceSalaries}
+                    isPageOffer={true}
+                  />
                 </div>
               )}
-            </>
+            </div>
           )}
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
