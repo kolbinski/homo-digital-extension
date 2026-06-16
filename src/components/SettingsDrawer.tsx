@@ -26,6 +26,8 @@ interface SubscriptionStatus {
   cl_counter_max?: number;
   profile_relevant_change_counter?: number;
   profile_relevant_change_counter_max?: number;
+  review_by_ai_counter?: number;
+  review_by_ai_counter_max?: number;
   is_admin?: boolean;
 }
 
@@ -908,6 +910,11 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           subscription.profile_relevant_change_counter ?? 0,
                         max:
                           subscription.profile_relevant_change_counter_max ?? 0,
+                      },
+                      {
+                        label: 'AI Profile Reviews',
+                        counter: subscription.review_by_ai_counter ?? 0,
+                        max: subscription.review_by_ai_counter_max ?? 0,
                       },
                     ].map(({ label, counter, max }) => {
                       const pct =

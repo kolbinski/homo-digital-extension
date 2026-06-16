@@ -24,6 +24,8 @@ export interface GeneralSettings {
   cl_package_price?: { formatted: string } | null;
   profile_relevant_change_package_amount?: number;
   profile_rematch_package_price?: { formatted: string } | null;
+  profile_review_package_amount?: number;
+  profile_review_package_price?: { formatted: string } | null;
   listing_page_size?: number;
   plans?: {
     free: {

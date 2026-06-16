@@ -43,6 +43,9 @@ interface Props {
   profileRematchPending?: boolean;
   isOnboarding?: boolean;
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
+  reviewByAiCounter?: number;
+  reviewByAiCounterMax?: number;
+  onReviewByAiUsed?: () => void;
 }
 
 export default function WizardShell({
@@ -60,6 +63,9 @@ export default function WizardShell({
   profileRematchPending = false,
   isOnboarding = false,
   onCloseComplete,
+  reviewByAiCounter,
+  reviewByAiCounterMax,
+  onReviewByAiUsed,
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -68,6 +74,7 @@ export default function WizardShell({
   const [submitting, setSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewBannerClosed, setReviewBannerClosed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -275,6 +282,7 @@ export default function WizardShell({
           await chrome.storage.local.set({ review_tab_id: tab.id });
         }
       }
+      onReviewByAiUsed?.();
     } catch {
       setReviewError('Review failed. Please try again.');
     } finally {
@@ -364,6 +372,29 @@ export default function WizardShell({
       console.error('[handleBuyRematch]', err);
     }
   }
+
+  async function handleBuyReviewPackage() {
+    try {
+      const token = await getAuthTokenRef.current();
+      const res = await fetch(
+        `${API_BASE_URL}/v1/subscription/review-package-checkout`,
+        {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = (await res.json()) as { url: string };
+      await chrome.tabs.create({ url: data.url });
+    } catch (err) {
+      console.error('[handleBuyReviewPackage]', err);
+    }
+  }
+
+  const reviewLimitReached =
+    reviewByAiCounterMax !== undefined &&
+    reviewByAiCounterMax > 0 &&
+    (reviewByAiCounter ?? 0) >= reviewByAiCounterMax;
 
   const isEditMode = !isOnboarding && !!onClose;
 
@@ -617,9 +648,16 @@ export default function WizardShell({
                   isReviewing ||
                   submitting ||
                   autoSaveStatus === 'saving' ||
-                  totalErrors > 0
+                  totalErrors > 0 ||
+                  reviewLimitReached
                 }
-                title={totalErrors > 0 ? 'Fix all errors first' : undefined}
+                title={
+                  reviewLimitReached
+                    ? 'Review limit reached'
+                    : totalErrors > 0
+                      ? 'Fix all errors first'
+                      : undefined
+                }
                 className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
               >
                 {isReviewing ? (
@@ -655,6 +693,18 @@ export default function WizardShell({
             )}
           </div>
         </div>
+        {reviewLimitReached && !reviewBannerClosed && (
+          <PlanLimitBanner
+            onButtonClick={() => void handleBuyReviewPackage()}
+            buttonText={`Buy ${generalSettings?.profile_review_package_amount ?? '...'} reviews for ${generalSettings?.profile_review_package_price?.formatted ?? '...'}`}
+            closable
+            onClose={() => setReviewBannerClosed(true)}
+          >
+            <p className="text-xs text-gray-500">
+              You've reached your AI profile review limit.
+            </p>
+          </PlanLimitBanner>
+        )}
       </div>
     </div>
   );
