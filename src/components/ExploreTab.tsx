@@ -165,6 +165,7 @@ interface Props {
   activeTabId?: number;
   currentUrl?: string;
   selfMode?: boolean;
+  wizardPortalTarget?: HTMLDivElement | null;
 }
 
 interface ClientAccordionProps {
@@ -182,6 +183,7 @@ interface ClientAccordionProps {
   defaultExpanded?: boolean;
   selfMode?: boolean;
   iconsPortalTarget?: HTMLDivElement | null;
+  wizardPortalTarget?: HTMLDivElement | null;
 }
 
 interface OfferCardProps {
@@ -1308,6 +1310,7 @@ function ClientAccordion({
   defaultExpanded = false,
   selfMode = false,
   iconsPortalTarget,
+  wizardPortalTarget,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -2225,34 +2228,38 @@ function ClientAccordion({
       }
     >
       {selfMode &&
+        wizardPortalTarget &&
+        createPortal(
+          <button
+            type="button"
+            onClick={() => void openWizard()}
+            title="Edit profile"
+            className="text-gray-800 hover:text-gray-700 transition-colors"
+          >
+            <AddressBook size={24} />
+          </button>,
+          wizardPortalTarget,
+        )}
+      {selfMode &&
         iconsPortalTarget &&
         createPortal(
-          <div className="flex items-center gap-1 ml-1.5">
-            <button
-              type="button"
-              onClick={() => void openWizard()}
-              title="Edit profile"
-              className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-600"
-            >
-              <AddressBook size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing || !hasLoaded}
-              title="Refresh"
-              className="relative p-1.5 rounded bg-white transition-colors text-gray-600 disabled:opacity-40"
-            >
-              {isRefreshing || !hasLoaded ? (
-                <Spinner size={14} />
-              ) : (
-                <ArrowsClockwise size={14} />
-              )}
-              {hasNewOffers && hasLoaded && !isRefreshing && (
-                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />
-              )}
-            </button>
-          </div>,
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing || !hasLoaded}
+            title="Refresh"
+            className="relative border border-gray-200 rounded p-1.5 
+            bg-white transition-colors text-gray-600 disabled:opacity-40"
+          >
+            {isRefreshing || !hasLoaded ? (
+              <Spinner size={14} />
+            ) : (
+              <ArrowsClockwise size={14} />
+            )}
+            {hasNewOffers && hasLoaded && !isRefreshing && (
+              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />
+            )}
+          </button>,
           iconsPortalTarget,
         )}
       {!selfMode && (
@@ -2999,6 +3006,7 @@ export default function ExploreTab({
   activeTabId,
   currentUrl,
   selfMode,
+  wizardPortalTarget,
 }: Props) {
   const { fetchClients } = useClients();
   const { settings: generalSettings } = useGeneralSettings();
@@ -3233,10 +3241,10 @@ export default function ExploreTab({
                 <option value="score">Score</option>
                 <option value="salary_delta">Biggest pay raise</option>
               </select>
-              {selfMode && (
-                <div ref={setIconsSlotEl} className="flex items-center gap-1" />
-              )}
             </div>
+            {selfMode && (
+              <div ref={setIconsSlotEl} className="flex items-center" />
+            )}
           </div>
         </div>
         {selfMode ? (
@@ -3261,6 +3269,7 @@ export default function ExploreTab({
               defaultExpanded={true}
               selfMode={true}
               iconsPortalTarget={iconsSlotEl}
+              wizardPortalTarget={wizardPortalTarget}
             />
           )
         ) : clients.length === 0 ? (

@@ -26,6 +26,7 @@ export default function ClientView({
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [oauthData, setOauthData] = useState<OAuthData | null>(null);
+  const [wizardSlotEl, setWizardSlotEl] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     getOAuthData()
@@ -112,6 +113,7 @@ export default function ClientView({
           <span />
         )}
         <div className="flex items-center gap-3">
+          <div ref={setWizardSlotEl} className="flex items-center" />
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
@@ -128,6 +130,7 @@ export default function ClientView({
           onLogout={onLogout}
           activeTabId={activeTabId}
           currentUrl={currentUrl}
+          wizardPortalTarget={wizardSlotEl}
         />
       </div>
       {settingsOpen && (
