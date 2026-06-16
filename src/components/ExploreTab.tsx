@@ -2241,7 +2241,7 @@ function ClientAccordion({
               onClick={handleRefresh}
               disabled={isRefreshing || !hasLoaded}
               title="Refresh"
-              className="relative p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-600 disabled:opacity-40"
+              className="relative p-1.5 rounded bg-white transition-colors text-gray-600 disabled:opacity-40"
             >
               {isRefreshing || !hasLoaded ? (
                 <Spinner size={14} />
