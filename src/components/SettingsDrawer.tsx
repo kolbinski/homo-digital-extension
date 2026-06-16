@@ -538,21 +538,23 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     }
   }
 
+  async function handleLogout() {
+    await chrome.storage.local.clear();
+    await chrome.storage.session?.clear?.();
+    onLogout();
+  }
+
   async function handleDeleteAccount() {
     setIsDeleting(true);
     setDeleteError('');
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/v1/account`, {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      onLogout();
-    } catch {
-      setDeleteError('Failed to delete account. Please try again.');
-      setIsDeleting(false);
-    }
+    const token = await getToken();
+    await chrome.storage.local.clear();
+    await chrome.storage.session?.clear?.();
+    onLogout();
+    void fetch(`${API_BASE_URL}/v1/account`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
   }
 
   const isPro =
@@ -649,7 +651,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     </div>
                     <button
                       type="button"
-                      onClick={onLogout}
+                      onClick={() => void handleLogout()}
                       className="shrink-0 font-medium py-1.5 px-3 rounded-md text-xs transition-colors bg-gray-800 hover:bg-gray-900 text-white"
                     >
                       Log out

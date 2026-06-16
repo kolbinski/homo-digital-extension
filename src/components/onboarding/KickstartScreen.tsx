@@ -251,7 +251,9 @@ export default function KickstartScreen({
       </header>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+      <div
+        className={`flex-1 flex flex-col items-center ${!loading ? 'justify-center' : ''} px-6 py-8`}
+      >
         <div className="w-full max-w-sm flex flex-col items-center gap-5">
           <div className={loading ? 'text-left w-full' : 'text-center'}>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">
@@ -358,7 +360,7 @@ export default function KickstartScreen({
                         </>
                       ) : isActive ? (
                         <>
-                          <Spinner className="text-gray-400" />
+                          <Spinner size={24} className="text-gray-400" />
                           <span className="text-sm text-gray-500">
                             {isLast
                               ? 'Finalizing...'
