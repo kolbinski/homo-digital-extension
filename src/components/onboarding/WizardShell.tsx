@@ -74,6 +74,7 @@ export default function WizardShell({
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewLimitReached, setReviewLimitReached] = useState(false);
   const [reviewCheckoutLoading, setReviewCheckoutLoading] = useState(false);
+  const [rematchCheckoutLoading, setRematchCheckoutLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,6 +93,8 @@ export default function WizardShell({
   const handleReviewRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const reviewCheckoutTabIdRef = useRef<number | undefined>(undefined);
   const reviewTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
+  const rematchCheckoutTabIdRef = useRef<number | undefined>(undefined);
+  const rematchTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
 
   const [preferredCurrency, setPreferredCurrency] = useState<string | undefined>(undefined);
 
@@ -130,11 +133,18 @@ export default function WizardShell({
         setReviewCheckoutLoading(false);
       }
       if (
+        'profile_rematch_purchased' in changes &&
+        changes.profile_rematch_purchased.newValue !== undefined
+      ) {
+        setRematchCheckoutLoading(false);
+      }
+      if (
         'upgrade_cancelled' in changes &&
         changes.upgrade_cancelled.newValue !== undefined
       ) {
         setReviewLimitReached(false);
         setReviewCheckoutLoading(false);
+        setRematchCheckoutLoading(false);
       }
     }
     chrome.storage.local.onChanged.addListener(handleStorageChange);
@@ -152,7 +162,6 @@ export default function WizardShell({
       autoSaveTimerRef.current = null;
       try {
         const token = await getAuthTokenRef.current();
-        console.log('[patchProfile] token:', token?.slice(0, 20));
         const res = await fetch(`${API_BASE_URL}/v1/profile`, {
           method: 'PATCH',
           headers: {
@@ -204,14 +213,6 @@ export default function WizardShell({
         const data = (await res.json()) as {
           matching_relevant_change?: boolean;
         };
-        console.log(
-          '[wizard close] matching_relevant_change:',
-          data.matching_relevant_change,
-        );
-        console.log(
-          '[wizard close] will trigger sync:',
-          data.matching_relevant_change === true,
-        );
         if (data.matching_relevant_change) {
           syncTriggered = true;
           void fetch(`${API_BASE_URL}/v1/profile/trigger-sync`, {
@@ -237,7 +238,6 @@ export default function WizardShell({
     setSubmitting(true);
     try {
       const token = await getAuthTokenRef.current();
-      console.log('[patchProfile] token:', token?.slice(0, 20));
       const res = await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {
@@ -322,7 +322,6 @@ export default function WizardShell({
   handleReviewRef.current = handleReview;
 
   useEffect(() => {
-    console.log('[WizardShell] autoTriggerReview changed:', autoTriggerReview);
     if (autoTriggerReview) {
       onAutoTriggerReviewConsumed?.();
       void handleReviewRef.current();
@@ -395,6 +394,11 @@ export default function WizardShell({
   }
 
   async function handleBuyRematch() {
+    if (rematchTabRemovedListenerRef.current) {
+      chrome.tabs.onRemoved.removeListener(rematchTabRemovedListenerRef.current);
+      rematchTabRemovedListenerRef.current = null;
+    }
+    setRematchCheckoutLoading(true);
     try {
       const token = await getAuthTokenRef.current();
       const res = await fetch(
@@ -406,9 +410,25 @@ export default function WizardShell({
       );
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = (await res.json()) as { url: string };
-      await chrome.tabs.create({ url: data.url });
+      const tab = await chrome.tabs.create({ url: data.url });
+      rematchCheckoutTabIdRef.current = tab.id;
+
+      function onTabRemoved(tabId: number) {
+        if (tabId === rematchCheckoutTabIdRef.current) {
+          rematchCheckoutTabIdRef.current = undefined;
+          setRematchCheckoutLoading(false);
+          if (rematchTabRemovedListenerRef.current) {
+            chrome.tabs.onRemoved.removeListener(rematchTabRemovedListenerRef.current);
+            rematchTabRemovedListenerRef.current = null;
+          }
+        }
+      }
+
+      rematchTabRemovedListenerRef.current = onTabRemoved;
+      chrome.tabs.onRemoved.addListener(onTabRemoved);
     } catch (err) {
       console.error('[handleBuyRematch]', err);
+      setRematchCheckoutLoading(false);
     }
   }
 
@@ -433,7 +453,6 @@ export default function WizardShell({
       reviewCheckoutTabIdRef.current = tab.id;
 
       function onTabRemoved(tabId: number) {
-        console.log('[review] tab removed, reviewCheckoutTabIdRef:', reviewCheckoutTabIdRef.current, 'tabId:', tabId);
         if (tabId === reviewCheckoutTabIdRef.current) {
           reviewCheckoutTabIdRef.current = undefined;
           setReviewCheckoutLoading(false);
@@ -643,6 +662,7 @@ export default function WizardShell({
           <PlanLimitBanner
             onButtonClick={() => void handleBuyRematch()}
             buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
+            isLoading={rematchCheckoutLoading}
             styles={{
               marginBottom: 0,
               marginRight: 16,

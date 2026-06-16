@@ -742,6 +742,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                             void handleBuyRematchFromSettings()
                           }
                           buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
+                          isLoading={checkoutLoading}
                           withMX={false}
                           closable
                           onClose={() => setShowCurrencyLimitBanner(false)}

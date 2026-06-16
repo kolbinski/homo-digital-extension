@@ -28,7 +28,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (tab.url?.includes('upgrade=review_package')) {
     chrome.tabs.remove(tabId)
     chrome.storage.local.set({ review_package_purchased: Date.now() })
-    console.log('[background] review_package_purchased set')
     return
   }
   if (tab.url?.includes('upgrade=cancelled')) {
@@ -39,5 +38,4 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab.url?.includes('upgrade=success')) return
   chrome.tabs.remove(tabId)
   chrome.storage.local.set({ upgrade_success: Date.now() })
-  console.log('background: upgrade_success set')
 })

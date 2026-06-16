@@ -1353,13 +1353,10 @@ function ClientAccordion({
     function handleStorageChange(
       changes: Record<string, chrome.storage.StorageChange>,
     ) {
-      console.log('[ExploreTab] storage changed keys:', Object.keys(changes));
-      console.log('[ExploreTab] review_package_purchased:', changes.review_package_purchased);
       if (
         'review_package_purchased' in changes &&
         changes.review_package_purchased.newValue !== undefined
       ) {
-        console.log('[ExploreTab] autoTriggerReview set to true');
         setAutoTriggerReview(true);
       }
       if (
@@ -1615,18 +1612,15 @@ function ClientAccordion({
 
   useEffect(() => {
     if (!pageOffer) return;
-    console.log('[scroll] pageOffer changed:', pageOffer?.user_offer_id);
     setExpandedOfferId(null);
     setTimeout(() => {
       const el = pageOfferCardRef.current;
-      console.log('[scroll] pageOfferCardRef.current:', el);
       if (!el) return;
       const scrollContainer = document.getElementById('main-scroll');
       if (!scrollContainer) return;
       const elTop = el.getBoundingClientRect().top;
       const containerTop = scrollContainer.getBoundingClientRect().top;
       const offset = elTop - containerTop - 40;
-      console.log('[scroll] scrolling by offset:', offset);
       scrollContainer.scrollBy({ top: offset, behavior: 'smooth' });
     }, 200);
   }, [pageOffer]);
@@ -2565,12 +2559,6 @@ function ClientAccordion({
                       </button>
                       {levelUpOpen && (
                         <div>
-                          {(() => {
-                            console.log(
-                              '[render] levelUpOffers:',
-                              levelUpOffers.map(o => o.user_offer_id),
-                            );
-                          })()}
                           {sortOffers(filteredLevelUpOffers, sortBy).map(
                             offer => (
                               <OfferCard
@@ -2906,9 +2894,6 @@ function ClientAccordion({
                     setProfileReady(ready);
                     if (syncTriggered) {
                       knownCountRef.current = 0;
-                      console.log(
-                        '[poll] baseline reset to 0 after trigger-sync',
-                      );
                       void handleRefresh();
                     }
                   }}
