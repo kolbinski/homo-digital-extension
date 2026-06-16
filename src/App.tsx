@@ -42,8 +42,7 @@ function App() {
         else if (role === 'client') setAuthState('client');
         else setAuthState('logged_in');
       })
-      .catch(err => {
-        console.error('[App] init auth error:', err);
+      .catch(() => {
         setAuthState('logged_out');
       });
   }, []);
@@ -144,8 +143,8 @@ function App() {
   async function handleLogout() {
     try {
       await logout();
-    } catch (err) {
-      console.error('[App] logout error:', err);
+    } catch {
+      // ignore
     }
     setAuthState('logged_out');
   }

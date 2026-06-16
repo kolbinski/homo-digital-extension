@@ -106,7 +106,6 @@ function LoginView({
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
 
   async function handleSocialLogin(provider: Provider, providerName: string) {
-    console.log('clicked', provider);
     setSocialLoading(providerName);
     setSocialError('');
     try {
@@ -132,18 +131,10 @@ function LoginView({
       `&redirect_to=${encodeURIComponent(redirectTo)}` +
       `&prompt=select_account`;
 
-    console.log(`[${provider}] redirectTo`, redirectTo);
-    console.log(`[${provider}] authUrl`, authUrl);
-    console.log(`[${provider}] calling launchWebAuthFlow...`);
-
     const responseUrl = await new Promise<string>((resolve, reject) => {
       chrome.identity.launchWebAuthFlow(
         { url: authUrl, interactive: true },
         url => {
-          console.log('launchWebAuthFlow callback', {
-            url,
-            lastError: chrome.runtime.lastError?.message,
-          });
           if (chrome.runtime.lastError || !url) {
             reject(chrome.runtime.lastError?.message ?? 'Auth flow cancelled.');
           } else {
@@ -153,7 +144,6 @@ function LoginView({
       );
     });
 
-    console.log('responseUrl', responseUrl);
     const parsedUrl = new URL(responseUrl);
 
     // PKCE flow: authorization code in query string
@@ -184,8 +174,7 @@ function LoginView({
           await setToken(token);
         }
       } catch (err) {
-        console.warn('[social-login] backend upsert failed:', err);
-        await setToken(token);
+          await setToken(token);
       }
       onLogin('client');
       return;
@@ -223,7 +212,6 @@ function LoginView({
         await setToken(accessToken);
       }
     } catch (err) {
-      console.warn('[social-login] backend upsert failed:', err);
       await setToken(accessToken);
     }
     onLogin('client');

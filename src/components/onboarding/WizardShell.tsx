@@ -366,8 +366,7 @@ export default function WizardShell({
           }
         }
       } catch (err) {
-        console.error('[handleRematch]', err);
-      }
+        }
     })();
   }
 
@@ -388,8 +387,7 @@ export default function WizardShell({
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
       } catch (err) {
-        console.error('[handleCancelEdit]', err);
-      }
+        }
     })();
   }
 
@@ -427,7 +425,6 @@ export default function WizardShell({
       rematchTabRemovedListenerRef.current = onTabRemoved;
       chrome.tabs.onRemoved.addListener(onTabRemoved);
     } catch (err) {
-      console.error('[handleBuyRematch]', err);
       setRematchCheckoutLoading(false);
     }
   }
@@ -467,7 +464,6 @@ export default function WizardShell({
       reviewTabRemovedListenerRef.current = onTabRemoved;
       chrome.tabs.onRemoved.addListener(onTabRemoved);
     } catch (err) {
-      console.error('[handleBuyReviewPackage]', err);
       setReviewCheckoutLoading(false);
     }
   }

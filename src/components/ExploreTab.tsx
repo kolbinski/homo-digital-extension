@@ -1438,8 +1438,8 @@ function ClientAccordion({
             setLevelUpCount(null);
             setApplyPage(1);
             setLevelUpPage(1);
-          } catch (err) {
-            console.error('[profile_rematch_purchased]', err);
+          } catch {
+            // ignore
           }
         })();
       }

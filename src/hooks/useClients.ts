@@ -28,8 +28,7 @@ export function useClients() {
       if (!res.ok) return { error: 'Failed to load clients. Please try again.' }
       const data = await res.json() as Client[]
       return { clients: data }
-    } catch (err) {
-      console.error('[useClients] fetchClients network error:', err)
+    } catch {
       return { error: 'Network error. Check your connection.' }
     }
   }

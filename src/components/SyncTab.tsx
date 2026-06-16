@@ -69,8 +69,6 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
             status?: string;
           } & Partial<SyncResult>;
 
-          console.log('[SyncTab] poll:', statusData.status);
-
           if (statusData.status === 'done') {
             clearInterval(pollRef.current!);
             pollRef.current = null;
@@ -82,8 +80,8 @@ export default function SyncTab({ onSyncingChange }: SyncTabProps) {
             setError('Sync failed. Try again.');
             setSyncState('error');
           }
-        } catch (err) {
-          console.warn('[SyncTab] poll error, retrying:', err);
+        } catch {
+          // retry on next interval
         }
       }, 5000);
     } catch {

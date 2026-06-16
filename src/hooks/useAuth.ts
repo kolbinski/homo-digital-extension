@@ -22,7 +22,6 @@ function getToken(): Promise<string | null> {
     if (!storageAvailable()) { resolve(null); return }
     chrome.storage.local.get(JWT_KEY, (result) => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] getToken:', chrome.runtime.lastError.message)
         resolve(null)
         return
       }
@@ -36,7 +35,6 @@ function setToken(token: string): Promise<void> {
     if (!storageAvailable()) { resolve(); return }
     chrome.storage.local.set({ [JWT_KEY]: token }, () => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] setToken:', chrome.runtime.lastError.message)
       }
       resolve()
     })
@@ -48,7 +46,6 @@ function removeToken(): Promise<void> {
     if (!storageAvailable()) { resolve(); return }
     chrome.storage.local.remove(JWT_KEY, () => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] removeToken:', chrome.runtime.lastError.message)
       }
       resolve()
     })
@@ -61,7 +58,6 @@ function setRole(role: string): Promise<void> {
     if (!storageAvailable()) { resolve(); return }
     chrome.storage.local.set({ [ROLE_KEY]: role }, () => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] setRole:', chrome.runtime.lastError.message)
       }
       resolve()
     })
@@ -73,7 +69,6 @@ function getRole(): Promise<string | null> {
     if (!storageAvailable()) { resolve(null); return }
     chrome.storage.local.get(ROLE_KEY, (result) => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] getRole:', chrome.runtime.lastError.message)
         resolve(null)
         return
       }
@@ -87,7 +82,6 @@ function removeRole(): Promise<void> {
     if (!storageAvailable()) { resolve(); return }
     chrome.storage.local.remove(ROLE_KEY, () => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] removeRole:', chrome.runtime.lastError.message)
       }
       resolve()
     })
@@ -99,7 +93,6 @@ function setOAuthData(data: OAuthData): Promise<void> {
     if (!storageAvailable()) { resolve(); return }
     chrome.storage.local.set({ [OAUTH_DATA_KEY]: data }, () => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] setOAuthData:', chrome.runtime.lastError.message)
       }
       resolve()
     })
@@ -111,7 +104,6 @@ function getOAuthData(): Promise<OAuthData | null> {
     if (!storageAvailable()) { resolve(null); return }
     chrome.storage.local.get(OAUTH_DATA_KEY, (result) => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] getOAuthData:', chrome.runtime.lastError.message)
         resolve(null)
         return
       }
@@ -125,7 +117,6 @@ function removeOAuthData(): Promise<void> {
     if (!storageAvailable()) { resolve(); return }
     chrome.storage.local.remove(OAUTH_DATA_KEY, () => {
       if (chrome.runtime.lastError) {
-        console.error('[useAuth] removeOAuthData:', chrome.runtime.lastError.message)
       }
       resolve()
     })
@@ -144,8 +135,7 @@ async function login(email: string, password: string): Promise<LoginResult> {
     const data = await res.json() as { token: string }
     await setToken(data.token)
     return { success: true }
-  } catch (err) {
-    console.error('[useAuth] login network error:', err)
+  } catch {
     return { success: false, error: 'Network error. Check your connection.' }
   }
 }

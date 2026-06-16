@@ -29,7 +29,6 @@ export function useOfferMatches() {
     const token = await getToken()
     if (!token) return { error: 'Not authenticated.' }
     const cleanUrl = pageUrl.split('?')[0]
-    console.log('[useOfferMatches] fetching for URL:', cleanUrl)
     try {
       const res = await fetch(
         `${API_BASE_URL}/v1/offer-matches?url=${encodeURIComponent(cleanUrl)}`,
@@ -38,7 +37,6 @@ export function useOfferMatches() {
       if (res.status === 401) return { error: 'Session expired. Please log in again.' }
       if (!res.ok) return { error: `Failed to load matches (${res.status}).` }
       const data = await res.json() as { matches: OfferMatch[] }
-      console.log('[useOfferMatches] raw matches:', JSON.stringify(data.matches))
       return { matches: data.matches ?? [] }
     } catch {
       return { error: 'Network error. Check your connection.' }
