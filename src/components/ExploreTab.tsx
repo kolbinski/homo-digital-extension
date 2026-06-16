@@ -30,6 +30,7 @@ interface OfferSalary {
   currency: string;
   type: string;
   delta: number;
+  unit?: string;
 }
 
 interface UserOffer {
@@ -746,9 +747,15 @@ function OfferCard({
             )}
           </div>
         )}
-        {offer.raw_salaries && offer.raw_salaries.length > 0 && (
+        {(() => {
+          const filteredRawSalaries = offer.raw_salaries?.filter(r => {
+            if (!offer.salary?.[0]) return true;
+            const s = offer.salary[0];
+            return !(r.from === s.min && r.to === s.max && r.currency === s.currency && r.type === s.type && r.unit === s.unit);
+          }) ?? [];
+          return filteredRawSalaries.length > 0 ? (
           <div className="text-xs text-gray-400">
-            {offer.raw_salaries.map((s, i) => (
+            {filteredRawSalaries.map((s, i) => (
               <p key={i} className="flex flex-wrap gap-1">
                 <CurrencyCircleDollar size={16} className="shrink-0" />
                 {s.currency} {formatSalaryType(s.type)}{' '}
@@ -758,7 +765,8 @@ function OfferCard({
               </p>
             ))}
           </div>
-        )}
+          ) : null;
+        })()}
         {offer.required_skills && offer.required_skills.length > 0 && (
           <div className="flex flex-wrap gap-1">
             <span className="text-xs text-gray-500">Required skills:</span>
