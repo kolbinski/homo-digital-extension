@@ -777,19 +777,8 @@ function OfferCard({
           </div>
         )}
         {(() => {
-          const filteredRawSalaries =
-            offer.raw_salaries?.filter(r => {
-              if (!offer.salary?.[0]) return true;
-              const s = offer.salary[0];
-              return !(
-                Math.round(r.from) === s.min &&
-                Math.round(r.to) === s.max &&
-                r.currency === s.currency &&
-                r.type === s.type &&
-                r.unit === 'month'
-              );
-            }) ?? [];
-          if (filteredRawSalaries.length === 0) return null;
+          const rawSalaries = offer.raw_salaries ?? [];
+          if (rawSalaries.length === 0) return null;
 
           const preferredType = preferenceSalaries?.some(
             p => p.type === 'contract',
@@ -805,7 +794,7 @@ function OfferCard({
             GBP: 3,
             CHF: 4,
           };
-          const sorted = [...filteredRawSalaries].sort((a, b) => {
+          const sorted = [...rawSalaries].sort((a, b) => {
             const typeA = a.type === preferredType ? 0 : 1;
             const typeB = b.type === preferredType ? 0 : 1;
             if (typeA !== typeB) return typeA - typeB;
@@ -815,25 +804,48 @@ function OfferCard({
             );
           });
 
-          if (isPageOffer || showAllRaw) {
+          const renderRow = (s: (typeof sorted)[number], i: number) => (
+            <span key={i} className="flex items-center gap-0.5">
+              <CurrencyCircleDollar size={16} className="shrink-0" />
+              {s.currency} {formatSalaryType(s.type)}{' '}
+              {formatNum(Math.round(s.from))} –{' '}
+              {formatNum(Math.round(s.to))}
+              {' / '}
+              {s.unit}
+            </span>
+          );
+
+          if (isPageOffer) {
             return (
               <div className="text-xs text-gray-400">
-                {sorted.map((s, i) => (
-                  <span key={i} className="flex items-center gap-0.5">
-                    <CurrencyCircleDollar size={16} className="shrink-0" />
-                    {s.currency} {formatSalaryType(s.type)}{' '}
-                    {formatNum(Math.round(s.from))} –{' '}
-                    {formatNum(Math.round(s.to))}
-                    {' / '}
-                    {s.unit}
-                  </span>
-                ))}
+                {sorted.map((s, i) => renderRow(s, i))}
               </div>
             );
           }
 
-          const picked = sorted[0];
-          const remaining = sorted.length - 1;
+          const filteredRawSalaries = sorted.filter(r => {
+            if (!offer.salary?.[0]) return true;
+            const s = offer.salary[0];
+            return !(
+              Math.round(r.from) === s.min &&
+              Math.round(r.to) === s.max &&
+              r.currency === s.currency &&
+              r.type === s.type &&
+              r.unit === 'month'
+            );
+          });
+          if (filteredRawSalaries.length === 0) return null;
+
+          if (showAllRaw) {
+            return (
+              <div className="text-xs text-gray-400">
+                {filteredRawSalaries.map((s, i) => renderRow(s, i))}
+              </div>
+            );
+          }
+
+          const picked = filteredRawSalaries[0];
+          const remaining = filteredRawSalaries.length - 1;
           return (
             <div className="text-xs text-gray-400">
               <span className="flex items-center gap-0.5">
