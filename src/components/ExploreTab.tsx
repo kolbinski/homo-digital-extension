@@ -1322,6 +1322,8 @@ function ClientAccordion({
   const manualPageOfferUrlRef = useRef<string | null>(null);
   const pageOfferSectionRef = useRef<HTMLButtonElement>(null);
   const pageOfferCardRef = useRef<HTMLDivElement>(null);
+  const scanCheckoutTabIdRef = useRef<number | undefined>(undefined);
+  const scanTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1370,12 +1372,14 @@ function ClientAccordion({
         changes.upgrade_cancelled.newValue !== undefined
       ) {
         setUpgradeDrawerOpen(false);
+        setScanPackageLoading(false);
       }
       if (
         'scan_package_purchased' in changes &&
         changes.scan_package_purchased.newValue !== undefined
       ) {
         setScanLimitReached(false);
+        setScanPackageLoading(false);
         void handleScanPage();
       }
       if (
@@ -2025,6 +2029,10 @@ function ClientAccordion({
   }
 
   async function handleBuyScanPackage() {
+    if (scanTabRemovedListenerRef.current) {
+      chrome.tabs.onRemoved.removeListener(scanTabRemovedListenerRef.current);
+      scanTabRemovedListenerRef.current = null;
+    }
     setScanPackageLoading(true);
     setScanPackageError(null);
     try {
@@ -2041,13 +2049,28 @@ function ClientAccordion({
       );
       if (!res.ok) {
         setScanPackageError('Something went wrong. Please try again.');
+        setScanPackageLoading(false);
         return;
       }
       const data = (await res.json()) as { url: string };
-      chrome.tabs.create({ url: data.url });
+      const tab = await chrome.tabs.create({ url: data.url });
+      scanCheckoutTabIdRef.current = tab.id;
+
+      function onTabRemoved(tabId: number) {
+        if (tabId === scanCheckoutTabIdRef.current) {
+          scanCheckoutTabIdRef.current = undefined;
+          setScanPackageLoading(false);
+          if (scanTabRemovedListenerRef.current) {
+            chrome.tabs.onRemoved.removeListener(scanTabRemovedListenerRef.current);
+            scanTabRemovedListenerRef.current = null;
+          }
+        }
+      }
+
+      scanTabRemovedListenerRef.current = onTabRemoved;
+      chrome.tabs.onRemoved.addListener(onTabRemoved);
     } catch {
       setScanPackageError('Something went wrong. Please try again.');
-    } finally {
       setScanPackageLoading(false);
     }
   }
