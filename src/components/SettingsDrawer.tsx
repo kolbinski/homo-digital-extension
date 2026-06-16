@@ -618,31 +618,40 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   Account
                 </h2>
                 <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 flex flex-col gap-3">
-                  {/* Avatar + name/email */}
-                  <div className="flex items-center gap-3">
-                    {oauthData?.oauth_photo_url ? (
-                      <img
-                        src={oauthData.oauth_photo_url}
-                        alt=""
-                        className="w-9 h-9 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-700 text-white text-sm font-medium shrink-0 leading-none">
-                        {initials}
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      {(firstName || lastName) && (
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {[firstName, lastName].filter(Boolean).join(' ')}
-                        </p>
+                  {/* Avatar + name/email + Log out */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {oauthData?.oauth_photo_url ? (
+                        <img
+                          src={oauthData.oauth_photo_url}
+                          alt=""
+                          className="w-9 h-9 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-700 text-white text-sm font-medium shrink-0 leading-none">
+                          {initials}
+                        </span>
                       )}
-                      {oauthData?.oauth_email && (
-                        <p className="text-xs text-gray-500 truncate">
-                          {oauthData.oauth_email}
-                        </p>
-                      )}
+                      <div className="min-w-0">
+                        {(firstName || lastName) && (
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {[firstName, lastName].filter(Boolean).join(' ')}
+                          </p>
+                        )}
+                        {oauthData?.oauth_email && (
+                          <p className="text-xs text-gray-500 truncate">
+                            {oauthData.oauth_email}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      className="shrink-0 font-medium py-1.5 px-3 rounded-md text-xs transition-colors bg-gray-800 hover:bg-gray-900 text-white"
+                    >
+                      Log out
+                    </button>
                   </div>
 
                   <div className="border-t border-gray-200" />
@@ -809,50 +818,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     </div>
                   </div>
 
-                  <div className="border-t border-gray-200" />
-
-                  {/* Log out + Delete account */}
-                  <button
-                    type="button"
-                    onClick={onLogout}
-                    className="w-full font-medium py-2 px-4 rounded-md text-sm transition-colors bg-gray-700 hover:bg-gray-800 text-gray-100"
-                  >
-                    Log out
-                  </button>
-                  {deleteError && (
-                    <p className="text-xs text-red-600">{deleteError}</p>
-                  )}
-                  {!showConfirm ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(true)}
-                      className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors bg-red-600 hover:bg-red-700"
-                    >
-                      Delete account
-                    </button>
-                  ) : (
-                    <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
-                      <p className="text-sm text-gray-700">
-                        Are you sure? This action cannot be undone.
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirm(false)}
-                          className="flex-1 py-2 px-3 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleDeleteAccount}
-                          className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5"
-                        >
-                          Delete account
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </section>
 
@@ -1198,6 +1163,44 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   </div>
                 </section>
               )}
+
+              {/* Delete account — always at drawer bottom */}
+              <section className="flex flex-col gap-2 pb-1">
+                {deleteError && (
+                  <p className="text-xs text-red-600">{deleteError}</p>
+                )}
+                {!showConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(true)}
+                    className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors bg-red-600 hover:bg-red-700"
+                  >
+                    Delete account
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
+                    <p className="text-sm text-gray-700">
+                      Are you sure? This action cannot be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(false)}
+                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5"
+                      >
+                        Delete account
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </>
         )}
