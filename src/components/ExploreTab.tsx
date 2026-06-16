@@ -1629,10 +1629,10 @@ function ClientAccordion({
       setExpandedOfferId(null);
       return;
     }
-    setExpandedOfferId(offerId);
     manualPageOfferRef.current = true;
     manualPageOfferUrlRef.current = offerUrl ?? null;
     setPageOffer(offer);
+    setExpandedOfferId(null);
     setPageOfferOpen(true);
     if (offerUrl && typeof chrome !== 'undefined') {
       await openOfferUrl(offerUrl);
@@ -1654,6 +1654,7 @@ function ClientAccordion({
 
   useEffect(() => {
     if (!currentUrl) return;
+    if (manualPageOfferRef.current) return;
     const allOffers = [...applyOffers, ...levelUpOffers];
     const match = allOffers.find(
       o => o.offer_url && currentUrl.startsWith(o.offer_url.split('?')[0]),
