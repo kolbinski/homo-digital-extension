@@ -2236,7 +2236,7 @@ function ClientAccordion({
             title="Edit profile"
             className="text-gray-800 hover:text-gray-700 transition-colors"
           >
-            <AddressBook size={24} />
+            <AddressBook size={16} />
           </button>,
           wizardPortalTarget,
         )}

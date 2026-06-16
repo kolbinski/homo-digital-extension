@@ -220,7 +220,7 @@ function App() {
             className="text-gray-800 hover:text-gray-700 transition-colors"
             aria-label="Settings"
           >
-            <Gear size={24} />
+            <Gear size={16} />
           </button>
         </div>
       </header>

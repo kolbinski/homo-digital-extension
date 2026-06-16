@@ -541,7 +541,7 @@ export default function WizardShell({
             aria-label="Settings"
             className="text-gray-800 hover:text-gray-700 transition-colors"
           >
-            <Gear size={24} />
+            <Gear size={16} />
           </button>
         ) : null}
       </header>
