@@ -34,7 +34,12 @@ interface AiUsageResponse {
   total_cost_this_month: number;
   by_type: { type: string; count: number; cost: number }[];
   by_model: { model: string; count: number; cost: number }[];
-  top_users: { user_id: string; email: string; cost: number; by_model: { model: string; count: number; cost: number }[] }[];
+  top_users: {
+    user_id: string;
+    email: string;
+    cost: number;
+    by_model: { model: string; count: number; cost: number }[];
+  }[];
 }
 
 interface BillingData {
@@ -434,13 +439,18 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
             });
             if (!profileRes.ok) return;
             const profileData = (await profileRes.json()) as {
-              preferences?: { salary?: { type: string; min: number; currency: string }[] };
+              preferences?: {
+                salary?: { type: string; min: number; currency: string }[];
+              };
             };
             const salary = profileData.preferences?.salary;
             if (!salary || salary.length === 0) return;
             await fetch(`${API_BASE_URL}/v1/profile`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
               body: JSON.stringify({
                 preferences: {
                   ...profileData.preferences,
@@ -448,7 +458,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                 },
               }),
             });
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         })();
         if (currencySavedTimerRef.current)
           clearTimeout(currencySavedTimerRef.current);
@@ -1023,42 +1035,44 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </section>
 
               {/* Feedback */}
-              {!isAdmin && <section className="flex flex-col gap-3">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Feedback
-                </h2>
-                {feedbackSent ? (
-                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2.5">
-                    Thank you! We'll get back to you soon.
-                  </p>
-                ) : (
-                  <>
-                    <textarea
-                      value={message}
-                      onChange={e => {
-                        setMessage(e.target.value);
-                        setFeedbackError('');
-                      }}
-                      placeholder="Write your feedback or anything we should improve..."
-                      rows={4}
-                      disabled={isSending}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-50 disabled:text-gray-400"
-                    />
-                    {feedbackError && (
-                      <p className="text-xs text-red-600">{feedbackError}</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleSend}
-                      disabled={isSending || !message.trim()}
-                      className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700"
-                    >
-                      {isSending && <Spinner className="text-white" />}
-                      {isSending ? 'Sending…' : 'Send'}
-                    </button>
-                  </>
-                )}
-              </section>}
+              {!isAdmin && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Feedback
+                  </h2>
+                  {feedbackSent ? (
+                    <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2.5">
+                      Thank you! We'll get back to you soon.
+                    </p>
+                  ) : (
+                    <>
+                      <textarea
+                        value={message}
+                        onChange={e => {
+                          setMessage(e.target.value);
+                          setFeedbackError('');
+                        }}
+                        placeholder="Write your feedback or anything we should improve..."
+                        rows={4}
+                        disabled={isSending}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-50 disabled:text-gray-400"
+                      />
+                      {feedbackError && (
+                        <p className="text-xs text-red-600">{feedbackError}</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleSend}
+                        disabled={isSending || !message.trim()}
+                        className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700"
+                      >
+                        {isSending && <Spinner className="text-white" />}
+                        {isSending ? 'Sending…' : 'Send'}
+                      </button>
+                    </>
+                  )}
+                </section>
+              )}
 
               {/* AI Usage — admin only */}
               {isAdmin && (
@@ -1076,45 +1090,37 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     ) : (
                       <>
                         <div className="flex items-center justify-between text-xs font-medium">
-                          <span className="text-gray-700">Total (all time)</span>
-                          <span className="text-gray-900">${aiUsage.total_cost_all_time.toFixed(4)}</span>
+                          <span className="text-gray-700">
+                            Total (all time)
+                          </span>
+                          <span className="text-gray-900">
+                            ${aiUsage.total_cost_all_time.toFixed(2)}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-500">This month</span>
-                          <span className="text-gray-700">${aiUsage.total_cost_this_month.toFixed(4)}</span>
+                          <span className="text-gray-700">
+                            ${aiUsage.total_cost_this_month.toFixed(2)}
+                          </span>
                         </div>
-
-                        {aiUsage.top_users.length > 0 && (
-                          <>
-                            <div className="border-t border-gray-200" />
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Top users</p>
-                            {aiUsage.top_users.map((u, i, arr) => (
-                              <div key={u.user_id} className="flex flex-col gap-0.5">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-gray-900 font-medium truncate">{u.email}</span>
-                                  <span className="text-gray-700 shrink-0 ml-2">${u.cost.toFixed(4)}</span>
-                                </div>
-                                <p className="text-xs text-gray-400 truncate">{u.user_id}</p>
-                                {u.by_model.map(m => (
-                                  <div key={m.model} className="flex items-center justify-between text-xs text-gray-500 pl-2">
-                                    <span className="truncate">{m.model} ({m.count}×)</span>
-                                    <span className="shrink-0 ml-2">${m.cost.toFixed(4)}</span>
-                                  </div>
-                                ))}
-                                {i < arr.length - 1 && <div className="border-t border-gray-200 mt-1" />}
-                              </div>
-                            ))}
-                          </>
-                        )}
 
                         {aiUsage.by_model.length > 0 && (
                           <>
                             <div className="border-t border-gray-200" />
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">By model</p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              By model
+                            </p>
                             {aiUsage.by_model.map(item => (
-                              <div key={item.model} className="flex items-center justify-between text-xs">
-                                <span className="text-gray-600 truncate">{item.model}</span>
-                                <span className="text-gray-700 shrink-0 ml-2">${item.cost.toFixed(4)}</span>
+                              <div
+                                key={item.model}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <span className="text-gray-600 truncate">
+                                  {item.model}
+                                </span>
+                                <span className="text-gray-700 shrink-0 ml-2">
+                                  ${item.cost.toFixed(2)}
+                                </span>
                               </div>
                             ))}
                           </>
@@ -1123,11 +1129,63 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         {aiUsage.by_type.length > 0 && (
                           <>
                             <div className="border-t border-gray-200" />
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">By type</p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              By type
+                            </p>
                             {aiUsage.by_type.map(item => (
-                              <div key={item.type} className="flex items-center justify-between text-xs">
-                                <span className="text-gray-600 truncate">{item.type}</span>
-                                <span className="text-gray-700 shrink-0 ml-2">${item.cost.toFixed(4)}</span>
+                              <div
+                                key={item.type}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <span className="text-gray-600 truncate">
+                                  {item.type}
+                                </span>
+                                <span className="text-gray-700 shrink-0 ml-2">
+                                  ${item.cost.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+
+                        {aiUsage.top_users.length > 0 && (
+                          <>
+                            <div className="border-t border-gray-200" />
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Top users
+                            </p>
+                            {aiUsage.top_users.map((u, i, arr) => (
+                              <div
+                                key={u.user_id}
+                                className="flex flex-col gap-0.5"
+                              >
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-900 font-medium truncate">
+                                    {u.email}
+                                  </span>
+                                  <span className="text-gray-700 shrink-0 ml-2">
+                                    ${u.cost.toFixed(2)}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-400 truncate">
+                                  {u.user_id}
+                                </p>
+                                {u.by_model.map(m => (
+                                  <div
+                                    key={m.model}
+                                    className="flex items-center justify-between text-xs text-gray-500 pl-2"
+                                  >
+                                    <span className="truncate">
+                                      {m.model} ({m.count}×)
+                                    </span>
+                                    <span className="shrink-0 ml-2">
+                                      ${m.cost.toFixed(2)}
+                                    </span>
+                                  </div>
+                                ))}
+                                {i < arr.length - 1 && (
+                                  <div className="border-t border-gray-200 mt-1" />
+                                )}
                               </div>
                             ))}
                           </>
