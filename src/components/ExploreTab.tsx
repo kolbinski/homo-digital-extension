@@ -1899,6 +1899,9 @@ function ClientAccordion({
         const newApplyCount = polled.apply_now.count;
         const newLevelUpCount = polled.level_up.count;
 
+        if (newTotal === 0) {
+          setPageOffer(null);
+        }
         if (newTotal > (knownCountRef.current ?? 0)) {
           setHasNewOffers(true);
         }
