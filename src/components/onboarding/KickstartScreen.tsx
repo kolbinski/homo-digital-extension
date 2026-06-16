@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle, Gear } from '@phosphor-icons/react';
+import { CheckCircle, CircleDashed, Gear } from '@phosphor-icons/react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
 import Spinner from '../Spinner';
@@ -13,7 +13,10 @@ const PROGRESS_ITEMS = [
   'Your education',
   'Your certifications',
   'Your skills',
+  'Finalizing',
 ];
+
+const PROGRESS_DELAY = 6000;
 
 interface Props {
   onPrepared: (profile: Partial<Profile>) => void;
@@ -53,7 +56,7 @@ export default function KickstartScreen({
       currentStepRef.current = next;
       setDisplayStep(next);
       if (next < PROGRESS_ITEMS.length) {
-        scheduleNext(apiResultRef.current !== 'pending' ? 200 : 6000);
+        scheduleNext(apiResultRef.current !== 'pending' ? 200 : PROGRESS_DELAY);
       } else if (apiResultRef.current !== 'pending') {
         onPreparedRef.current(apiResultRef.current as Partial<Profile>);
       }
@@ -113,7 +116,7 @@ export default function KickstartScreen({
     apiResultRef.current = 'pending';
     currentStepRef.current = 0;
     setDisplayStep(0);
-    scheduleNext(6000);
+    scheduleNext(PROGRESS_DELAY);
     try {
       const token = await getToken();
       const body = new FormData();
@@ -245,18 +248,12 @@ export default function KickstartScreen({
           {loading && (
             <div className="w-full flex flex-col gap-2.5">
               {PROGRESS_ITEMS.map((item, i) => {
-                if (i > displayStep) return null;
+                const isDone = i < displayStep;
                 const isActive = i === displayStep;
+                const isLast = i === PROGRESS_ITEMS.length - 1;
                 return (
                   <div key={item} className="flex items-center gap-2">
-                    {isActive ? (
-                      <>
-                        <Spinner className="text-gray-400" />
-                        <span className="text-sm text-gray-500">
-                          Reading {item.toLowerCase()}...
-                        </span>
-                      </>
-                    ) : (
+                    {isDone ? (
                       <>
                         <CheckCircle
                           size={16}
@@ -265,16 +262,27 @@ export default function KickstartScreen({
                         />
                         <span className="text-sm text-gray-700">{item}</span>
                       </>
+                    ) : isActive ? (
+                      <>
+                        <Spinner className="text-gray-400" />
+                        <span className="text-sm text-gray-500">
+                          {isLast
+                            ? 'Finalizing...'
+                            : `Reading ${item.toLowerCase()}...`}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CircleDashed
+                          size={16}
+                          className="text-gray-300 shrink-0"
+                        />
+                        <span className="text-sm text-gray-300">{item}</span>
+                      </>
                     )}
                   </div>
                 );
               })}
-              {displayStep >= PROGRESS_ITEMS.length && (
-                <div className="flex items-center gap-2">
-                  <Spinner className="text-gray-400" />
-                  <span className="text-sm text-gray-500">Finalizing...</span>
-                </div>
-              )}
             </div>
           )}
 
