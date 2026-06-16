@@ -1353,6 +1353,8 @@ function ClientAccordion({
   const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
   const [applyNowCount, setApplyNowCount] = useState<number | null>(null);
   const [levelUpCount, setLevelUpCount] = useState<number | null>(null);
+  const applyNowCountRef = useRef(0);
+  const levelUpCountRef = useRef(0);
   const [applyOpen, setApplyOpen] = useState(true);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [pageOfferOpen, setPageOfferOpen] = useState(true);
@@ -1472,7 +1474,9 @@ function ClientAccordion({
         setApplyOffers([]);
         setLevelUpOffers([]);
         setApplyNowCount(null);
+        applyNowCountRef.current = 0;
         setLevelUpCount(null);
+        levelUpCountRef.current = 0;
         setApplyPage(1);
         setLevelUpPage(1);
       }
@@ -1510,7 +1514,9 @@ function ClientAccordion({
             setApplyOffers([]);
             setLevelUpOffers([]);
             setApplyNowCount(null);
+            applyNowCountRef.current = 0;
             setLevelUpCount(null);
+            levelUpCountRef.current = 0;
             setApplyPage(1);
             setLevelUpPage(1);
           } catch {
@@ -1608,7 +1614,9 @@ function ClientAccordion({
         pending = result.apply_now.offers ?? [];
         levelUp = result.level_up.offers ?? [];
         setApplyNowCount(result.apply_now.count);
+        applyNowCountRef.current = result.apply_now.count;
         setLevelUpCount(result.level_up.count);
+        levelUpCountRef.current = result.level_up.count;
         setApplyHasMore(result.apply_now.has_more ?? false);
         setLevelUpHasMore(result.level_up.has_more ?? false);
       } else {
@@ -1722,7 +1730,9 @@ function ClientAccordion({
         setLevelUpOffers(result.level_up.offers ?? []);
         setLevelUpHasMore(result.level_up.has_more ?? false);
         setApplyNowCount(result.apply_now.count);
+        applyNowCountRef.current = result.apply_now.count;
         setLevelUpCount(result.level_up.count);
+        levelUpCountRef.current = result.level_up.count;
       } else {
         const fetched = await fetchOffers(statusFilter, 1);
         if (cancelled) return;
@@ -1837,7 +1847,9 @@ function ClientAccordion({
         setLevelUpOffers(result.level_up.offers ?? []);
         setLevelUpHasMore(result.level_up.has_more ?? false);
         setApplyNowCount(result.apply_now.count);
+        applyNowCountRef.current = result.apply_now.count;
         setLevelUpCount(result.level_up.count);
+        levelUpCountRef.current = result.level_up.count;
       } else {
         const fetched = await fetchOffers(statusFilter, 1);
         setApplyOffers(fetched.offers);
@@ -1871,7 +1883,9 @@ function ClientAccordion({
       setLevelUpOffers(result.level_up.offers ?? []);
       setLevelUpHasMore(result.level_up.has_more ?? false);
       setApplyNowCount(result.apply_now.count);
+      applyNowCountRef.current = result.apply_now.count;
       setLevelUpCount(result.level_up.count);
+      levelUpCountRef.current = result.level_up.count;
     } else {
       const fetched = await fetchOffers(statusFilter, 1);
       setApplyOffers(fetched.offers);
@@ -1967,8 +1981,8 @@ function ClientAccordion({
       interval = setInterval(async () => {
         const polled = await fetchCombinedOffers(
           1,
-          applyNowCount ?? 0,
-          levelUpCount ?? 0,
+          applyNowCountRef.current,
+          levelUpCountRef.current,
         );
         const newTotal = polled.count;
         const newApplyCount = polled.apply_now.count;
@@ -1986,6 +2000,7 @@ function ClientAccordion({
           setApplyOffers(polled.apply_now.offers ?? []);
           setApplyHasMore(polled.apply_now.has_more ?? false);
           setApplyNowCount(newApplyCount);
+          applyNowCountRef.current = newApplyCount;
           setApplyPage(1);
         }
         prevApplyCountRef.current = newApplyCount;
@@ -1994,6 +2009,7 @@ function ClientAccordion({
           setLevelUpOffers(polled.level_up.offers ?? []);
           setLevelUpHasMore(polled.level_up.has_more ?? false);
           setLevelUpCount(newLevelUpCount);
+          levelUpCountRef.current = newLevelUpCount;
           setLevelUpPage(1);
         }
         prevLevelUpCountRef.current = newLevelUpCount;
@@ -2963,7 +2979,9 @@ function ClientAccordion({
                     setApplyOffers([]);
                     setLevelUpOffers([]);
                     setApplyNowCount(null);
+                    applyNowCountRef.current = 0;
                     setLevelUpCount(null);
+                    levelUpCountRef.current = 0;
                     setApplyPage(1);
                     setLevelUpPage(1);
                     const currency =
