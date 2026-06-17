@@ -177,16 +177,24 @@ function CategorySection({
           {category.replace(/_/g, ' ')}
         </span>
         <span className="text-xs text-gray-400 shrink-0">{skills.length}</span>
+        {pendingOfferSkills.length > 0 && (
+          <span
+            className="inline-flex items-center justify-center rounded-full bg-orange-400 text-white leading-none shrink-0"
+            style={{ fontSize: 8, width: 16, height: 16 }}
+          >
+            {pendingOfferSkills.length}
+          </span>
+        )}
         {isEmpty && (
           <CircleDashed
-            size={24}
+            size={20}
             weight="fill"
             className="text-gray-300 shrink-0"
           />
         )}
         {allFilled && (
           <CheckCircle
-            size={24}
+            size={20}
             weight="fill"
             className="text-green-500 shrink-0"
           />
@@ -199,14 +207,6 @@ function CategorySection({
             {missingCount}
           </span>
         )}
-        {pendingOfferSkills.length > 0 && (
-          <span
-            className="inline-flex items-center justify-center rounded-full bg-orange-400 text-white leading-none shrink-0"
-            style={{ fontSize: 8, width: 16, height: 16 }}
-          >
-            {pendingOfferSkills.length}
-          </span>
-        )}
       </div>
 
       {/* Body */}
@@ -214,10 +214,10 @@ function CategorySection({
         <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col gap-2">
           {pendingOfferSkills.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-orange-400 font-medium">
-                Suggested skills from job offers
-              </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-orange-500 font-medium">
+                  Suggested skills from job offers:
+                </span>
                 {pendingOfferSkills.map(s => (
                   <span
                     key={s.name}
@@ -233,9 +233,7 @@ function CategorySection({
                     >
                       <span>{s.name}</span>
                       {s.count > 1 && (
-                        <span className="opacity-60 text-[10px]">
-                          ·{s.count}
-                        </span>
+                        <span className="opacity-60">({s.count})</span>
                       )}
                     </button>
                     <button
@@ -502,7 +500,11 @@ export default function SkillsTab({
             onRemove={skill => removeSkill(cat, skill)}
             onUpdate={(skill, since) => updateSkillSince(cat, skill, since)}
             offerSkills={catOfferSkills}
-            onDismissSkill={onDismissOfferSkill ? skillName => onDismissOfferSkill(skillName) : undefined}
+            onDismissSkill={
+              onDismissOfferSkill
+                ? skillName => onDismissOfferSkill(skillName)
+                : undefined
+            }
           />
         );
       })}
