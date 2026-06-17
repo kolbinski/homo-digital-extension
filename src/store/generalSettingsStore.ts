@@ -11,7 +11,7 @@ export interface GeneralSettings {
   markets: string[];
   company_types: string[];
   countries: { code: string; name: string }[];
-  languages: string[];
+  languages: { code: string; name: string }[];
   language_levels: string[];
   experience_levels: string[];
   show_source_filter?: boolean;

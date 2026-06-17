@@ -311,7 +311,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   const { settings } = useGeneralSettings();
   const industryOptions = settings?.industries ?? [];
   const markets = settings?.markets ?? [];
-  const languageOptions = settings?.languages ?? [];
+  const languageOptions = (settings?.languages ?? []).map(l => l.name);
   const languageLevels = settings?.language_levels ?? [];
   const experienceLevels = settings?.experience_levels ?? ['junior', 'mid', 'senior', 'lead'];
 

@@ -1134,20 +1134,17 @@ function OfferCard({
                             style={cvPortalStyle}
                             className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                           >
-                            {[
-                              { value: 'en', label: 'English' },
-                              { value: 'pl', label: 'Polish' },
-                            ].map(opt => (
+                            {(generalSettings?.languages ?? []).map(l => (
                               <button
-                                key={opt.value}
+                                key={l.code}
                                 type="button"
                                 onClick={e => {
                                   e.stopPropagation();
-                                  handleCvSelect(opt.value);
+                                  handleCvSelect(l.code);
                                 }}
                                 className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                               >
-                                {opt.label}
+                                {l.name}
                               </button>
                             ))}
                           </div>,
@@ -1224,20 +1221,17 @@ function OfferCard({
                             style={clPortalStyle}
                             className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                           >
-                            {[
-                              { value: 'en', label: 'English' },
-                              { value: 'pl', label: 'Polish' },
-                            ].map(opt => (
+                            {(generalSettings?.languages ?? []).map(l => (
                               <button
-                                key={opt.value}
+                                key={l.code}
                                 type="button"
                                 onClick={e => {
                                   e.stopPropagation();
-                                  handleClSelect(opt.value);
+                                  handleClSelect(l.code);
                                 }}
                                 className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                               >
-                                {opt.label}
+                                {l.name}
                               </button>
                             ))}
                           </div>,
