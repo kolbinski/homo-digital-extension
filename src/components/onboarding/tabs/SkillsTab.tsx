@@ -16,6 +16,7 @@ interface Props {
   onChange: (skills: Record<string, SkillEntry[]>) => void;
   offerSkills?: OfferSkill[];
   onDismissOfferSkill?: (skillName: string, categoryName: string) => void;
+  openedFromBlueDot?: boolean;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -358,7 +359,7 @@ function CategorySection({
   );
 }
 
-export default function SkillsTab({ skills, onChange, offerSkills, onDismissOfferSkill }: Props) {
+export default function SkillsTab({ skills, onChange, offerSkills, onDismissOfferSkill, openedFromBlueDot }: Props) {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
@@ -373,15 +374,17 @@ export default function SkillsTab({ skills, onChange, offerSkills, onDismissOffe
       })
       .then((data: { categories: string[] }) => {
         setCategories(data.categories);
-        setExpanded(prev => {
-          const next = new Set(
-            data.categories.filter(
-              cat => (initialSkillsRef.current[cat]?.length ?? 0) > 0,
-            ),
-          );
-          prev.forEach(c => next.add(c));
-          return next;
-        });
+        if (!openedFromBlueDot) {
+          setExpanded(prev => {
+            const next = new Set(
+              data.categories.filter(
+                cat => (initialSkillsRef.current[cat]?.length ?? 0) > 0,
+              ),
+            );
+            prev.forEach(c => next.add(c));
+            return next;
+          });
+        }
         setLoading(false);
       })
       .catch((err: Error) => {
@@ -391,16 +394,19 @@ export default function SkillsTab({ skills, onChange, offerSkills, onDismissOffe
   }, []);
 
   useEffect(() => {
-    if (!offerSkills?.length || !categories.length) return;
+    if (!categories.length) return;
     const catsWithSuggestions = new Set(
-      offerSkills.filter(s => !s.dismissed).map(s => s.category_name),
+      (offerSkills ?? []).filter(s => !s.dismissed).map(s => s.category_name),
     );
-    if (!catsWithSuggestions.size) return;
-    setExpanded(prev => {
-      const next = new Set(prev);
-      catsWithSuggestions.forEach(c => next.add(c));
-      return next;
-    });
+    if (openedFromBlueDot) {
+      setExpanded(catsWithSuggestions);
+    } else if (catsWithSuggestions.size > 0) {
+      setExpanded(prev => {
+        const next = new Set(prev);
+        catsWithSuggestions.forEach(c => next.add(c));
+        return next;
+      });
+    }
   }, [categories, offerSkills]);
 
   function toggleExpand(cat: string) {

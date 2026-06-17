@@ -48,6 +48,7 @@ interface Props {
   initialTab?: WizardTabId;
   offerSkills?: OfferSkill[];
   onDismissOfferSkill?: (skillName: string, categoryName: string) => void;
+  openedFromBlueDot?: boolean;
 }
 
 export default function WizardShell({
@@ -70,6 +71,7 @@ export default function WizardShell({
   initialTab,
   offerSkills,
   onDismissOfferSkill,
+  openedFromBlueDot,
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -650,6 +652,7 @@ export default function WizardShell({
             onChange={skills => onChange({ ...profile, skills })}
             offerSkills={offerSkills}
             onDismissOfferSkill={onDismissOfferSkill}
+            openedFromBlueDot={openedFromBlueDot}
           />
         ) : activeTab === 'preferences' ? (
           <PreferencesTab

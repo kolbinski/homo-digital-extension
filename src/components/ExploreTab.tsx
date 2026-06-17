@@ -3215,6 +3215,7 @@ function ClientAccordion({
                   initialTab={wizardInitialTab}
                   offerSkills={offerSkills}
                   onDismissOfferSkill={dismissOfferSkill}
+                  openedFromBlueDot={wizardInitialTab === 'skills'}
                   onRematchLimitReached={() => {
                     setProfileRematchPending(true);
                     setProfileOpen(true);
