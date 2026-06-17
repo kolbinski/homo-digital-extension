@@ -1986,7 +1986,15 @@ function ClientAccordion({
 
   function handleScrollToPageOffer() {
     if (!pageOfferCardRef.current) return;
-    pageOfferCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    pageOfferCardRef.current.scrollIntoView({ behavior: 'instant', block: 'start' });
+    const scrollContainer =
+      pageOfferCardRef.current.closest('.overflow-y-auto') ??
+      pageOfferCardRef.current.closest('[style*="overflow"]');
+    if (scrollContainer) {
+      scrollContainer.scrollBy({ top: -40, behavior: 'smooth' });
+    } else {
+      window.scrollBy({ top: -40, behavior: 'smooth' });
+    }
   }
 
   async function handleLoadMoreApply() {
