@@ -874,9 +874,23 @@ function OfferCard({
           );
 
           if (isPageOffer) {
+            const displayRawSalaries = sorted.filter(r => {
+              if (!offer.salary?.[0]) return true;
+              const s = offer.salary[0];
+              const prefUnit =
+                preferenceSalaries?.find(p => p.type === s.type)?.unit ??
+                'month';
+              return !(
+                r.currency === s.currency &&
+                r.type === s.type &&
+                r.from === s.min &&
+                r.to === s.max &&
+                r.unit === prefUnit
+              );
+            });
             return (
               <div className="text-xs text-gray-400">
-                {sorted.map((s, i) => renderRow(s, i))}
+                {displayRawSalaries.map((s, i) => renderRow(s, i))}
               </div>
             );
           }
