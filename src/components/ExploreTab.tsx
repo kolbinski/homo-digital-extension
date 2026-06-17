@@ -204,6 +204,7 @@ interface OfferCardProps {
   onSalaryUpdate?: (userOfferId: string, salary: OfferSalary) => void;
   isOfferLoading: boolean;
   isPageOffer?: boolean;
+  isCurrentPageOffer?: boolean;
   hideActions?: boolean;
   selfMode?: boolean;
   onCvLimitReached?: () => void;
@@ -244,6 +245,7 @@ function OfferCard({
   onSalaryUpdate,
   isOfferLoading,
   isPageOffer = false,
+  isCurrentPageOffer = false,
   hideActions = false,
   selfMode = false,
   onCvLimitReached,
@@ -280,6 +282,7 @@ function OfferCard({
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
   const [showAllRaw, setShowAllRaw] = useState(false);
+  const effectiveShowAllRaw = showAllRaw && !isCurrentPageOffer;
   const [editingRoleFit, setEditingRoleFit] = useState(false);
   const [roleFitSaved, setRoleFitSaved] = useState(offer.claude_role_fit ?? '');
   const [roleFitValue, setRoleFitValue] = useState(offer.claude_role_fit ?? '');
@@ -846,7 +849,7 @@ function OfferCard({
           });
           if (filteredRawSalaries.length === 0) return null;
 
-          if (showAllRaw) {
+          if (effectiveShowAllRaw) {
             return (
               <div className="text-xs text-gray-400">
                 {filteredRawSalaries.map((s, i) => renderRow(s, i))}
@@ -2668,7 +2671,7 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
-                                isPageOffer={
+                                isCurrentPageOffer={
                                   offer.user_offer_id ===
                                   pageOffer?.user_offer_id
                                 }
@@ -2791,7 +2794,7 @@ function ClientAccordion({
                                 onSalaryUpdate={handleSalaryUpdate}
                                 candidateSkills={candidateSkills}
                                 isOfferLoading={isLoading}
-                                isPageOffer={
+                                isCurrentPageOffer={
                                   offer.user_offer_id ===
                                   pageOffer?.user_offer_id
                                 }
@@ -2938,7 +2941,7 @@ function ClientAccordion({
                                   candidateSkills={candidateSkills}
                                   isOfferLoading={isLoading}
                                   selfMode={selfMode}
-                                  isPageOffer={
+                                  isCurrentPageOffer={
                                     offer.user_offer_id ===
                                     pageOffer?.user_offer_id
                                   }
