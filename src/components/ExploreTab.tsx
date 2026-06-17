@@ -205,6 +205,7 @@ interface OfferCardProps {
   isOfferLoading: boolean;
   isPageOffer?: boolean;
   isCurrentPageOffer?: boolean;
+  onScrollToPageOffer?: () => void;
   hideActions?: boolean;
   selfMode?: boolean;
   onCvLimitReached?: () => void;
@@ -246,6 +247,7 @@ function OfferCard({
   isOfferLoading,
   isPageOffer = false,
   isCurrentPageOffer = false,
+  onScrollToPageOffer,
   hideActions = false,
   selfMode = false,
   onCvLimitReached,
@@ -871,7 +873,13 @@ function OfferCard({
                 {remaining > 0 && (
                   <button
                     type="button"
-                    onClick={() => setShowAllRaw(true)}
+                    onClick={() => {
+                      if (isCurrentPageOffer) {
+                        onScrollToPageOffer?.();
+                      } else {
+                        setShowAllRaw(true);
+                      }
+                    }}
                     className="text-gray-500 hover:text-gray-600 transition-colors"
                   >
                     show {remaining} more
@@ -1976,6 +1984,12 @@ function ClientAccordion({
   const handleRefreshRef = useRef(handleRefresh);
   handleRefreshRef.current = handleRefresh;
 
+  function handleScrollToPageOffer() {
+    if (!pageOfferCardRef.current) return;
+    const y = pageOfferCardRef.current.getBoundingClientRect().top + window.scrollY - 8;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+
   async function handleLoadMoreApply() {
     setApplyLoadingMore(true);
     const nextPage = applyPage + 1;
@@ -2675,6 +2689,7 @@ function ClientAccordion({
                                   offer.user_offer_id ===
                                   pageOffer?.user_offer_id
                                 }
+                                onScrollToPageOffer={handleScrollToPageOffer}
                                 hideActions={true}
                                 preferenceSalaries={preferenceSalaries}
                               />
@@ -2798,6 +2813,7 @@ function ClientAccordion({
                                   offer.user_offer_id ===
                                   pageOffer?.user_offer_id
                                 }
+                                onScrollToPageOffer={handleScrollToPageOffer}
                                 hideActions={true}
                                 preferenceSalaries={preferenceSalaries}
                               />
@@ -2945,6 +2961,7 @@ function ClientAccordion({
                                     offer.user_offer_id ===
                                     pageOffer?.user_offer_id
                                   }
+                                  onScrollToPageOffer={handleScrollToPageOffer}
                                   onCvLimitReached={() =>
                                     void handleBuyCvPackage()
                                   }
