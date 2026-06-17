@@ -15,7 +15,7 @@ import { useGeneralSettings } from '../../store/generalSettingsStore';
 import PlanLimitBanner from '../PlanLimitBanner';
 import Spinner from '../Spinner';
 import SettingsDrawer from '../SettingsDrawer';
-import type { Profile, WizardTabId } from './types';
+import type { OfferSkill, Profile, WizardTabId } from './types';
 import { getTabCompletions, allRequiredComplete } from './completionChecks';
 import BasicInfoTab from './tabs/BasicInfoTab';
 import CertificationsTab from './tabs/CertificationsTab';
@@ -45,6 +45,9 @@ interface Props {
   onCloseComplete?: (profileReady: boolean, syncTriggered: boolean) => void;
   autoTriggerReview?: boolean;
   onAutoTriggerReviewConsumed?: () => void;
+  initialTab?: WizardTabId;
+  offerSkills?: OfferSkill[];
+  onDismissOfferSkill?: (skillName: string, categoryName: string) => void;
 }
 
 export default function WizardShell({
@@ -64,10 +67,13 @@ export default function WizardShell({
   onCloseComplete,
   autoTriggerReview = false,
   onAutoTriggerReviewConsumed,
+  initialTab,
+  offerSkills,
+  onDismissOfferSkill,
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
-  const [activeTab, setActiveTab] = useState<WizardTabId>('basic_info');
+  const [activeTab, setActiveTab] = useState<WizardTabId>(initialTab ?? 'basic_info');
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('saved');
   const [submitting, setSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -642,6 +648,8 @@ export default function WizardShell({
           <SkillsTab
             skills={profile.skills}
             onChange={skills => onChange({ ...profile, skills })}
+            offerSkills={offerSkills}
+            onDismissOfferSkill={onDismissOfferSkill}
           />
         ) : activeTab === 'preferences' ? (
           <PreferencesTab

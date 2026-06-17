@@ -14,7 +14,7 @@ import {
 } from '@phosphor-icons/react';
 import WizardShell from './onboarding/WizardShell';
 import { emptyProfile } from './onboarding/emptyProfile';
-import type { Profile } from './onboarding/types';
+import type { OfferSkill, Profile, WizardTabId } from './onboarding/types';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../hooks/useAuth';
 import { useClients, type Client } from '../hooks/useClients';
@@ -1548,6 +1548,10 @@ function ClientAccordion({
   const scanTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(
     null,
   );
+  const [hasNewSkills, setHasNewSkills] = useState(false);
+  const [offerSkills, setOfferSkills] = useState<OfferSkill[]>([]);
+  const [wizardInitialTab, setWizardInitialTab] = useState<WizardTabId>('basic_info');
+  const knownNewSkillsCountRef = useRef<number | null>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1562,6 +1566,8 @@ function ClientAccordion({
           subscribed_to: string | null;
           expires_at?: string | null;
           profile_relevant_change_pending?: boolean;
+          offer_skills?: OfferSkill[];
+          new_skills_count?: number;
         };
         const active =
           data.subscribed_to !== null &&
@@ -1569,6 +1575,10 @@ function ClientAccordion({
             new Date(data.expires_at).getTime() > Date.now());
         setIsPro(active);
         setProfileRematchPending(data.profile_relevant_change_pending ?? false);
+        if (data.offer_skills) setOfferSkills(data.offer_skills);
+        if (data.new_skills_count !== undefined) {
+          knownNewSkillsCountRef.current = data.new_skills_count;
+        }
       } catch {
         // ignore
       }
@@ -1920,6 +1930,7 @@ function ClientAccordion({
     apply_now: CombinedBucket;
     level_up: CombinedBucket;
     count: number;
+    new_skills_count?: number;
   }
   const EMPTY_COMBINED: CombinedOffersResponse = {
     apply_now: { offers: [], count: 0 },
@@ -1931,6 +1942,7 @@ function ClientAccordion({
     page = 1,
     knownApplyCount?: number,
     knownLevelUpCount?: number,
+    knownNewSkillsCount?: number,
   ): Promise<CombinedOffersResponse> {
     const token = await getToken();
     if (!token) return EMPTY_COMBINED;
@@ -1947,6 +1959,8 @@ function ClientAccordion({
       params.append('known_apply_count', String(knownApplyCount));
     if (knownLevelUpCount !== undefined)
       params.append('known_level_up_count', String(knownLevelUpCount));
+    if (knownNewSkillsCount !== undefined)
+      params.append('known_new_skills_count', String(knownNewSkillsCount));
     params.append('page_size', String(pageSize));
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
@@ -1958,6 +1972,7 @@ function ClientAccordion({
         apply_now: raw.apply_now ?? EMPTY_COMBINED.apply_now,
         level_up: raw.level_up ?? EMPTY_COMBINED.level_up,
         count: raw.count ?? 0,
+        new_skills_count: raw.new_skills_count,
       };
     } catch {
       return EMPTY_COMBINED;
@@ -2113,7 +2128,32 @@ function ClientAccordion({
     setTimeout(() => setProfileOpen(false), 200);
   }
 
-  async function openWizard() {
+  async function dismissOfferSkill(skillName: string, categoryName: string) {
+    setOfferSkills(prev =>
+      prev.map(s =>
+        s.skill_name === skillName && s.category_name === categoryName
+          ? { ...s, dismissed: true }
+          : s,
+      ),
+    );
+    try {
+      const token = await getToken();
+      await fetch(`${API_BASE_URL}/v1/profile/dismiss-skill`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ skill_name: skillName, category_name: categoryName }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  async function openWizard(tab: WizardTabId = 'basic_info') {
+    setWizardInitialTab(tab);
+    if (tab === 'skills') setHasNewSkills(false);
     setWizardProfile(null);
     setWizardProfileLoading(true);
     setProfileOpen(true);
@@ -2161,6 +2201,7 @@ function ClientAccordion({
           1,
           applyNowCountRef.current,
           levelUpCountRef.current,
+          knownNewSkillsCountRef.current ?? undefined,
         );
         const newTotal = polled.count;
         const newApplyCount = polled.apply_now.count;
@@ -2173,6 +2214,16 @@ function ClientAccordion({
           setHasNewOffers(true);
         }
         knownCountRef.current = newTotal;
+
+        if (
+          polled.new_skills_count !== undefined &&
+          polled.new_skills_count > (knownNewSkillsCountRef.current ?? 0)
+        ) {
+          setHasNewSkills(true);
+        }
+        if (polled.new_skills_count !== undefined) {
+          knownNewSkillsCountRef.current = polled.new_skills_count;
+        }
 
         if (prevApplyCountRef.current === 0 && newApplyCount > 0) {
           setApplyOffers(polled.apply_now.offers ?? []);
@@ -2433,11 +2484,14 @@ function ClientAccordion({
         createPortal(
           <button
             type="button"
-            onClick={() => void openWizard()}
+            onClick={() => void openWizard(hasNewSkills ? 'skills' : 'basic_info')}
             title="Edit profile"
-            className="text-gray-800 hover:text-gray-700 transition-colors"
+            className="relative text-gray-800 hover:text-gray-700 transition-colors"
           >
             <AddressBook size={16} />
+            {hasNewSkills && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500" />
+            )}
           </button>,
           wizardPortalTarget,
         )}
@@ -2519,12 +2573,15 @@ function ClientAccordion({
               type="button"
               onClick={async e => {
                 e.stopPropagation();
-                void openWizard();
+                void openWizard(hasNewSkills ? 'skills' : 'basic_info');
               }}
               title="Edit profile"
-              className="text-gray-800 hover:text-gray-600 p-0.5 leading-none"
+              className="relative text-gray-800 hover:text-gray-600 p-0.5 leading-none"
             >
               <AddressBook size={14} />
+              {hasNewSkills && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500" />
+              )}
             </button>
             <button
               type="button"
@@ -3153,6 +3210,9 @@ function ClientAccordion({
                   onAutoTriggerReviewConsumed={() =>
                     setAutoTriggerReview(false)
                   }
+                  initialTab={wizardInitialTab}
+                  offerSkills={offerSkills}
+                  onDismissOfferSkill={dismissOfferSkill}
                   onRematchLimitReached={() => {
                     setProfileRematchPending(true);
                     setProfileOpen(true);
@@ -3234,7 +3294,7 @@ export default function ExploreTab({
   const [sourceFilter, setSourceFilter] = useState('all');
   const [cvGenerated, setCvGenerated] = useState(false);
   const [clGenerated, setClGenerated] = useState(false);
-  const [minScore, setMinScore] = useState(75);
+  const [minScore, setMinScore] = useState(0);
   const [debouncedMinScore, setDebouncedMinScore] = useState(75);
   const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,

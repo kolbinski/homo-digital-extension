@@ -9,11 +9,13 @@ import {
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
 import Spinner from '../../Spinner';
-import type { SkillEntry } from '../types';
+import type { OfferSkill, SkillEntry } from '../types';
 
 interface Props {
   skills: Record<string, SkillEntry[]>;
   onChange: (skills: Record<string, SkillEntry[]>) => void;
+  offerSkills?: OfferSkill[];
+  onDismissOfferSkill?: (skillName: string, categoryName: string) => void;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -36,6 +38,8 @@ function CategorySection({
   onAdd,
   onRemove,
   onUpdate,
+  offerSkills,
+  onDismissSkill,
 }: {
   category: string;
   skills: SkillEntry[];
@@ -44,6 +48,8 @@ function CategorySection({
   onAdd: (skill: string) => void;
   onRemove: (skill: string) => void;
   onUpdate: (skill: string, since: number) => void;
+  offerSkills?: OfferSkill[];
+  onDismissSkill?: (skillName: string) => void;
 }) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -138,6 +144,7 @@ function CategorySection({
   const missingCount = skills.filter(s => s.since === null).length;
   const isEmpty = skills.length === 0;
   const allFilled = !isEmpty && missingCount === 0;
+  const pendingOfferSkills = offerSkills ?? [];
 
   return (
     <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
@@ -180,11 +187,54 @@ function CategorySection({
             {missingCount}
           </span>
         )}
+        {pendingOfferSkills.length > 0 && (
+          <span
+            className="inline-flex items-center justify-center rounded-full bg-orange-400 text-white leading-none shrink-0"
+            style={{ fontSize: 8, width: 16, height: 16 }}
+          >
+            {pendingOfferSkills.length}
+          </span>
+        )}
       </div>
 
       {/* Body */}
       {isExpanded && (
         <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col gap-2">
+          {pendingOfferSkills.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-orange-600 font-medium">Suggested from job offers</span>
+              <div className="flex flex-wrap gap-1.5">
+                {pendingOfferSkills.map(s => (
+                  <span
+                    key={s.skill_name}
+                    className="inline-flex items-center rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onAdd(s.skill_name);
+                        onDismissSkill?.(s.skill_name);
+                      }}
+                      className="flex items-center gap-1 pl-2.5 py-1 hover:bg-orange-200 transition-colors"
+                    >
+                      <span>{s.skill_name}</span>
+                      {s.count > 1 && (
+                        <span className="opacity-60 text-[10px]">·{s.count}</span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDismissSkill?.(s.skill_name)}
+                      title="Dismiss"
+                      className="px-2 py-1 hover:bg-orange-200 transition-colors opacity-60 hover:opacity-100 text-sm leading-none"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {skills.map(entry => (
@@ -308,7 +358,7 @@ function CategorySection({
   );
 }
 
-export default function SkillsTab({ skills, onChange }: Props) {
+export default function SkillsTab({ skills, onChange, offerSkills, onDismissOfferSkill }: Props) {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
@@ -323,13 +373,15 @@ export default function SkillsTab({ skills, onChange }: Props) {
       })
       .then((data: { categories: string[] }) => {
         setCategories(data.categories);
-        setExpanded(
-          new Set(
+        setExpanded(prev => {
+          const next = new Set(
             data.categories.filter(
               cat => (initialSkillsRef.current[cat]?.length ?? 0) > 0,
             ),
-          ),
-        );
+          );
+          prev.forEach(c => next.add(c));
+          return next;
+        });
         setLoading(false);
       })
       .catch((err: Error) => {
@@ -337,6 +389,19 @@ export default function SkillsTab({ skills, onChange }: Props) {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (!offerSkills?.length || !categories.length) return;
+    const catsWithSuggestions = new Set(
+      offerSkills.filter(s => !s.dismissed).map(s => s.category_name),
+    );
+    if (!catsWithSuggestions.size) return;
+    setExpanded(prev => {
+      const next = new Set(prev);
+      catsWithSuggestions.forEach(c => next.add(c));
+      return next;
+    });
+  }, [categories, offerSkills]);
 
   function toggleExpand(cat: string) {
     setExpanded(prev => {
@@ -389,18 +454,26 @@ export default function SkillsTab({ skills, onChange }: Props) {
           <XCircle size={16} weight="fill" className="shrink-0 text-red-400" />
         </div>
       )}
-      {categories.map(cat => (
-        <CategorySection
-          key={cat}
-          category={cat}
-          skills={skills[cat] ?? []}
-          isExpanded={expanded.has(cat)}
-          onToggle={() => toggleExpand(cat)}
-          onAdd={skill => addSkill(cat, skill)}
-          onRemove={skill => removeSkill(cat, skill)}
-          onUpdate={(skill, since) => updateSkillSince(cat, skill, since)}
-        />
-      ))}
+      {categories.map(cat => {
+        const existingNames = new Set((skills[cat] ?? []).map(e => e.name));
+        const catOfferSkills = (offerSkills ?? []).filter(
+          s => s.category_name === cat && !s.dismissed && !existingNames.has(s.skill_name),
+        );
+        return (
+          <CategorySection
+            key={cat}
+            category={cat}
+            skills={skills[cat] ?? []}
+            isExpanded={expanded.has(cat)}
+            onToggle={() => toggleExpand(cat)}
+            onAdd={skill => addSkill(cat, skill)}
+            onRemove={skill => removeSkill(cat, skill)}
+            onUpdate={(skill, since) => updateSkillSince(cat, skill, since)}
+            offerSkills={catOfferSkills}
+            onDismissSkill={skillName => onDismissOfferSkill?.(skillName, cat)}
+          />
+        );
+      })}
     </div>
   );
 }

@@ -60,7 +60,6 @@ const LOGIN_BULLETS = [
   'Tailored CVs and cover letters generated in one click',
   'Scan any job posting and instantly match it to your profile',
   'Track every application and stay updated in real time',
-  'Let your dedicated agent apply and negotiate on your behalf',
 ];
 
 const JOIN_BULLETS = [
