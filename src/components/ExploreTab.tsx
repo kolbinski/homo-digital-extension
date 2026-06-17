@@ -1566,7 +1566,6 @@ function ClientAccordion({
           subscribed_to: string | null;
           expires_at?: string | null;
           profile_relevant_change_pending?: boolean;
-          offer_skills?: OfferSkill[];
           new_skills_count?: number;
         };
         const active =
@@ -1575,7 +1574,6 @@ function ClientAccordion({
             new Date(data.expires_at).getTime() > Date.now());
         setIsPro(active);
         setProfileRematchPending(data.profile_relevant_change_pending ?? false);
-        if (data.offer_skills) setOfferSkills(data.offer_skills);
         if (data.new_skills_count !== undefined) {
           knownNewSkillsCountRef.current = data.new_skills_count;
         }
@@ -2164,10 +2162,14 @@ function ClientAccordion({
       const res = await fetch(`${API_BASE_URL}/v1/profile?${params}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      const fetched = res.ok
-        ? ((await res.json()) as { profile: Record<string, unknown> | null })
-            .profile
+      const json = res.ok
+        ? ((await res.json()) as {
+            profile: Record<string, unknown> | null;
+            offer_skills?: OfferSkill[];
+          })
         : null;
+      const fetched = json?.profile ?? null;
+      if (json?.offer_skills) setOfferSkills(json.offer_skills);
       setWizardProfile(clientToProfile(fetched ?? client.profile));
       await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
