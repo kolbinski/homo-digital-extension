@@ -1105,7 +1105,6 @@ function OfferCard({
                                 position: 'fixed',
                                 top: rect.bottom + 4,
                                 left: rect.left,
-                                width: rect.width,
                                 zIndex: 9999,
                               });
                             }
@@ -1132,7 +1131,7 @@ function OfferCard({
                           <div
                             ref={cvPortalRef}
                             style={cvPortalStyle}
-                            className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                            className="w-max max-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                           >
                             {(generalSettings?.languages ?? []).map(l => (
                               <button
@@ -1192,7 +1191,6 @@ function OfferCard({
                                 position: 'fixed',
                                 top: rect.bottom + 4,
                                 left: rect.left,
-                                width: rect.width,
                                 zIndex: 9999,
                               });
                             }
@@ -1219,7 +1217,7 @@ function OfferCard({
                           <div
                             ref={clPortalRef}
                             style={clPortalStyle}
-                            className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                            className="w-max max-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                           >
                             {(generalSettings?.languages ?? []).map(l => (
                               <button
