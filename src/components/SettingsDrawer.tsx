@@ -37,7 +37,6 @@ interface AiUsageResponse {
   by_type: { type: string; count: number; cost: number }[];
   by_model: { model: string; count: number; cost: number }[];
   top_users: {
-    user_id: string;
     email: string;
     cost: number;
     by_model: { model: string; count: number; cost: number }[];
@@ -1130,7 +1129,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                             </p>
                             {aiUsage.top_users.map((u, i, arr) => (
                               <div
-                                key={u.user_id}
+                                key={u.email}
                                 className="flex flex-col gap-0.5"
                               >
                                 <div className="flex items-center justify-between text-xs">
@@ -1141,9 +1140,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                                     ${u.cost.toFixed(2)}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-400 truncate">
-                                  {u.user_id}
-                                </p>
                                 {u.by_model.map(m => (
                                   <div
                                     key={m.model}
