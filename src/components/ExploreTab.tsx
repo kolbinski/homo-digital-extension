@@ -614,7 +614,10 @@ function OfferCard({
             {onShowOffer && (
               <button
                 type="button"
-                onClick={onShowOffer}
+                onClick={e => {
+                  e.stopPropagation();
+                  onShowOffer();
+                }}
                 className="ml-auto text-xs text-blue-600 hover:text-blue-700 transition-colors shrink-0"
               >
                 Show offer
@@ -1452,6 +1455,8 @@ function ClientAccordion({
   const [statusLoadingMore, setStatusLoadingMore] = useState(false);
   const manualPageOfferRef = useRef(false);
   const manualPageOfferUrlRef = useRef<string | null>(null);
+  const pageOfferIdRef = useRef<string | null>(null);
+  pageOfferIdRef.current = pageOffer?.user_offer_id ?? null;
   const pageOfferSectionRef = useRef<HTMLButtonElement>(null);
   const pageOfferCardRef = useRef<HTMLDivElement>(null);
   const scanCheckoutTabIdRef = useRef<number | undefined>(undefined);
@@ -1659,7 +1664,7 @@ function ClientAccordion({
     const match = allOffers.find(
       o => o.offer_url && currentUrl.startsWith(o.offer_url.split('?')[0]),
     );
-    if (match) {
+    if (match && match.user_offer_id !== pageOfferIdRef.current) {
       setExpandedOfferId(match.user_offer_id);
     }
   }, [currentUrl, applyOffers, levelUpOffers]);
@@ -1698,7 +1703,9 @@ function ClientAccordion({
         : undefined;
       if (match) {
         setIsOpen(true);
-        setExpandedOfferId(match.user_offer_id);
+        if (match.user_offer_id !== pageOfferIdRef.current) {
+          setExpandedOfferId(match.user_offer_id);
+        }
       }
     }
     eagerLoad();
@@ -1757,7 +1764,9 @@ function ClientAccordion({
 
   useEffect(() => {
     if (!pageOffer) return;
-    setExpandedOfferId(null);
+    if (expandedOfferId === pageOffer.user_offer_id) {
+      setExpandedOfferId(null);
+    }
     setTimeout(() => {
       const el = pageOfferCardRef.current;
       if (!el) return;
@@ -1936,6 +1945,7 @@ function ClientAccordion({
     setIsRefreshing(true);
     setIsLoading(true);
     setHasNewOffers(false);
+    setExpandedOfferId(null);
     setApplyPage(1);
     setLevelUpPage(1);
     setStatusPage(1);
