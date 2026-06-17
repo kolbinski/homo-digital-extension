@@ -465,6 +465,34 @@ function OfferCard({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isClDropdownOpen]);
 
+  useEffect(() => {
+    if (!isDropdownOpen && !isCvDropdownOpen && !isClDropdownOpen) return;
+    const scrollEl =
+      document.getElementById('main-scroll') ?? document.documentElement;
+    let rafId: number;
+    function reposition() {
+      rafId = requestAnimationFrame(() => {
+        if (isDropdownOpen && dropdownRef.current) {
+          const r = dropdownRef.current.getBoundingClientRect();
+          setPortalStyle(prev => ({ ...prev, top: r.bottom + 4, left: r.left }));
+        }
+        if (isCvDropdownOpen && cvDropdownRef.current) {
+          const r = cvDropdownRef.current.getBoundingClientRect();
+          setCvPortalStyle(prev => ({ ...prev, top: r.bottom + 4, left: r.left }));
+        }
+        if (isClDropdownOpen && clDropdownRef.current) {
+          const r = clDropdownRef.current.getBoundingClientRect();
+          setClPortalStyle(prev => ({ ...prev, top: r.bottom + 4, left: r.left }));
+        }
+      });
+    }
+    scrollEl.addEventListener('scroll', reposition, { passive: true });
+    return () => {
+      scrollEl.removeEventListener('scroll', reposition);
+      cancelAnimationFrame(rafId);
+    };
+  }, [isDropdownOpen, isCvDropdownOpen, isClDropdownOpen]);
+
   async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
     onRemove(offer.user_offer_id);
@@ -1131,7 +1159,7 @@ function OfferCard({
                           <div
                             ref={cvPortalRef}
                             style={cvPortalStyle}
-                            className="w-max max-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                            className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
                           >
                             {(generalSettings?.languages ?? []).map(l => (
                               <button
@@ -1217,7 +1245,7 @@ function OfferCard({
                           <div
                             ref={clPortalRef}
                             style={clPortalStyle}
-                            className="w-max max-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                            className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
                           >
                             {(generalSettings?.languages ?? []).map(l => (
                               <button
