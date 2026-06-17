@@ -2919,7 +2919,7 @@ function ClientAccordion({
                             : (STATUS_LABELS[statusFilter] ?? statusFilter)}
                         </span>
                         {filteredApplyOffers.length > 0 && (
-                          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                          <span className="text-xs font-medium bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
                             {filteredApplyOffers.length}
                           </span>
                         )}
