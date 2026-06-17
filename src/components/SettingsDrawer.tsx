@@ -550,11 +550,18 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     await chrome.storage.local.clear();
     await chrome.storage.session?.clear?.();
     setIsDeleting(true);
-    void fetch(`${API_BASE_URL}/v1/account`, {
-      method: 'DELETE',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    setTimeout(() => onLogout(), 5000);
+    try {
+      const res = await fetch(`${API_BASE_URL}/v1/account`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      onLogout();
+    } catch {
+      setIsDeleting(false);
+      setShowConfirm(false);
+      setDeleteError('Something went wrong. Please try again.');
+    }
   }
 
   const isPro =
