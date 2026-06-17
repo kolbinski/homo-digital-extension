@@ -349,7 +349,7 @@ function OfferCard({
     } else {
       onCvUpdate(offer.user_offer_id, result.cvUrl, result.cvStatus);
       onCvGenerated?.();
-      chrome.tabs.create({ url: result.cvUrl });
+      chrome.tabs.create({ url: `${result.cvUrl}?r=${Date.now()}` });
     }
   }
 
@@ -415,7 +415,7 @@ function OfferCard({
         };
         onClUpdate(offer.user_offer_id, data.cl_url, data.cl_status);
         onClGenerated?.();
-        chrome.tabs.create({ url: data.cl_url });
+        chrome.tabs.create({ url: `${data.cl_url}?r=${Date.now()}` });
       }
     } catch {
       setStatus({
@@ -1185,7 +1185,7 @@ function OfferCard({
                           type="button"
                           onClick={() =>
                             chrome.tabs.create({
-                              url: `${offer.cv_url}?t=${Date.now()}`,
+                              url: `${offer.cv_url}?r=${Date.now()}`,
                             })
                           }
                           className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
@@ -1271,7 +1271,7 @@ function OfferCard({
                           type="button"
                           onClick={() =>
                             chrome.tabs.create({
-                              url: `${offer.cl_url}?t=${Date.now()}`,
+                              url: `${offer.cl_url}?r=${Date.now()}`,
                             })
                           }
                           className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
