@@ -1512,6 +1512,7 @@ function ClientAccordion({
   const [isPro, setIsPro] = useState(false);
   const [profileRematchPending, setProfileRematchPending] = useState(false);
   const [autoTriggerReview, setAutoTriggerReview] = useState(false);
+  const [byUrlLoading, setByUrlLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -1824,6 +1825,7 @@ function ClientAccordion({
       if (!token || cancelled) return;
       const params = new URLSearchParams({ url: currentUrl! });
       if (!selfMode) params.append('client_id', client.id);
+      setByUrlLoading(true);
       try {
         const res = await fetch(
           `${API_BASE_URL}/v1/user-offers/by-url?${params}`,
@@ -1834,11 +1836,14 @@ function ClientAccordion({
         if (!cancelled) setPageOffer(data.user_offer ?? null);
       } catch {
         // silently ignore
+      } finally {
+        if (!cancelled) setByUrlLoading(false);
       }
     }
     fetchPageOffer();
     return () => {
       cancelled = true;
+      setByUrlLoading(false);
     };
   }, [currentUrl]);
 
@@ -2594,29 +2599,35 @@ function ClientAccordion({
               ) : (
                 !pageOffer && (
                   <div className="my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center">
-                    <p className="text-xs font-medium text-gray-700">
-                      Scan this page for a job offer
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Open any job posting and click Scan to instantly match it
-                      with your profile.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void handleScanPage()}
-                      disabled={isScanning}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isScanning && (
-                        <Spinner size={12} className="text-white" />
-                      )}
-                      {isScanning ? 'Scanning...' : 'Scan this page'}
-                    </button>
-                    {scanMessage && (
-                      <p className="text-xs text-gray-500">{scanMessage}</p>
-                    )}
-                    {scanError && (
-                      <p className="text-xs text-red-500">{scanError}</p>
+                    {byUrlLoading ? (
+                      <Spinner size={16} className="text-gray-400" />
+                    ) : (
+                      <>
+                        <p className="text-xs font-medium text-gray-700">
+                          Scan this page for a job offer
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Open any job posting and click Scan to instantly match
+                          it with your profile.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => void handleScanPage()}
+                          disabled={isScanning}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isScanning && (
+                            <Spinner size={12} className="text-white" />
+                          )}
+                          {isScanning ? 'Scanning...' : 'Scan this page'}
+                        </button>
+                        {scanMessage && (
+                          <p className="text-xs text-gray-500">{scanMessage}</p>
+                        )}
+                        {scanError && (
+                          <p className="text-xs text-red-500">{scanError}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 )
