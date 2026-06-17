@@ -271,6 +271,20 @@ function OfferCard({
   const unitOptions = ['month', 'day', 'hour', 'year'];
   const currencyOptions = generalSettings?.currencies ?? [];
 
+  const browserLang = navigator.language.split('-')[0];
+  const sortedLanguages = (() => {
+    const langs = generalSettings?.languages ?? [];
+    const browser = langs.find(l => l.code === browserLang);
+    const english = langs.find(l => l.code === 'en');
+    const rest = langs
+      .filter(l => l.code !== browserLang && l.code !== 'en')
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const top: typeof langs = [];
+    if (browser) top.push(browser);
+    if (english && english.code !== browserLang) top.push(english);
+    return [...top, ...rest];
+  })();
+
   const [editSalaryOpen, setEditSalaryOpen] = useState(false);
   const [salaryFrom, setSalaryFrom] = useState('');
   const [salaryTo, setSalaryTo] = useState('');
@@ -1161,7 +1175,7 @@ function OfferCard({
                             style={cvPortalStyle}
                             className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
                           >
-                            {(generalSettings?.languages ?? []).map(l => (
+                            {sortedLanguages.map(l => (
                               <button
                                 key={l.code}
                                 type="button"
@@ -1247,7 +1261,7 @@ function OfferCard({
                             style={clPortalStyle}
                             className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
                           >
-                            {(generalSettings?.languages ?? []).map(l => (
+                            {sortedLanguages.map(l => (
                               <button
                                 key={l.code}
                                 type="button"
