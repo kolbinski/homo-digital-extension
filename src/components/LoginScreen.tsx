@@ -431,6 +431,27 @@ function LoginView({
         >
           Join as agent
         </button>
+
+        <div className="text-xs text-gray-400 mt-4 px-4">
+          By signing in you agree to our{' '}
+          <a
+            href="https://homodigital.io/view.html?file=terms-of-service.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            href="https://homodigital.io/view.html?file=privacy-policy.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            Privacy Policy
+          </a>
+        </div>
       </div>
     </div>
   );
