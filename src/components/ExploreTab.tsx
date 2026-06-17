@@ -1986,8 +1986,7 @@ function ClientAccordion({
 
   function handleScrollToPageOffer() {
     if (!pageOfferCardRef.current) return;
-    const y = pageOfferCardRef.current.getBoundingClientRect().top + window.scrollY - 8;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    pageOfferCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   async function handleLoadMoreApply() {
