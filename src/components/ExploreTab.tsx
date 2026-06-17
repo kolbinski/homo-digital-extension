@@ -488,15 +488,27 @@ function OfferCard({
       rafId = requestAnimationFrame(() => {
         if (isDropdownOpen && dropdownRef.current) {
           const r = dropdownRef.current.getBoundingClientRect();
-          setPortalStyle(prev => ({ ...prev, top: r.bottom + 4, left: r.left }));
+          setPortalStyle(prev => ({
+            ...prev,
+            top: r.bottom + 4,
+            left: r.left,
+          }));
         }
         if (isCvDropdownOpen && cvDropdownRef.current) {
           const r = cvDropdownRef.current.getBoundingClientRect();
-          setCvPortalStyle(prev => ({ ...prev, top: r.bottom + 4, left: r.left }));
+          setCvPortalStyle(prev => ({
+            ...prev,
+            top: r.bottom + 4,
+            left: r.left,
+          }));
         }
         if (isClDropdownOpen && clDropdownRef.current) {
           const r = clDropdownRef.current.getBoundingClientRect();
-          setClPortalStyle(prev => ({ ...prev, top: r.bottom + 4, left: r.left }));
+          setClPortalStyle(prev => ({
+            ...prev,
+            top: r.bottom + 4,
+            left: r.left,
+          }));
         }
       });
     }
@@ -883,8 +895,8 @@ function OfferCard({
               return !(
                 r.currency === s.currency &&
                 r.type === s.type &&
-                r.from === s.min &&
-                r.to === s.max &&
+                Math.round(r.from) === s.min &&
+                Math.round(r.to) === s.max &&
                 r.unit === prefUnit
               );
             });
