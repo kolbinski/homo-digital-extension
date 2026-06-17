@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { API_BASE_URL } from '../config';
 
 const CACHE_KEY = 'general_settings_cache';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 export interface GeneralSettings {
   currencies: string[];
@@ -60,6 +60,14 @@ export const generalSettingsStore = {
 
   getSnapshot(): StoreState {
     return state;
+  },
+
+  async refresh(): Promise<void> {
+    state = { settings: null, loaded: false };
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      chrome.storage.local.remove(CACHE_KEY).catch(() => {});
+    }
+    await generalSettingsStore.fetch();
   },
 
   async fetch(): Promise<void> {

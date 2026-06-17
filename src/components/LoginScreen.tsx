@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { API_BASE_URL, CONFIG } from '../config';
 import Spinner from './Spinner';
 import { CaretLeft } from '@phosphor-icons/react';
+import { generalSettingsStore } from '../store/generalSettingsStore';
 
 type UserMeta = Record<string, unknown>;
 
@@ -184,6 +185,7 @@ function LoginView({
       } catch (err) {
         await setToken(token);
       }
+      void generalSettingsStore.refresh();
       onLogin('client');
       return;
     }
@@ -227,6 +229,7 @@ function LoginView({
     } catch (err) {
       await setToken(accessToken);
     }
+    void generalSettingsStore.refresh();
     onLogin('client');
   }
 
@@ -249,6 +252,7 @@ function LoginView({
       setAgentError(result.error);
       return;
     }
+    void generalSettingsStore.refresh();
     onLogin('agent');
   }
 
