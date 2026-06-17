@@ -15,7 +15,7 @@ interface Props {
   skills: Record<string, SkillEntry[]>;
   onChange: (skills: Record<string, SkillEntry[]>) => void;
   offerSkills?: OfferSkill[];
-  onDismissOfferSkill?: (skillName: string, categoryName: string) => void;
+  onDismissOfferSkill?: (skillName: string) => Promise<void>;
   openedFromBlueDot?: boolean;
 }
 
@@ -50,7 +50,7 @@ function CategorySection({
   onRemove: (skill: string) => void;
   onUpdate: (skill: string, since: number) => void;
   offerSkills?: OfferSkill[];
-  onDismissSkill?: (skillName: string) => void;
+  onDismissSkill?: (skillName: string) => Promise<void>;
 }) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -142,6 +142,17 @@ function CategorySection({
     setPickerSkill(skill);
   }
 
+  const [dismissError, setDismissError] = useState<string | null>(null);
+
+  async function handleDismiss(skillName: string) {
+    try {
+      await onDismissSkill?.(skillName);
+      setDismissError(null);
+    } catch {
+      setDismissError('Failed to dismiss. Try again.');
+    }
+  }
+
   const missingCount = skills.filter(s => s.since === null).length;
   const isEmpty = skills.length === 0;
   const allFilled = !isEmpty && missingCount === 0;
@@ -168,14 +179,14 @@ function CategorySection({
         <span className="text-xs text-gray-400 shrink-0">{skills.length}</span>
         {isEmpty && (
           <CircleDashed
-            size={16}
+            size={24}
             weight="fill"
             className="text-gray-300 shrink-0"
           />
         )}
         {allFilled && (
           <CheckCircle
-            size={16}
+            size={24}
             weight="fill"
             className="text-green-500 shrink-0"
           />
@@ -203,29 +214,33 @@ function CategorySection({
         <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col gap-2">
           {pendingOfferSkills.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-orange-600 font-medium">Suggested from job offers</span>
+              <span className="text-xs text-orange-400 font-medium">
+                Suggested skills from job offers
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {pendingOfferSkills.map(s => (
                   <span
-                    key={s.skill_name}
+                    key={s.name}
                     className="inline-flex items-center rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 overflow-hidden"
                   >
                     <button
                       type="button"
                       onClick={() => {
-                        onAdd(s.skill_name);
-                        onDismissSkill?.(s.skill_name);
+                        onAdd(s.name);
+                        void handleDismiss(s.name);
                       }}
                       className="flex items-center gap-1 pl-2.5 py-1 hover:bg-orange-200 transition-colors"
                     >
-                      <span>{s.skill_name}</span>
+                      <span>{s.name}</span>
                       {s.count > 1 && (
-                        <span className="opacity-60 text-[10px]">·{s.count}</span>
+                        <span className="opacity-60 text-[10px]">
+                          ·{s.count}
+                        </span>
                       )}
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDismissSkill?.(s.skill_name)}
+                      onClick={() => void handleDismiss(s.name)}
                       title="Dismiss"
                       className="px-2 py-1 hover:bg-orange-200 transition-colors opacity-60 hover:opacity-100 text-sm leading-none"
                     >
@@ -234,6 +249,9 @@ function CategorySection({
                   </span>
                 ))}
               </div>
+              {dismissError && (
+                <p className="text-xs text-red-500">{dismissError}</p>
+              )}
             </div>
           )}
           {skills.length > 0 && (
@@ -359,7 +377,13 @@ function CategorySection({
   );
 }
 
-export default function SkillsTab({ skills, onChange, offerSkills, onDismissOfferSkill, openedFromBlueDot }: Props) {
+export default function SkillsTab({
+  skills,
+  onChange,
+  offerSkills,
+  onDismissOfferSkill,
+  openedFromBlueDot,
+}: Props) {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
@@ -396,7 +420,7 @@ export default function SkillsTab({ skills, onChange, offerSkills, onDismissOffe
   useEffect(() => {
     if (!categories.length) return;
     const catsWithSuggestions = new Set(
-      (offerSkills ?? []).filter(s => !s.dismissed).map(s => s.category_name),
+      (offerSkills ?? []).map(s => s.category_name),
     );
     if (openedFromBlueDot) {
       setExpanded(catsWithSuggestions);
@@ -463,7 +487,9 @@ export default function SkillsTab({ skills, onChange, offerSkills, onDismissOffe
       {categories.map(cat => {
         const existingNames = new Set((skills[cat] ?? []).map(e => e.name));
         const catOfferSkills = (offerSkills ?? []).filter(
-          s => s.category_name === cat && !s.dismissed && !existingNames.has(s.skill_name),
+          s =>
+            s.category_name?.toLowerCase() === cat.toLowerCase() &&
+            !existingNames.has(s.name),
         );
         return (
           <CategorySection
@@ -476,7 +502,7 @@ export default function SkillsTab({ skills, onChange, offerSkills, onDismissOffe
             onRemove={skill => removeSkill(cat, skill)}
             onUpdate={(skill, since) => updateSkillSince(cat, skill, since)}
             offerSkills={catOfferSkills}
-            onDismissSkill={skillName => onDismissOfferSkill?.(skillName, cat)}
+            onDismissSkill={onDismissOfferSkill ? skillName => onDismissOfferSkill(skillName) : undefined}
           />
         );
       })}

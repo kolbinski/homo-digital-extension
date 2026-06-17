@@ -2126,26 +2126,23 @@ function ClientAccordion({
     setTimeout(() => setProfileOpen(false), 200);
   }
 
-  async function dismissOfferSkill(skillName: string, categoryName: string) {
-    setOfferSkills(prev =>
-      prev.map(s =>
-        s.skill_name === skillName && s.category_name === categoryName
-          ? { ...s, dismissed: true }
-          : s,
-      ),
-    );
+  async function dismissOfferSkill(skillName: string) {
+    const removed = offerSkills.find(s => s.name === skillName);
+    setOfferSkills(prev => prev.filter(s => s.name !== skillName));
     try {
       const token = await getToken();
-      await fetch(`${API_BASE_URL}/v1/profile/dismiss-skill`, {
+      const res = await fetch(`${API_BASE_URL}/v1/profile/dismiss-skill`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ skill_name: skillName, category_name: categoryName }),
+        body: JSON.stringify({ name: skillName }),
       });
+      if (!res.ok) throw new Error(`${res.status}`);
     } catch {
-      // ignore
+      if (removed) setOfferSkills(prev => [...prev, removed]);
+      throw new Error('Failed to dismiss');
     }
   }
 

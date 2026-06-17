@@ -47,7 +47,7 @@ interface Props {
   onAutoTriggerReviewConsumed?: () => void;
   initialTab?: WizardTabId;
   offerSkills?: OfferSkill[];
-  onDismissOfferSkill?: (skillName: string, categoryName: string) => void;
+  onDismissOfferSkill?: (skillName: string) => Promise<void>;
   openedFromBlueDot?: boolean;
 }
 

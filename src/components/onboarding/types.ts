@@ -126,10 +126,9 @@ export type WizardTabId =
   | 'red_flags';
 
 export interface OfferSkill {
-  skill_name: string;
+  name: string;
   category_name: string;
   count: number;
-  dismissed: boolean;
 }
 
 export interface TabCompletion {
