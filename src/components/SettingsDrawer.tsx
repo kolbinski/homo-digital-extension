@@ -38,7 +38,7 @@ interface AiUsageResponse {
   by_model: { model: string; count: number; cost: number }[];
   top_users: {
     email: string;
-    cost: number;
+    total_cost: number;
     by_model: { model: string; count: number; cost: number }[];
   }[];
 }
@@ -856,7 +856,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                           subscription.current_period_end && (
                             <span className="text-xs text-gray-500">
                               Ends at{' '}
-                              {new Date(subscription.current_period_end).toLocaleDateString(navigator.language)}
+                              {new Date(
+                                subscription.current_period_end,
+                              ).toLocaleDateString(navigator.language)}
                             </span>
                           )
                         )}
@@ -1137,7 +1139,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                                     {u.email}
                                   </span>
                                   <span className="text-gray-700 shrink-0 ml-2">
-                                    ${u.cost.toFixed(2)}
+                                    ${u.total_cost.toFixed(2)}
                                   </span>
                                 </div>
                                 {u.by_model.map(m => (
