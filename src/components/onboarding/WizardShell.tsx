@@ -83,6 +83,7 @@ export default function WizardShell({
   const [reviewLimitReached, setReviewLimitReached] = useState(false);
   const [reviewCheckoutLoading, setReviewCheckoutLoading] = useState(false);
   const [rematchCheckoutLoading, setRematchCheckoutLoading] = useState(false);
+  const [rematching, setRematching] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -349,8 +350,7 @@ export default function WizardShell({
   }, [autoTriggerReview]);
 
   function handleRematch() {
-    onRematch?.();
-    onClose?.();
+    setRematching(true);
     void (async () => {
       try {
         const token = await getAuthTokenRef.current();
@@ -380,12 +380,18 @@ export default function WizardShell({
             },
           );
           if (syncRes.status === 402) {
+            setRematching(false);
             onRematchLimitReachedRef.current?.();
-          } else {
-            onSyncTriggeredRef.current?.();
+            return;
           }
+          onSyncTriggeredRef.current?.();
         }
-      } catch (err) {}
+        setRematching(false);
+        onRematch?.();
+        onClose?.();
+      } catch (err) {
+        setRematching(false);
+      }
     })();
   }
 
@@ -508,23 +514,28 @@ export default function WizardShell({
             <button
               type="button"
               onClick={handleCancelEdit}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              disabled={rematching}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel changes
             </button>
             <button
               type="button"
               onClick={handleRematch}
-              disabled={totalErrors > 0 || autoSaveStatus === 'saving'}
+              disabled={totalErrors > 0 || autoSaveStatus === 'saving' || rematching}
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Re-match offers
-              {totalErrors > 0 && (
-                <WarningCircle
-                  size={14}
-                  weight="fill"
-                  className="text-red-500"
-                />
+              {rematching ? (
+                <Spinner size={14} className="text-blue-600" />
+              ) : (
+                totalErrors > 0 && (
+                  <WarningCircle
+                    size={14}
+                    weight="fill"
+                    className="text-red-500"
+                  />
+                )
               )}
             </button>
           </div>
@@ -554,6 +565,13 @@ export default function WizardShell({
         ) : null}
       </header>
 
+      {rematching && (
+        <p className="text-xs text-gray-500 text-center mt-2">
+          Re-matching was initialized. First, we&apos;re deleting your previous
+          job offers.
+        </p>
+      )}
+
       {/* Tab bar — wraps to multiple lines */}
       <div className="bg-white border-b border-gray-200 shrink-0">
         <div className="flex flex-wrap">
@@ -570,7 +588,8 @@ export default function WizardShell({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-row items-center gap-1 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                disabled={rematching}
+                className={`flex flex-row items-center gap-1 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
                   isActive
                     ? 'border-blue-600 text-blue-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
