@@ -1550,7 +1550,8 @@ function ClientAccordion({
   );
   const [hasNewSkills, setHasNewSkills] = useState(false);
   const [offerSkills, setOfferSkills] = useState<OfferSkill[]>([]);
-  const [wizardInitialTab, setWizardInitialTab] = useState<WizardTabId>('basic_info');
+  const [wizardInitialTab, setWizardInitialTab] =
+    useState<WizardTabId>('basic_info');
   const knownNewSkillsCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -2500,7 +2501,9 @@ function ClientAccordion({
         createPortal(
           <button
             type="button"
-            onClick={() => void openWizard(hasNewSkills ? 'skills' : 'basic_info')}
+            onClick={() =>
+              void openWizard(hasNewSkills ? 'skills' : 'basic_info')
+            }
             title="Edit profile"
             className="relative text-gray-800 hover:text-gray-700 transition-colors"
           >
@@ -2894,6 +2897,7 @@ function ClientAccordion({
                               <PlanLimitBanner
                                 onButtonClick={() => setUpgradeDrawerOpen(true)}
                                 buttonText="Upgrade to Pro"
+                                withMX={false}
                               >
                                 <p className="text-xs text-gray-500">
                                   You've reached your free plan limit. Upgrade
@@ -3020,6 +3024,7 @@ function ClientAccordion({
                               <PlanLimitBanner
                                 onButtonClick={() => setUpgradeDrawerOpen(true)}
                                 buttonText="Upgrade to Pro"
+                                withMX={false}
                               >
                                 <p className="text-xs text-gray-500">
                                   You've reached your free plan limit. Upgrade
