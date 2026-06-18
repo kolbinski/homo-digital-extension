@@ -640,9 +640,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
   function handleCancelDeleteFeedback() {
     setCheckedReasons(prev => {
-      const next = prev.filter(
-        r => r !== 'Other' && r !== 'Technical issues',
-      );
+      const next = prev.filter(r => r !== 'Other' && r !== 'Technical issues');
       postDeleteReasons(next);
       return next;
     });
@@ -749,12 +747,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
 
             {deleteCompleted ? (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <CheckCircle size={16} color="green" weight="fill" />
+                <CheckCircle size={24} color="green" weight="fill" />
                 Your account was deleted
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Spinner size={16} className="text-gray-400" />
+                <Spinner size={24} className="text-gray-400" />
                 Deleting your account…
               </div>
             )}
