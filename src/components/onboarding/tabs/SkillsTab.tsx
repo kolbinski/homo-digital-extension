@@ -415,13 +415,21 @@ export default function SkillsTab({
       });
   }, []);
 
+  const didBlueDotExpandRef = useRef(false);
+
   useEffect(() => {
     if (!categories.length) return;
     const catsWithSuggestions = new Set(
       (offerSkills ?? []).map(s => s.category_name),
     );
     if (openedFromBlueDot) {
-      setExpanded(catsWithSuggestions);
+      // Only expand the suggestion categories once, on initial load.
+      // Re-running on every offerSkills change would collapse a category
+      // when its last suggestion chip is added/dismissed.
+      if (!didBlueDotExpandRef.current) {
+        didBlueDotExpandRef.current = true;
+        setExpanded(catsWithSuggestions);
+      }
     } else if (catsWithSuggestions.size > 0) {
       setExpanded(prev => {
         const next = new Set(prev);
@@ -441,6 +449,9 @@ export default function SkillsTab({
   }
 
   function addSkill(cat: string, skill: string) {
+    // Keep the category expanded — adding a skill (e.g. from an orange
+    // suggestion chip) must never collapse the accordion.
+    setExpanded(prev => (prev.has(cat) ? prev : new Set(prev).add(cat)));
     const existing = skills[cat] ?? [];
     if (existing.some(e => e.name === skill)) return;
     onChange({ ...skills, [cat]: [...existing, { name: skill, since: null }] });

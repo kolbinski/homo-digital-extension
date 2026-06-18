@@ -75,7 +75,9 @@ export default function WizardShell({
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
-  const [activeTab, setActiveTab] = useState<WizardTabId>(initialTab ?? 'basic_info');
+  const [activeTab, setActiveTab] = useState<WizardTabId>(
+    initialTab ?? 'basic_info',
+  );
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('saved');
   const [submitting, setSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -522,7 +524,9 @@ export default function WizardShell({
             <button
               type="button"
               onClick={handleRematch}
-              disabled={totalErrors > 0 || autoSaveStatus === 'saving' || rematching}
+              disabled={
+                totalErrors > 0 || autoSaveStatus === 'saving' || rematching
+              }
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Re-match offers
@@ -566,10 +570,11 @@ export default function WizardShell({
       </header>
 
       {rematching && (
-        <p className="text-xs text-gray-500 text-center mt-2">
-          Re-matching was initialized. First, we&apos;re deleting your previous
-          job offers.
-        </p>
+        <div className="mx-4 my-3 px-3 py-2 bg-white border border-gray-200 rounded text-sm text-black text-center">
+          Re-matching was initialized.
+          <br />
+          First, we&apos;re deleting your previous job offers.
+        </div>
       )}
 
       {/* Tab bar — wraps to multiple lines */}
@@ -628,9 +633,15 @@ export default function WizardShell({
       {/* Tab body */}
       <div
         ref={tabBodyRef}
-        className={`flex-1 overflow-y-auto pb-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
+        className={`relative flex-1 overflow-y-auto pb-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
+        {rematching && (
+          <div
+            className="absolute inset-0 bg-white opacity-60 z-10"
+            style={{ pointerEvents: 'all', cursor: 'not-allowed' }}
+          />
+        )}
         <h2 className="text-base font-semibold text-gray-900 mb-3 pt-4">
           {activeCompletion.label}
         </h2>
@@ -781,7 +792,8 @@ export default function WizardShell({
                   submitting ||
                   autoSaveStatus === 'saving' ||
                   totalErrors > 0 ||
-                  reviewLimitReached
+                  reviewLimitReached ||
+                  rematching
                 }
                 title={
                   reviewLimitReached
