@@ -14,6 +14,7 @@ export interface GeneralSettings {
   languages: { code: string; name: string }[];
   language_levels: string[];
   experience_levels: string[];
+  delete_reasons?: string[];
   show_source_filter?: boolean;
   pro_price?: { formatted: string };
   scan_package_price?: { formatted: string } | null;

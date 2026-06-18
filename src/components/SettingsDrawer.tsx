@@ -107,6 +107,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [checkedReasons, setCheckedReasons] = useState<string[]>([]);
+  const [deleteFeedback, setDeleteFeedback] = useState('');
+  const [waitingForFeedback, setWaitingForFeedback] = useState(false);
+  const confirmationBoxRef = useRef<HTMLDivElement>(null);
+  const deleteFeedbackRef = useRef('');
+  deleteFeedbackRef.current = deleteFeedback;
 
   const [oauthData, setOauthData] = useState<OAuthData | null>(null);
 
@@ -146,6 +152,17 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
+
+  useEffect(() => {
+    if (showConfirm) {
+      requestAnimationFrame(() =>
+        confirmationBoxRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        }),
+      );
+    }
+  }, [showConfirm]);
 
   const fetchSubscription = useCallback(async () => {
     setSubscriptionLoading(true);
@@ -544,9 +561,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     onLogout();
   }
 
+  const deleteTokenRef = useRef<string | null>(null);
+
   async function handleDeleteAccount() {
     setDeleteError('');
     const token = await getToken();
+    deleteTokenRef.current = token;
     await chrome.storage.local.clear();
     await chrome.storage.session?.clear?.();
     setIsDeleting(true);
@@ -556,12 +576,47 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`${res.status}`);
-      onLogout();
+      if (deleteFeedbackRef.current.trim()) {
+        setWaitingForFeedback(true);
+      } else {
+        onLogout();
+      }
     } catch {
       setIsDeleting(false);
       setShowConfirm(false);
       setDeleteError('Something went wrong. Please try again.');
     }
+  }
+
+  function toggleDeleteReason(reason: string) {
+    setCheckedReasons(prev => {
+      const next = prev.includes(reason)
+        ? prev.filter(r => r !== reason)
+        : [...prev, reason];
+      const token = deleteTokenRef.current;
+      void fetch(`${API_BASE_URL}/v1/account/delete-reasons`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ reasons: next }),
+      });
+      return next;
+    });
+  }
+
+  function handleSubmitDeleteFeedback() {
+    const token = deleteTokenRef.current;
+    void fetch(`${API_BASE_URL}/v1/account/delete-feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ feedback: deleteFeedbackRef.current }),
+    });
+    onLogout();
   }
 
   const isPro =
@@ -596,11 +651,63 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         className={`absolute inset-y-0 right-0 w-full bg-white flex flex-col shadow-xl transition-transform duration-200 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {isDeleting ? (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4">
-            <p className="text-base font-semibold text-gray-900">
-              Your account is being deleted.
-            </p>
-            <Spinner size={20} className="text-gray-400" />
+          <div className="flex-1 overflow-y-auto px-6 py-8 flex flex-col gap-5">
+            <div className="flex flex-col gap-1">
+              <p className="text-base font-semibold text-gray-900">
+                We&apos;re sorry to see you go 👋
+              </p>
+              <p className="text-sm text-gray-500">
+                Help us improve by sharing why you&apos;re leaving.
+              </p>
+            </div>
+
+            {(generalSettings?.delete_reasons?.length ?? 0) > 0 && (
+              <div className="flex flex-col gap-2">
+                {generalSettings!.delete_reasons!.map(reason => (
+                  <label
+                    key={reason}
+                    className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checkedReasons.includes(reason)}
+                      onChange={() => toggleDeleteReason(reason)}
+                      className="rounded border-gray-300"
+                    />
+                    {reason}
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">
+                Other feedback (optional)
+              </label>
+              <textarea
+                value={deleteFeedback}
+                onChange={e => setDeleteFeedback(e.target.value)}
+                placeholder="Tell us more..."
+                rows={3}
+                className="w-full border border-gray-200 rounded p-2 text-sm resize-none"
+              />
+              {deleteFeedback.trim() && (
+                <button
+                  type="button"
+                  onClick={handleSubmitDeleteFeedback}
+                  className="self-start mt-1 py-1.5 px-3 rounded-md text-xs font-medium border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                >
+                  Submit feedback
+                </button>
+              )}
+            </div>
+
+            {!waitingForFeedback && (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Spinner size={16} className="text-gray-400" />
+                Deleting your account…
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -1194,7 +1301,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     Delete account
                   </button>
                 ) : (
-                  <div className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50">
+                  <div
+                    ref={confirmationBoxRef}
+                    className="flex flex-col gap-3 p-3 border border-red-200 rounded-md bg-red-50"
+                  >
                     <p className="text-sm text-gray-700">
                       Are you sure? This action cannot be undone.
                     </p>
