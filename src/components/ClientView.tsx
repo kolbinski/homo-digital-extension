@@ -46,13 +46,23 @@ export default function ClientView({
           setProfileState('onboarding');
           return;
         }
-        const { profile: dbProfile, profile_ready } = (await res.json()) as {
-          profile: Profile | null;
+        const raw = (await res.json()) as {
+          profile: (Profile & { editing_snapshot?: unknown }) | null;
           profile_ready: boolean;
+          profile_editing_snapshot?: unknown | null;
         };
+        const {
+          profile: dbProfile,
+          profile_ready,
+          profile_editing_snapshot,
+        } = raw;
+        // Onboarding only when the profile has never been completed:
+        // not ready AND no editing snapshot. A non-null snapshot means the
+        // user is mid-edit of an already-onboarded profile (post-onboarding).
+        const isOnboarding = !profile_ready && profile_editing_snapshot == null;
         if (!dbProfile) {
           setProfileState('onboarding');
-        } else if (!profile_ready) {
+        } else if (isOnboarding) {
           setProfile(dbProfile);
           setProfileState('onboarding');
         } else {

@@ -2124,6 +2124,9 @@ function ClientAccordion({
   function closeWizard() {
     setProfileVisible(false);
     setTimeout(() => setProfileOpen(false), 200);
+    if (selfMode && typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.remove('wizard_was_open');
+    }
   }
 
   async function dismissOfferSkill(skillName: string) {
@@ -2153,6 +2156,9 @@ function ClientAccordion({
     setWizardProfileLoading(true);
     setProfileOpen(true);
     requestAnimationFrame(() => setProfileVisible(true));
+    if (selfMode && typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ wizard_was_open: true });
+    }
     try {
       const token = await getToken();
       const params = new URLSearchParams({ client_id: client.id });
@@ -2183,6 +2189,18 @@ function ClientAccordion({
       setWizardProfileLoading(false);
     }
   }
+
+  // Re-open the wizard in edit mode if it was open before the panel closed.
+  useEffect(() => {
+    if (!selfMode || typeof chrome === 'undefined' || !chrome.storage) return;
+    let cancelled = false;
+    chrome.storage.local.get('wizard_was_open').then(r => {
+      if (!cancelled && r.wizard_was_open) void openWizard();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selfMode]);
 
   const knownCountRef = useRef<number | null>(null);
   const prevApplyCountRef = useRef<number>(0);
