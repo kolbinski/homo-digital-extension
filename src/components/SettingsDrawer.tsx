@@ -109,14 +109,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [deleteError, setDeleteError] = useState('');
   const [checkedReasons, setCheckedReasons] = useState<string[]>([]);
   const [deleteFeedback, setDeleteFeedback] = useState('');
-  const [waitingForFeedback, setWaitingForFeedback] = useState(false);
-  const [otherChecked, setOtherChecked] = useState(false);
+  const [feedbackRequired, setFeedbackRequired] = useState(false);
   const [deleteCompleted, setDeleteCompleted] = useState(false);
   const confirmationBoxRef = useRef<HTMLDivElement>(null);
   const deleteFeedbackRef = useRef('');
   deleteFeedbackRef.current = deleteFeedback;
-  const otherCheckedRef = useRef(false);
-  otherCheckedRef.current = otherChecked;
+  const feedbackRequiredRef = useRef(false);
+  feedbackRequiredRef.current = feedbackRequired;
   const deleteCompletedRef = useRef(false);
   deleteCompletedRef.current = deleteCompleted;
   const feedbackResolvedRef = useRef(false);
@@ -585,11 +584,10 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       if (!res.ok) throw new Error(`${res.status}`);
       setDeleteCompleted(true);
       deleteCompletedRef.current = true;
-      if (otherCheckedRef.current && !feedbackResolvedRef.current) {
-        setWaitingForFeedback(true);
-      } else {
+      if (!feedbackRequiredRef.current || feedbackResolvedRef.current) {
         onLogout();
       }
+      // otherwise wait for Submit/Cancel before redirecting
     } catch {
       setIsDeleting(false);
       setShowConfirm(false);
@@ -614,12 +612,11 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       const next = prev.includes(reason)
         ? prev.filter(r => r !== reason)
         : [...prev, reason];
-      if (reason === 'Other') {
-        const checked = next.includes('Other');
-        setOtherChecked(checked);
-        otherCheckedRef.current = checked;
-        if (!checked) setDeleteFeedback('');
-      }
+      const required =
+        next.includes('Other') || next.includes('Technical issues');
+      setFeedbackRequired(required);
+      feedbackRequiredRef.current = required;
+      if (!required) setDeleteFeedback('');
       postDeleteReasons(next);
       return next;
     });
@@ -638,25 +635,23 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     feedbackResolvedRef.current = true;
     if (deleteCompletedRef.current) {
       onLogout();
-    } else {
-      setWaitingForFeedback(false);
     }
   }
 
   function handleCancelDeleteFeedback() {
     setCheckedReasons(prev => {
-      const next = prev.filter(r => r !== 'Other');
+      const next = prev.filter(
+        r => r !== 'Other' && r !== 'Technical issues',
+      );
       postDeleteReasons(next);
       return next;
     });
-    setOtherChecked(false);
-    otherCheckedRef.current = false;
+    setFeedbackRequired(false);
+    feedbackRequiredRef.current = false;
     setDeleteFeedback('');
     feedbackResolvedRef.current = true;
     if (deleteCompletedRef.current) {
       onLogout();
-    } else {
-      setWaitingForFeedback(false);
     }
   }
 
@@ -695,7 +690,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
           <div className="flex-1 overflow-y-auto px-6 py-8 flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <p className="text-base font-semibold text-gray-900">
-                We&apos;re sorry to see you go 👋
+                We&apos;re sorry to see you go
               </p>
               <p className="text-sm text-gray-500">
                 Help us improve by sharing why you&apos;re leaving.
@@ -721,7 +716,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </div>
             )}
 
-            {otherChecked && (
+            {feedbackRequired && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">
                   Please tell us more:
@@ -752,7 +747,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </div>
             )}
 
-            {!waitingForFeedback && (
+            {deleteCompleted ? (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <CheckCircle size={16} color="green" weight="fill" />
+                Your account was deleted
+              </div>
+            ) : (
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Spinner size={16} className="text-gray-400" />
                 Deleting your account…
