@@ -2152,7 +2152,6 @@ function ClientAccordion({
   async function openWizard(tab: WizardTabId = 'basic_info') {
     setWizardInitialTab(tab);
     if (tab === 'skills') setHasNewSkills(false);
-    setWizardProfile(null);
     setWizardProfileLoading(true);
     setProfileOpen(true);
     requestAnimationFrame(() => setProfileVisible(true));
@@ -3195,7 +3194,7 @@ function ClientAccordion({
             <div
               className={`absolute inset-y-0 right-0 w-full flex flex-col shadow-xl transition-transform duration-200 ${profileVisible ? 'translate-x-0' : 'translate-x-full'}`}
             >
-              {wizardProfileLoading || !wizardProfile ? (
+              {!wizardProfile ? (
                 <div className="flex flex-col h-full bg-gray-50">
                   <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
                     <span className="text-sm font-semibold text-gray-900">
@@ -3219,6 +3218,7 @@ function ClientAccordion({
                   profile={wizardProfile}
                   onChange={setWizardProfile}
                   clientId={client.id}
+                  profileLoading={wizardProfileLoading}
                   onClose={closeWizard}
                   onRematch={() => setProfileReady(true)}
                   onCancelEdit={() => setProfileReady(true)}

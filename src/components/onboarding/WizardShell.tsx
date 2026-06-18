@@ -49,6 +49,7 @@ interface Props {
   offerSkills?: OfferSkill[];
   onDismissOfferSkill?: (skillName: string) => Promise<void>;
   openedFromBlueDot?: boolean;
+  profileLoading?: boolean;
 }
 
 export default function WizardShell({
@@ -72,6 +73,7 @@ export default function WizardShell({
   offerSkills,
   onDismissOfferSkill,
   openedFromBlueDot,
+  profileLoading = false,
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -373,28 +375,40 @@ export default function WizardShell({
             has_relevant_changes?: boolean;
           };
           hasRelevantChanges = checkData.has_relevant_changes === true;
+          // Set rematching BEFORE clearing wizardLoading so there's no frame
+          // where both are false and the wizard content flashes through.
+          if (hasRelevantChanges) {
+            setRematching(true);
+            // Let rematching paint before clearing wizardLoading, so the
+            // overlay never drops for a frame.
+            await new Promise(r => requestAnimationFrame(r));
+          }
         } catch {
+          setWizardLoading(false);
           setRematchError('Something went wrong. Please try again.');
           setRematching(false);
           return;
+        }
+        setWizardLoading(false);
+
+        setWizardLoading(true);
+        try {
+          const res = await fetch(`${API_BASE_URL}/v1/profile`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              profile_ready: true,
+              profile_editing_snapshot: null,
+              ...(clientId ? { client_id: clientId } : {}),
+            }),
+          });
+          if (!res.ok) throw new Error(`Server error ${res.status}`);
         } finally {
           setWizardLoading(false);
         }
-        if (hasRelevantChanges) setRematching(true);
-
-        const res = await fetch(`${API_BASE_URL}/v1/profile`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            profile_ready: true,
-            profile_editing_snapshot: null,
-            ...(clientId ? { client_id: clientId } : {}),
-          }),
-        });
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
         onSavedRef.current?.(profile);
 
         // Only relevant changes trigger a re-sync (and offer deletion).
@@ -554,12 +568,13 @@ export default function WizardShell({
                 totalErrors > 0 ||
                 autoSaveStatus === 'saving' ||
                 rematching ||
-                wizardLoading
+                wizardLoading ||
+                profileLoading
               }
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Re-match offers
-              {rematching || wizardLoading ? (
+              {rematching || wizardLoading || profileLoading ? (
                 <Spinner size={14} className="text-blue-600" />
               ) : (
                 totalErrors > 0 && (
@@ -671,7 +686,7 @@ export default function WizardShell({
         className={`relative flex-1 overflow-y-auto pb-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
-        {(wizardLoading || rematching) && (
+        {(wizardLoading || rematching || profileLoading) && (
           <div
             className="absolute inset-0 bg-white opacity-60 z-10"
             style={{ pointerEvents: 'all', cursor: 'not-allowed' }}
