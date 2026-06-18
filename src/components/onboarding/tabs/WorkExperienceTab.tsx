@@ -742,7 +742,7 @@ function ExperienceCard({
                     date_to: e.target.checked ? null : '',
                   })
                 }
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
               />
               <span className="text-xs text-gray-600">
                 I currently work here

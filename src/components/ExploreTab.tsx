@@ -1032,7 +1032,7 @@ function OfferCard({
                   <textarea
                     value={roleFitValue}
                     onChange={e => setRoleFitValue(e.target.value)}
-                    className="w-full text-xs border border-gray-200 rounded p-2 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    className="w-full text-xs border border-gray-200 rounded p-2 resize-y focus:outline-none focus:ring-1 focus:ring-indigo-400"
                     rows={3}
                   />
                   <div className="flex gap-1.5">
@@ -3482,7 +3482,7 @@ export default function ExploreTab({
                   type="checkbox"
                   checked={cvGenerated}
                   onChange={e => setCvGenerated(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
                 />
                 <span className="text-xs text-gray-700">CV</span>
               </label>
@@ -3491,7 +3491,7 @@ export default function ExploreTab({
                   type="checkbox"
                   checked={clGenerated}
                   onChange={e => setClGenerated(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
                 />
                 <span className="text-xs text-gray-700">CL</span>
               </label>

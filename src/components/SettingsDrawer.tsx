@@ -687,7 +687,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                       type="checkbox"
                       checked={checkedReasons.includes(reason)}
                       onChange={() => toggleDeleteReason(reason)}
-                      className="rounded border-gray-300"
+                      className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
                     />
                     {reason}
                   </label>
@@ -705,13 +705,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                   onChange={e => setDeleteFeedback(e.target.value)}
                   placeholder="Tell us more..."
                   rows={3}
-                  className="w-full border border-gray-200 rounded p-2 text-sm resize-none"
+                  className="w-full border border-gray-200 rounded p-2 text-sm resize-y"
                 />
                 <div className="flex items-center gap-2 mt-1">
                   <button
                     type="button"
                     onClick={handleSubmitDeleteFeedback}
-                    className="py-1.5 px-3 rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+                    className="py-1.5 px-3 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                   >
                     Submit
                   </button>
@@ -1195,7 +1195,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         placeholder="Write your feedback or anything we should improve..."
                         rows={4}
                         disabled={isSending}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-50 disabled:text-gray-400"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent resize-y disabled:bg-gray-50 disabled:text-gray-400"
                       />
                       {feedbackError && (
                         <p className="text-xs text-red-600">{feedbackError}</p>

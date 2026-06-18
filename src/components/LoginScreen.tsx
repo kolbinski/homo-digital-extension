@@ -590,7 +590,7 @@ function JoinView({ onBack }: { onBack: () => void }) {
               onChange={e => setNotes(e.target.value)}
               rows={3}
               disabled={isLoading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 resize-y"
               placeholder="Brief background — years of experience, industries, relevant skills…"
             />
           </div>
