@@ -86,6 +86,8 @@ export default function WizardShell({
   const [reviewCheckoutLoading, setReviewCheckoutLoading] = useState(false);
   const [rematchCheckoutLoading, setRematchCheckoutLoading] = useState(false);
   const [rematching, setRematching] = useState(false);
+  const [rematchError, setRematchError] = useState<string | null>(null);
+  const [wizardLoading, setWizardLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -352,10 +354,34 @@ export default function WizardShell({
   }, [autoTriggerReview]);
 
   function handleRematch() {
-    setRematching(true);
+    setRematchError(null);
     void (async () => {
       try {
         const token = await getAuthTokenRef.current();
+
+        // Check for relevant changes first. Only relevant changes trigger the
+        // offer deletion, so only then do we show the box and block the wizard.
+        let hasRelevantChanges = false;
+        setWizardLoading(true);
+        try {
+          const checkRes = await fetch(
+            `${API_BASE_URL}/v1/profile/has-relevant-changes`,
+            { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+          );
+          if (!checkRes.ok) throw new Error(`${checkRes.status}`);
+          const checkData = (await checkRes.json()) as {
+            has_relevant_changes?: boolean;
+          };
+          hasRelevantChanges = checkData.has_relevant_changes === true;
+        } catch {
+          setRematchError('Something went wrong. Please try again.');
+          setRematching(false);
+          return;
+        } finally {
+          setWizardLoading(false);
+        }
+        if (hasRelevantChanges) setRematching(true);
+
         const res = await fetch(`${API_BASE_URL}/v1/profile`, {
           method: 'PATCH',
           headers: {
@@ -370,10 +396,9 @@ export default function WizardShell({
         });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         onSavedRef.current?.(profile);
-        const patchData = (await res.json()) as {
-          matching_relevant_change?: boolean;
-        };
-        if (patchData.matching_relevant_change === true) {
+
+        // Only relevant changes trigger a re-sync (and offer deletion).
+        if (hasRelevantChanges) {
           const syncRes = await fetch(
             `${API_BASE_URL}/v1/profile/trigger-sync`,
             {
@@ -388,6 +413,7 @@ export default function WizardShell({
           }
           onSyncTriggeredRef.current?.();
         }
+
         setRematching(false);
         onRematch?.();
         onClose?.();
@@ -516,7 +542,7 @@ export default function WizardShell({
             <button
               type="button"
               onClick={handleCancelEdit}
-              disabled={rematching}
+              disabled={rematching || wizardLoading}
               className="text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel changes
@@ -525,12 +551,15 @@ export default function WizardShell({
               type="button"
               onClick={handleRematch}
               disabled={
-                totalErrors > 0 || autoSaveStatus === 'saving' || rematching
+                totalErrors > 0 ||
+                autoSaveStatus === 'saving' ||
+                rematching ||
+                wizardLoading
               }
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Re-match offers
-              {rematching ? (
+              {rematching || wizardLoading ? (
                 <Spinner size={14} className="text-blue-600" />
               ) : (
                 totalErrors > 0 && (
@@ -574,6 +603,12 @@ export default function WizardShell({
           Re-matching was initialized.
           <br />
           First, we&apos;re deleting your previous job offers.
+        </div>
+      )}
+
+      {rematchError && (
+        <div className="mx-4 my-3 px-3 py-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 text-center">
+          {rematchError}
         </div>
       )}
 
@@ -636,7 +671,7 @@ export default function WizardShell({
         className={`relative flex-1 overflow-y-auto pb-4 px-2 ${isReviewing || submitting ? 'pointer-events-none opacity-50' : ''}`}
         style={{ paddingBottom: 300 }}
       >
-        {rematching && (
+        {(wizardLoading || rematching) && (
           <div
             className="absolute inset-0 bg-white opacity-60 z-10"
             style={{ pointerEvents: 'all', cursor: 'not-allowed' }}
