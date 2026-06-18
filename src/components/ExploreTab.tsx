@@ -3404,7 +3404,12 @@ export default function ExploreTab({
       setIsLoading(false);
       if ('error' in result) {
         setError(result.error);
-        if (result.error.includes('Session expired')) onLogout();
+        if (result.error.includes('Session expired')) {
+          const flag = await chrome.storage.local.get(
+            'account_deletion_in_progress',
+          );
+          if (!flag.account_deletion_in_progress) onLogout();
+        }
       } else {
         setClients(result.clients);
       }

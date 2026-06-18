@@ -569,6 +569,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     deleteTokenRef.current = token;
     await chrome.storage.local.clear();
     await chrome.storage.session?.clear?.();
+    await chrome.storage.local.set({ account_deletion_in_progress: true });
     setIsDeleting(true);
     try {
       const res = await fetch(`${API_BASE_URL}/v1/account`, {
@@ -739,7 +740,12 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                 </div>
                 <button
                   type="button"
-                  onClick={onLogout}
+                  onClick={async () => {
+                    await chrome.storage.local.remove(
+                      'account_deletion_in_progress',
+                    );
+                    onLogout();
+                  }}
                   className="self-start py-2 px-4 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
                 >
                   Go to login screen
