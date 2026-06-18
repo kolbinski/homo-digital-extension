@@ -110,9 +110,16 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [checkedReasons, setCheckedReasons] = useState<string[]>([]);
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [waitingForFeedback, setWaitingForFeedback] = useState(false);
+  const [otherChecked, setOtherChecked] = useState(false);
+  const [deleteCompleted, setDeleteCompleted] = useState(false);
   const confirmationBoxRef = useRef<HTMLDivElement>(null);
   const deleteFeedbackRef = useRef('');
   deleteFeedbackRef.current = deleteFeedback;
+  const otherCheckedRef = useRef(false);
+  otherCheckedRef.current = otherChecked;
+  const deleteCompletedRef = useRef(false);
+  deleteCompletedRef.current = deleteCompleted;
+  const feedbackResolvedRef = useRef(false);
 
   const [oauthData, setOauthData] = useState<OAuthData | null>(null);
 
@@ -576,7 +583,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`${res.status}`);
-      if (deleteFeedbackRef.current.trim()) {
+      setDeleteCompleted(true);
+      deleteCompletedRef.current = true;
+      if (otherCheckedRef.current && !feedbackResolvedRef.current) {
         setWaitingForFeedback(true);
       } else {
         onLogout();
@@ -588,20 +597,30 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     }
   }
 
+  function postDeleteReasons(reasons: string[]) {
+    const token = deleteTokenRef.current;
+    void fetch(`${API_BASE_URL}/v1/account/delete-reasons`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ reasons }),
+    });
+  }
+
   function toggleDeleteReason(reason: string) {
     setCheckedReasons(prev => {
       const next = prev.includes(reason)
         ? prev.filter(r => r !== reason)
         : [...prev, reason];
-      const token = deleteTokenRef.current;
-      void fetch(`${API_BASE_URL}/v1/account/delete-reasons`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reasons: next }),
-      });
+      if (reason === 'Other') {
+        const checked = next.includes('Other');
+        setOtherChecked(checked);
+        otherCheckedRef.current = checked;
+        if (!checked) setDeleteFeedback('');
+      }
+      postDeleteReasons(next);
       return next;
     });
   }
@@ -616,7 +635,29 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       },
       body: JSON.stringify({ feedback: deleteFeedbackRef.current }),
     });
-    onLogout();
+    feedbackResolvedRef.current = true;
+    if (deleteCompletedRef.current) {
+      onLogout();
+    } else {
+      setWaitingForFeedback(false);
+    }
+  }
+
+  function handleCancelDeleteFeedback() {
+    setCheckedReasons(prev => {
+      const next = prev.filter(r => r !== 'Other');
+      postDeleteReasons(next);
+      return next;
+    });
+    setOtherChecked(false);
+    otherCheckedRef.current = false;
+    setDeleteFeedback('');
+    feedbackResolvedRef.current = true;
+    if (deleteCompletedRef.current) {
+      onLogout();
+    } else {
+      setWaitingForFeedback(false);
+    }
   }
 
   const isPro =
@@ -680,27 +721,36 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Other feedback (optional)
-              </label>
-              <textarea
-                value={deleteFeedback}
-                onChange={e => setDeleteFeedback(e.target.value)}
-                placeholder="Tell us more..."
-                rows={3}
-                className="w-full border border-gray-200 rounded p-2 text-sm resize-none"
-              />
-              {deleteFeedback.trim() && (
-                <button
-                  type="button"
-                  onClick={handleSubmitDeleteFeedback}
-                  className="self-start mt-1 py-1.5 px-3 rounded-md text-xs font-medium border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                >
-                  Submit feedback
-                </button>
-              )}
-            </div>
+            {otherChecked && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-gray-700">
+                  Please tell us more:
+                </label>
+                <textarea
+                  value={deleteFeedback}
+                  onChange={e => setDeleteFeedback(e.target.value)}
+                  placeholder="Tell us more..."
+                  rows={3}
+                  className="w-full border border-gray-200 rounded p-2 text-sm resize-none"
+                />
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={handleSubmitDeleteFeedback}
+                    className="py-1.5 px-3 rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+                  >
+                    Submit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelDeleteFeedback}
+                    className="py-1.5 px-3 rounded-md text-xs font-medium border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {!waitingForFeedback && (
               <div className="flex items-center gap-2 text-sm text-gray-400">
