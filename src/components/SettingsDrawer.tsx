@@ -936,9 +936,14 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         <div key={label} className="flex flex-col gap-1">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-600">{label}</span>
-                            <span className="text-gray-500 font-medium">
-                              {pct}%
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-400">
+                                {counter}/{max}
+                              </span>
+                              <span className="text-gray-500 font-medium">
+                                {pct}%
+                              </span>
+                            </div>
                           </div>
                           <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
                             <div
