@@ -110,15 +110,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [checkedReasons, setCheckedReasons] = useState<string[]>([]);
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [feedbackRequired, setFeedbackRequired] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [deleteCompleted, setDeleteCompleted] = useState(false);
   const confirmationBoxRef = useRef<HTMLDivElement>(null);
-  const deleteFeedbackRef = useRef('');
-  deleteFeedbackRef.current = deleteFeedback;
-  const feedbackRequiredRef = useRef(false);
-  feedbackRequiredRef.current = feedbackRequired;
-  const deleteCompletedRef = useRef(false);
-  deleteCompletedRef.current = deleteCompleted;
-  const feedbackResolvedRef = useRef(false);
 
   const [oauthData, setOauthData] = useState<OAuthData | null>(null);
 
@@ -583,11 +577,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       });
       if (!res.ok) throw new Error(`${res.status}`);
       setDeleteCompleted(true);
-      deleteCompletedRef.current = true;
-      if (!feedbackRequiredRef.current || feedbackResolvedRef.current) {
-        onLogout();
-      }
-      // otherwise wait for Submit/Cancel before redirecting
     } catch {
       setIsDeleting(false);
       setShowConfirm(false);
@@ -615,7 +604,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       const required =
         next.includes('Other') || next.includes('Technical issues');
       setFeedbackRequired(required);
-      feedbackRequiredRef.current = required;
       if (!required) setDeleteFeedback('');
       postDeleteReasons(next);
       return next;
@@ -630,12 +618,9 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ feedback: deleteFeedbackRef.current }),
+      body: JSON.stringify({ feedback: deleteFeedback }),
     });
-    feedbackResolvedRef.current = true;
-    if (deleteCompletedRef.current) {
-      onLogout();
-    }
+    setFeedbackSubmitted(true);
   }
 
   function handleCancelDeleteFeedback() {
@@ -645,12 +630,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       return next;
     });
     setFeedbackRequired(false);
-    feedbackRequiredRef.current = false;
     setDeleteFeedback('');
-    feedbackResolvedRef.current = true;
-    if (deleteCompletedRef.current) {
-      onLogout();
-    }
   }
 
   const isPro =
@@ -714,7 +694,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </div>
             )}
 
-            {feedbackRequired && (
+            {feedbackRequired && !feedbackSubmitted && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">
                   Please tell us more:
@@ -745,10 +725,25 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </div>
             )}
 
+            {feedbackSubmitted && (
+              <p className="text-xs font-medium text-green-600">
+                Thank you for your feedback!
+              </p>
+            )}
+
             {deleteCompleted ? (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <CheckCircle size={24} color="green" weight="fill" />
-                Your account was deleted
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle size={24} color="green" weight="fill" />
+                  Your account was deleted
+                </div>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="self-start py-2 px-4 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+                >
+                  Go to login screen
+                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-gray-400">
