@@ -620,14 +620,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
     setFeedbackSubmitted(true);
   }
 
-  function handleCancelDeleteFeedback() {
-    setCheckedReasons(prev => {
-      const next = prev.filter(r => r !== 'Other' && r !== 'Technical issues');
-      postDeleteReasons(next);
-      return next;
-    });
-    setDeleteFeedback('');
-  }
 
   const isPro =
     subscription != null && subscription.plan_name.toLowerCase() !== 'free';
@@ -698,7 +690,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                 <textarea
                   value={deleteFeedback}
                   onChange={e => setDeleteFeedback(e.target.value)}
-                  placeholder="Tell us more..."
+                  placeholder="Your feedback..."
                   rows={3}
                   className="w-full border border-gray-200 rounded p-2 text-sm resize-y"
                 />
@@ -709,13 +701,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                     className="py-1.5 px-3 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                   >
                     Submit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelDeleteFeedback}
-                    className="py-1.5 px-3 rounded-md text-xs font-medium border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
                   </button>
                 </div>
               </div>
