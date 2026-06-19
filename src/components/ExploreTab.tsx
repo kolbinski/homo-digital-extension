@@ -149,6 +149,12 @@ function clientToProfile(raw: Record<string, unknown> | undefined): Profile {
     ...emptyProfile,
     ...((raw as Partial<Profile>) ?? {}),
   } as Profile;
+  // employment_type was removed from preferences; drop any value the backend
+  // still returns so it is never echoed back in the save payload.
+  if (profile.preferences) {
+    delete (profile.preferences as unknown as Record<string, unknown>)
+      .employment_type;
+  }
   if (profile.preferences?.salary?.length) {
     profile.preferences = {
       ...profile.preferences,

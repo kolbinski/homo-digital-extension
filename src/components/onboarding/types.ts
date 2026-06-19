@@ -91,7 +91,6 @@ export interface ProfilePreferences {
   target_role: string[];
   company_type: string[];
   company_type_excluded: string[];
-  employment_type: string[];
   industries: string[];
   markets: string[];
   learning_skills_goals: string[];

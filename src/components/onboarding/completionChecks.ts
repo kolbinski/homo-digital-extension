@@ -67,7 +67,6 @@ function countMissingPreferences(p: Profile): number {
   missing += roles.length === 0 ? 1 : 0;
   missing += roles.filter(r => !r.trim()).length;
   if (!pref.work_model?.length) missing++;
-  if (!pref.employment_type?.length) missing++;
   return missing;
 }
 

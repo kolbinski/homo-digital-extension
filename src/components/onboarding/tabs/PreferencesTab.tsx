@@ -606,42 +606,6 @@ export default function PreferencesTab({
         </>
       )}
 
-      {/* Employment type */}
-      <Section
-        title="Employment type"
-        badge={
-          prefs.employment_type.length === 0 ? (
-            <XCircle
-              size={16}
-              weight="fill"
-              className="text-red-400 shrink-0"
-            />
-          ) : undefined
-        }
-      >
-        <div className="flex flex-wrap gap-1.5">
-          {(
-            [
-              ['contract', 'Contract'],
-              ['permanent', 'Permanent'],
-              ['part_time', 'Part-time'],
-            ] as const
-          ).map(([val, label]) => (
-            <Chip
-              key={val}
-              label={label}
-              selected={prefs.employment_type.includes(val)}
-              onClick={() =>
-                onChange({
-                  ...prefs,
-                  employment_type: toggle(prefs.employment_type, val),
-                })
-              }
-            />
-          ))}
-        </div>
-      </Section>
-
       {/* Target role */}
       <Section
         title="Target role"
