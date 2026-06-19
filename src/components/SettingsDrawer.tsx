@@ -109,7 +109,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
   const [deleteError, setDeleteError] = useState('');
   const [checkedReasons, setCheckedReasons] = useState<string[]>([]);
   const [deleteFeedback, setDeleteFeedback] = useState('');
-  const [feedbackRequired, setFeedbackRequired] = useState(false);
+
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [deleteCompleted, setDeleteCompleted] = useState(false);
   const confirmationBoxRef = useRef<HTMLDivElement>(null);
@@ -602,10 +602,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       const next = prev.includes(reason)
         ? prev.filter(r => r !== reason)
         : [...prev, reason];
-      const required =
-        next.includes('Other') || next.includes('Technical issues');
-      setFeedbackRequired(required);
-      if (!required) setDeleteFeedback('');
       postDeleteReasons(next);
       return next;
     });
@@ -630,7 +626,6 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
       postDeleteReasons(next);
       return next;
     });
-    setFeedbackRequired(false);
     setDeleteFeedback('');
   }
 
@@ -695,7 +690,7 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
               </div>
             )}
 
-            {feedbackRequired && !feedbackSubmitted && (
+            {!feedbackSubmitted && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">
                   Please tell us more:
