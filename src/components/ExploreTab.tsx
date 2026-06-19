@@ -3324,7 +3324,7 @@ export default function ExploreTab({
   const [cvGenerated, setCvGenerated] = useState(false);
   const [clGenerated, setClGenerated] = useState(false);
   const [minScore, setMinScore] = useState(0);
-  const [debouncedMinScore, setDebouncedMinScore] = useState(75);
+  const [debouncedMinScore, setDebouncedMinScore] = useState(0);
   const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
