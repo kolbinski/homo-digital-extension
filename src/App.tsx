@@ -3,12 +3,10 @@ import { Gear } from '@phosphor-icons/react';
 import Spinner from './components/Spinner';
 import LoginScreen from './components/LoginScreen';
 import ClientView from './components/ClientView';
-import TabBar, { type Tab } from './components/TabBar';
 import ExploreTab from './components/ExploreTab';
-import SyncTab from './components/SyncTab';
 import SettingsDrawer from './components/SettingsDrawer';
 import { useAuth, type OAuthData } from './hooks/useAuth';
-import { API_BASE_URL, SHOW_TABS } from './config';
+
 import { generalSettingsStore } from './store/generalSettingsStore';
 
 type AuthState = 'checking' | 'logged_out' | 'logged_in' | 'client';
@@ -17,16 +15,9 @@ function App() {
   const { getToken, getRole, logout, getOAuthData } = useAuth();
   const [authState, setAuthState] = useState<AuthState>('checking');
   const [activeTabId, setActiveTabId] = useState<number | undefined>();
-  const [activeTab, setActiveTab] = useState<Tab>('explore');
   const [currentUrl, setCurrentUrl] = useState<string>('');
-  const [isSyncing, setIsSyncing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [oauthData, setOauthData] = useState<OAuthData | null>(null);
-  const [settings, setSettings] = useState<{
-    show_sync_tab_in_extension: boolean;
-  }>({
-    show_sync_tab_in_extension: false,
-  });
 
   useEffect(() => {
     generalSettingsStore.fetch();
@@ -130,25 +121,6 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (authState !== 'logged_in') return;
-    getToken().then(token => {
-      if (!token) return;
-      fetch(`${API_BASE_URL}/v1/settings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then(r => r.json())
-        .then(data => setSettings(data))
-        .catch(() => {});
-    });
-  }, [authState]);
-
-  useEffect(() => {
-    if (!settings.show_sync_tab_in_extension && activeTab === 'sync') {
-      setActiveTab('explore');
-    }
-  }, [settings.show_sync_tab_in_extension]);
-
   async function handleLogout() {
     try {
       await logout();
@@ -231,41 +203,12 @@ function App() {
         />
       )}
 
-      {SHOW_TABS && (
-        <TabBar
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          isSyncing={isSyncing}
-          showSync={settings.show_sync_tab_in_extension}
-        />
-      )}
-
       <div id="main-scroll" className="flex-1 overflow-y-auto">
-        {SHOW_TABS ? (
-          <>
-            <div
-              className="h-full"
-              style={{ display: activeTab === 'explore' ? 'block' : 'none' }}
-            >
-              <ExploreTab
-                onLogout={handleLogout}
-                activeTabId={activeTabId}
-                currentUrl={currentUrl}
-              />
-            </div>
-            {settings.show_sync_tab_in_extension && (
-              <div style={{ display: activeTab === 'sync' ? 'block' : 'none' }}>
-                <SyncTab onSyncingChange={setIsSyncing} />
-              </div>
-            )}
-          </>
-        ) : (
-          <ExploreTab
-            onLogout={handleLogout}
-            activeTabId={activeTabId}
-            currentUrl={currentUrl}
-          />
-        )}
+        <ExploreTab
+          onLogout={handleLogout}
+          activeTabId={activeTabId}
+          currentUrl={currentUrl}
+        />
       </div>
     </div>
   );
