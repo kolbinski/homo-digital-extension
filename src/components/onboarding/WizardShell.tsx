@@ -613,6 +613,24 @@ export default function WizardShell({
         ) : null}
       </header>
 
+      {isEditMode && profileRematchPending && (
+        <PlanLimitBanner
+          onButtonClick={() => void handleBuyRematch()}
+          buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
+          isLoading={rematchCheckoutLoading}
+          styles={{
+            marginBottom: 0,
+            marginRight: 16,
+            marginLeft: 16,
+          }}
+        >
+          <p className="text-xs text-gray-500">
+            You've reached your limit for re-matching offers based on profile
+            changes. Buy more edits to keep matching offers.
+          </p>
+        </PlanLimitBanner>
+      )}
+
       {rematching && (
         <div className="mx-4 my-3 px-3 py-2 bg-blue-100 border border-blue-300 rounded text-sm text-blue-600 text-center">
           Re-matching was initialized.
@@ -688,7 +706,7 @@ export default function WizardShell({
       >
         {(wizardLoading || rematching || profileLoading) && (
           <div
-            className="fixed inset-0 bg-white opacity-60 z-50"
+            className="fixed inset-0 z-50"
             style={{ pointerEvents: 'all', cursor: 'not-allowed' }}
           />
         )}
@@ -761,23 +779,6 @@ export default function WizardShell({
 
       {/* Footer */}
       <div className="shrink-0 bg-white border-t border-gray-200 flex flex-col">
-        {isEditMode && profileRematchPending && (
-          <PlanLimitBanner
-            onButtonClick={() => void handleBuyRematch()}
-            buttonText={`Buy ${generalSettings?.profile_relevant_change_package_amount ?? '...'} edits for ${generalSettings?.profile_rematch_package_price?.formatted ?? '...'}`}
-            isLoading={rematchCheckoutLoading}
-            styles={{
-              marginBottom: 0,
-              marginRight: 16,
-              marginLeft: 16,
-            }}
-          >
-            <p className="text-xs text-gray-500">
-              You've reached your limit for re-matching offers based on profile
-              changes. Buy more edits to keep matching offers.
-            </p>
-          </PlanLimitBanner>
-        )}
         {reviewLimitReached && (
           <PlanLimitBanner
             onButtonClick={() => void handleBuyReviewPackage()}
