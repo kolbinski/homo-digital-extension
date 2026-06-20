@@ -114,9 +114,15 @@ function LoginView({
     try {
       await handleOAuthLogin(provider);
     } catch (err) {
-      setSocialError(
-        typeof err === 'string' ? err : 'Sign-in failed. Please try again.',
+      const msg = typeof err === 'string' ? err : String(err);
+      const isUserCancelled = /user did not approve|cancelled|closed/i.test(
+        msg,
       );
+      if (!isUserCancelled) {
+        setSocialError(
+          typeof err === 'string' ? err : 'Sign-in failed. Please try again.',
+        );
+      }
     } finally {
       setSocialLoading(null);
     }
@@ -326,7 +332,7 @@ function LoginView({
                 type="button"
                 disabled={!!socialLoading}
                 onClick={() => handleSocialLogin(provider, name)}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 transition-colors disabled:cursor-not-allowed"
               >
                 <img src={logo} alt={name} width={20} height={20} />
                 {socialLoading === name && (
