@@ -1929,7 +1929,15 @@ function ClientAccordion({
     return () => {
       cancelled = true;
     };
-  }, [statusFilter, sourceFilter, minScore, sortBy, cvGenerated, clGenerated, withSalary]);
+  }, [
+    statusFilter,
+    sourceFilter,
+    minScore,
+    sortBy,
+    cvGenerated,
+    clGenerated,
+    withSalary,
+  ]);
 
   interface CombinedBucket {
     offers: UserOffer[];
@@ -3615,18 +3623,20 @@ export default function ExploreTab({
                 <option value="salary_delta">Biggest pay raise</option>
               </select>
             </div>
-            <label className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={withSalary}
-                onChange={e => handleWithSalaryChange(e.target.checked)}
-                className="w-3.5 h-3.5 accent-indigo-600 cursor-pointer"
-              />
-              <span className="text-xs text-gray-500">With salary</span>
-            </label>
-            {selfMode && (
-              <div ref={setIconsSlotEl} className="flex items-center" />
-            )}
+            <div className="flex items-center gap-1">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={withSalary}
+                  onChange={e => handleWithSalaryChange(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-indigo-600 cursor-pointer"
+                />
+                <span className="text-xs text-gray-500">With salary</span>
+              </label>
+              {selfMode && (
+                <div ref={setIconsSlotEl} className="flex items-center" />
+              )}
+            </div>
           </div>
         </div>
         {selfMode ? (
