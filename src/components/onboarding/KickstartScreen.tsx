@@ -222,6 +222,14 @@ export default function KickstartScreen({
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const json = await res.json();
+      if (json.is_cv === false) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setError(
+          'It looks like your PDF is not a valid CV. Please try again by uploading your CV.',
+        );
+        setLoading(false);
+        return;
+      }
       const data = (json.profile ?? json) as Partial<Profile>;
       const fromDb = await patchProfile(data);
       handleApiDone(fromDb ?? data);
