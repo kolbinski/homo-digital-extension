@@ -3254,6 +3254,7 @@ function ClientAccordion({
                     applyNowCountRef.current = 0;
                     setLevelUpCount(null);
                     levelUpCountRef.current = 0;
+                    knownNewSkillsCountRef.current = 0;
                     setApplyPage(1);
                     setLevelUpPage(1);
                     const currency =
@@ -3279,6 +3280,7 @@ function ClientAccordion({
                         }
                       })();
                     }
+                    void fetchCombinedOffers(1, 0, 0, 0);
                   }}
                   onSubmitted={closeWizard}
                   onSaved={saved => {
