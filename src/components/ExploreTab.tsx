@@ -1544,6 +1544,9 @@ function ClientAccordion({
   const [applyLoadingMore, setApplyLoadingMore] = useState(false);
   const [levelUpLoadingMore, setLevelUpLoadingMore] = useState(false);
   const [statusLoadingMore, setStatusLoadingMore] = useState(false);
+  const loadMoreApplyInProgress = useRef(false);
+  const loadMoreLevelUpInProgress = useRef(false);
+  const loadMoreStatusInProgress = useRef(false);
   const manualPageOfferRef = useRef(false);
   const manualPageOfferUrlRef = useRef<string | null>(null);
   const pageOfferIdRef = useRef<string | null>(null);
@@ -2099,33 +2102,51 @@ function ClientAccordion({
   }
 
   async function handleLoadMoreApply() {
+    if (loadMoreApplyInProgress.current) return;
+    loadMoreApplyInProgress.current = true;
     setApplyLoadingMore(true);
-    const nextPage = applyPage + 1;
-    const result = await fetchCombinedOffers(nextPage);
-    setApplyOffers(prev => [...prev, ...(result.apply_now.offers ?? [])]);
-    setApplyHasMore(result.apply_now.has_more ?? false);
-    setApplyPage(nextPage);
-    setApplyLoadingMore(false);
+    try {
+      const nextPage = applyPage + 1;
+      const result = await fetchCombinedOffers(nextPage);
+      setApplyOffers(prev => [...prev, ...(result.apply_now.offers ?? [])]);
+      setApplyHasMore(result.apply_now.has_more ?? false);
+      setApplyPage(nextPage);
+    } finally {
+      setApplyLoadingMore(false);
+      loadMoreApplyInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreLevelUp() {
+    if (loadMoreLevelUpInProgress.current) return;
+    loadMoreLevelUpInProgress.current = true;
     setLevelUpLoadingMore(true);
-    const nextPage = levelUpPage + 1;
-    const result = await fetchCombinedOffers(nextPage);
-    setLevelUpOffers(prev => [...prev, ...(result.level_up.offers ?? [])]);
-    setLevelUpHasMore(result.level_up.has_more ?? false);
-    setLevelUpPage(nextPage);
-    setLevelUpLoadingMore(false);
+    try {
+      const nextPage = levelUpPage + 1;
+      const result = await fetchCombinedOffers(nextPage);
+      setLevelUpOffers(prev => [...prev, ...(result.level_up.offers ?? [])]);
+      setLevelUpHasMore(result.level_up.has_more ?? false);
+      setLevelUpPage(nextPage);
+    } finally {
+      setLevelUpLoadingMore(false);
+      loadMoreLevelUpInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreStatus() {
+    if (loadMoreStatusInProgress.current) return;
+    loadMoreStatusInProgress.current = true;
     setStatusLoadingMore(true);
-    const nextPage = statusPage + 1;
-    const fetched = await fetchOffers(statusFilter, nextPage);
-    setApplyOffers(prev => [...prev, ...fetched.offers]);
-    setStatusHasMore(fetched.has_more);
-    setStatusPage(nextPage);
-    setStatusLoadingMore(false);
+    try {
+      const nextPage = statusPage + 1;
+      const fetched = await fetchOffers(statusFilter, nextPage);
+      setApplyOffers(prev => [...prev, ...fetched.offers]);
+      setStatusHasMore(fetched.has_more);
+      setStatusPage(nextPage);
+    } finally {
+      setStatusLoadingMore(false);
+      loadMoreStatusInProgress.current = false;
+    }
   }
 
   function closeWizard() {
