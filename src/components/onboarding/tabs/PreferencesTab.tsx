@@ -10,16 +10,21 @@ interface Props {
   preferences: ProfilePreferences;
   onChange: (preferences: ProfilePreferences) => void;
   preferredCurrency?: string;
+  onSalaryFocusChange?: (focused: boolean) => void;
 }
 
 function SalaryMinInput({
   value,
   onChange,
   hasError,
+  onFocus,
+  onBlur,
 }: {
   value: number;
   onChange: (n: number) => void;
   hasError: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const [localValue, setLocalValue] = useState(String(value || ''));
   useEffect(() => {
@@ -34,10 +39,12 @@ function SalaryMinInput({
         const digits = e.target.value.replace(/\D/g, '');
         setLocalValue(digits);
       }}
+      onFocus={onFocus}
       onBlur={() => {
         const num = localValue === '' ? 0 : Number(localValue);
         setLocalValue(num === 0 ? '' : String(num));
         onChange(num);
+        onBlur?.();
       }}
       placeholder="Min salary"
       className={`px-2.5 py-1.5 border ${hasError ? 'border-red-400' : 'border-gray-300'} rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
@@ -131,6 +138,7 @@ export default function PreferencesTab({
   preferences: prefs,
   onChange,
   preferredCurrency,
+  onSalaryFocusChange,
 }: Props) {
   const [cityInput, setCityInput] = useState('');
   const [industryInput, setIndustryInput] = useState('');
@@ -513,6 +521,8 @@ export default function PreferencesTab({
                       value={minVal}
                       onChange={handleMin}
                       hasError={hasMinError}
+                      onFocus={() => onSalaryFocusChange?.(true)}
+                      onBlur={() => onSalaryFocusChange?.(false)}
                     />
                     <select
                       value={unitVal}

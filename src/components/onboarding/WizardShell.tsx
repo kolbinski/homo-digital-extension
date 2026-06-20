@@ -90,6 +90,7 @@ export default function WizardShell({
   const [rematching, setRematching] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
   const [wizardLoading, setWizardLoading] = useState(false);
+  const [isSalaryInputFocused, setIsSalaryInputFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -569,7 +570,8 @@ export default function WizardShell({
                 autoSaveStatus === 'saving' ||
                 rematching ||
                 wizardLoading ||
-                profileLoading
+                profileLoading ||
+                isSalaryInputFocused
               }
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -757,6 +759,7 @@ export default function WizardShell({
             preferences={profile.preferences}
             onChange={preferences => onChange({ ...profile, preferences })}
             preferredCurrency={preferredCurrency}
+            onSalaryFocusChange={setIsSalaryInputFocused}
           />
         ) : activeTab === 'red_flags' ? (
           <RedFlagsTab
@@ -876,7 +879,8 @@ export default function WizardShell({
                   submitting ||
                   !allComplete ||
                   autoSaveStatus === 'saving' ||
-                  isReviewing
+                  isReviewing ||
+                  isSalaryInputFocused
                 }
                 title={
                   !allComplete ? 'Complete all required tabs first' : undefined
