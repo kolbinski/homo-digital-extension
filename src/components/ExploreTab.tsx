@@ -3570,8 +3570,8 @@ export default function ExploreTab({
                 className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="score">Score</option>
-                <option value="salary_delta">Biggest pay raise</option>
                 <option value="published_at">Published at</option>
+                <option value="salary_delta">Biggest pay raise</option>
               </select>
             </div>
             {selfMode && (
