@@ -2693,6 +2693,7 @@ function ClientAccordion({
                   buttonText="Upgrade to Pro"
                   closable
                   onClose={() => setShowSalaryDeltaBanner(false)}
+                  withMX={false}
                 >
                   <p className="text-xs text-gray-500">
                     Sorting by biggest pay raise is not available in Free plan.
