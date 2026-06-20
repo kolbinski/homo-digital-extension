@@ -3280,7 +3280,26 @@ function ClientAccordion({
                         }
                       })();
                     }
-                    void fetchCombinedOffers(1, 0, 0, 0);
+                    void (async () => {
+                      try {
+                        const result = await fetchCombinedOffers(1, 0, 0, 0);
+                        if (!result) return;
+                        setApplyOffers(result.apply_now.offers ?? []);
+                        setApplyHasMore(result.apply_now.has_more ?? false);
+                        setApplyNowCount(result.apply_now.count);
+                        applyNowCountRef.current = result.apply_now.count;
+                        prevApplyCountRef.current = result.apply_now.count;
+                        setLevelUpOffers(result.level_up.offers ?? []);
+                        setLevelUpHasMore(result.level_up.has_more ?? false);
+                        setLevelUpCount(result.level_up.count);
+                        levelUpCountRef.current = result.level_up.count;
+                        prevLevelUpCountRef.current = result.level_up.count;
+                        knownNewSkillsCountRef.current =
+                          result.new_skills_count ?? 0;
+                      } catch {
+                        /* ignore */
+                      }
+                    })();
                   }}
                   onSubmitted={closeWizard}
                   onSaved={saved => {
