@@ -12,6 +12,40 @@ interface Props {
   preferredCurrency?: string;
 }
 
+function SalaryMinInput({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  hasError: boolean;
+}) {
+  const [localValue, setLocalValue] = useState(String(value || ''));
+  useEffect(() => {
+    setLocalValue(String(value || ''));
+  }, [value]);
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={localValue}
+      onChange={e => {
+        const digits = e.target.value.replace(/\D/g, '');
+        setLocalValue(digits);
+      }}
+      onBlur={() => {
+        const num = localValue === '' ? 0 : Number(localValue);
+        setLocalValue(num === 0 ? '' : String(num));
+        onChange(num);
+      }}
+      placeholder="Min salary"
+      className={`px-2.5 py-1.5 border ${hasError ? 'border-red-400' : 'border-gray-300'} rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+      style={{ width: 90 }}
+    />
+  );
+}
+
 const inputClass =
   'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
@@ -475,14 +509,10 @@ export default function PreferencesTab({
                         </option>
                       ))}
                     </select>
-                    <input
-                      type="number"
-                      value={minVal || ''}
-                      onChange={e => handleMin(Number(e.target.value))}
-                      placeholder="Min salary"
-                      min={1}
-                      className={`px-2.5 py-1.5 border ${hasMinError ? 'border-red-400' : 'border-gray-300'} rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      style={{ width: 90 }}
+                    <SalaryMinInput
+                      value={minVal}
+                      onChange={handleMin}
+                      hasError={hasMinError}
                     />
                     <select
                       value={unitVal}
