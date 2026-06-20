@@ -51,7 +51,6 @@ export default function KickstartScreen({
 }: Props) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
-  const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -170,7 +169,7 @@ export default function KickstartScreen({
       return;
     }
     setError('');
-    setFile(f);
+    void handlePrepare(f);
   }
 
   async function patchProfile(
@@ -196,11 +195,7 @@ export default function KickstartScreen({
     }
   }
 
-  async function handlePrepare() {
-    if (!file) {
-      setError('Please upload your CV first.');
-      return;
-    }
+  async function handlePrepare(file: File) {
     setLoading(true);
     setError('');
     apiResultRef.current = 'pending';
@@ -321,16 +316,8 @@ export default function KickstartScreen({
               />
               <UploadSimpleIcon size={32} className="text-gray-400" />
               <p className="text-sm text-gray-500 text-center">
-                {file ? (
-                  <span className="font-medium text-green-700">
-                    {file.name}
-                  </span>
-                ) : (
-                  <>
-                    Drag & drop or{' '}
-                    <span className="text-green-600 font-medium">browse</span>
-                  </>
-                )}
+                Drag & drop or{' '}
+                <span className="text-green-600 font-medium">browse</span>
               </p>
               <p className="text-xs text-gray-400">PDF only</p>
             </div>
@@ -482,16 +469,6 @@ export default function KickstartScreen({
           )}
 
           {error && <p className="text-sm text-red-600 w-full">{error}</p>}
-
-          {!loading && (
-            <button
-              type="button"
-              onClick={handlePrepare}
-              className="w-full text-white font-medium py-2 px-4 rounded-md text-sm transition-colors flex items-center justify-center gap-2 bg-green-600"
-            >
-              Prepare my profile
-            </button>
-          )}
 
           {!loading && (
             <button
