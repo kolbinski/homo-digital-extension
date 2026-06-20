@@ -688,7 +688,7 @@ export default function WizardShell({
       >
         {(wizardLoading || rematching || profileLoading) && (
           <div
-            className="absolute inset-0 bg-white opacity-60 z-10"
+            className="fixed inset-0 bg-white opacity-60 z-50"
             style={{ pointerEvents: 'all', cursor: 'not-allowed' }}
           />
         )}
