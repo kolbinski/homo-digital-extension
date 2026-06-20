@@ -319,7 +319,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
   const [industryInput, setIndustryInput] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const emailInvalid =
-    emailTouched && (!b.email.trim() || !EMAIL_RE.test(b.email));
+    emailTouched && (!(b.email ?? '').trim() || !EMAIL_RE.test(b.email ?? ''));
 
   const langDragFrom = useRef<number | null>(null);
   const [langDragOver, setLangDragOver] = useState<number | null>(null);
@@ -464,12 +464,12 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             <div className="flex items-center gap-1.5">
               <input
                 type="text"
-                value={b.first_name}
+                value={b.first_name ?? ''}
                 onChange={e => update({ first_name: e.target.value })}
                 placeholder="e.g. Anna"
                 className={`${fieldClass} flex-1`}
               />
-              {!b.first_name.trim() && (
+              {!(b.first_name ?? '').trim() && (
                 <XCircle
                   size={16}
                   weight="fill"
@@ -482,12 +482,12 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
             <div className="flex items-center gap-1.5">
               <input
                 type="text"
-                value={b.last_name}
+                value={b.last_name ?? ''}
                 onChange={e => update({ last_name: e.target.value })}
                 placeholder="e.g. Kowalski"
                 className={`${fieldClass} flex-1`}
               />
-              {!b.last_name.trim() && (
+              {!(b.last_name ?? '').trim() && (
                 <XCircle
                   size={16}
                   weight="fill"
@@ -505,7 +505,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
           <div className="flex items-center gap-1.5">
             <input
               type="email"
-              value={b.email}
+              value={b.email ?? ''}
               onChange={e => update({ email: e.target.value })}
               onBlur={() => setEmailTouched(true)}
               placeholder="you@example.com"
@@ -523,7 +523,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
         <Field label="Phone">
           <input
             type="text"
-            value={b.phone}
+            value={b.phone ?? ''}
             onChange={e => update({ phone: e.target.value })}
             placeholder="+1 415 555 0123"
             className={fieldClass}
@@ -536,7 +536,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
         <Field label="GitHub">
           <input
             type="text"
-            value={b.github}
+            value={b.github ?? ''}
             onChange={e => update({ github: e.target.value })}
             placeholder="https://github.com/username"
             className={fieldClass}
@@ -545,7 +545,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
         <Field label="LinkedIn">
           <input
             type="text"
-            value={b.linkedin}
+            value={b.linkedin ?? ''}
             onChange={e => update({ linkedin: e.target.value })}
             placeholder="https://linkedin.com/in/username"
             className={fieldClass}
@@ -737,7 +737,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                   </option>
                 ))}
               </select>
-              {(!lang.name.trim() || !lang.level) && (
+              {(!(lang.name ?? '').trim() || !lang.level) && (
                 <XCircle
                   size={16}
                   weight="fill"
@@ -844,7 +844,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 placeholder="e.g. Strong communicator"
                 className={`${fieldClass} resize-y flex-1`}
               />
-              {!skill.trim() && (
+              {!(skill ?? '').trim() && (
                 <XCircle
                   size={16}
                   weight="fill"
@@ -908,7 +908,7 @@ export default function BasicInfoTab({ basicInfo: b, onChange }: Props) {
                 placeholder="e.g. 8 years building scalable APIs"
                 className={`${fieldClass} resize-y flex-1`}
               />
-              {!bullet.trim() && (
+              {!(bullet ?? '').trim() && (
                 <XCircle
                   size={16}
                   weight="fill"
