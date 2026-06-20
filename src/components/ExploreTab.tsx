@@ -191,6 +191,7 @@ interface ClientAccordionProps {
   selfMode?: boolean;
   iconsPortalTarget?: HTMLDivElement | null;
   wizardPortalTarget?: HTMLDivElement | null;
+  withSalary?: boolean;
 }
 
 interface OfferCardProps {
@@ -1488,6 +1489,7 @@ function ClientAccordion({
   selfMode = false,
   iconsPortalTarget,
   wizardPortalTarget,
+  withSalary = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
   const { settings: generalSettings } = useGeneralSettings();
@@ -1927,7 +1929,7 @@ function ClientAccordion({
     return () => {
       cancelled = true;
     };
-  }, [statusFilter, sourceFilter, minScore, sortBy, cvGenerated, clGenerated]);
+  }, [statusFilter, sourceFilter, minScore, sortBy, cvGenerated, clGenerated, withSalary]);
 
   interface CombinedBucket {
     offers: UserOffer[];
@@ -1962,6 +1964,7 @@ function ClientAccordion({
     if (clGenerated) params.append('generated_cl', 'true');
     if (!(sortBy === 'salary_delta' && !isPro))
       params.append('sort_by', sortBy);
+    if (withSalary) params.append('with_salary', 'true');
     params.append('page', String(page));
     if (knownApplyCount !== undefined)
       params.append('known_apply_count', String(knownApplyCount));
@@ -2001,6 +2004,7 @@ function ClientAccordion({
     if (clGenerated) params.append('generated_cl', 'true');
     if (!(sortBy === 'salary_delta' && !isPro))
       params.append('sort_by', sortBy);
+    if (withSalary) params.append('with_salary', 'true');
     params.append('page', String(page));
     params.append('page_size', String(pageSize));
     try {
@@ -3367,6 +3371,7 @@ export default function ExploreTab({
   const [clGenerated, setClGenerated] = useState(false);
   const [minScore, setMinScore] = useState(0);
   const [debouncedMinScore, setDebouncedMinScore] = useState(0);
+  const [withSalary, setWithSalary] = useState(false);
   const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -3407,6 +3412,14 @@ export default function ExploreTab({
         setMinScore(result.hd_min_score as number);
         setDebouncedMinScore(result.hd_min_score as number);
       }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_with_salary', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_with_salary) setWithSalary(true);
     });
   }, []);
 
@@ -3465,6 +3478,13 @@ export default function ExploreTab({
         chrome.storage.local.set({ hd_min_score: value });
       }
     }, 400);
+  }
+
+  function handleWithSalaryChange(value: boolean) {
+    setWithSalary(value);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ hd_with_salary: value });
+    }
   }
 
   useEffect(() => {
@@ -3595,6 +3615,15 @@ export default function ExploreTab({
                 <option value="salary_delta">Biggest pay raise</option>
               </select>
             </div>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={withSalary}
+                onChange={e => handleWithSalaryChange(e.target.checked)}
+                className="w-3.5 h-3.5 accent-indigo-600 cursor-pointer"
+              />
+              <span className="text-xs text-gray-500">With salary</span>
+            </label>
             {selfMode && (
               <div ref={setIconsSlotEl} className="flex items-center" />
             )}
@@ -3623,6 +3652,7 @@ export default function ExploreTab({
               selfMode={true}
               iconsPortalTarget={iconsSlotEl}
               wizardPortalTarget={wizardPortalTarget}
+              withSalary={withSalary}
             />
           )
         ) : clients.length === 0 ? (
@@ -3647,6 +3677,7 @@ export default function ExploreTab({
                 cvGenerated={cvGenerated}
                 clGenerated={clGenerated}
                 onClientUpdate={handleClientUpdate}
+                withSalary={withSalary}
               />
             ))
         )}
