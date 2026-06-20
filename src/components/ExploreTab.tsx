@@ -3571,6 +3571,7 @@ export default function ExploreTab({
               >
                 <option value="score">Score</option>
                 <option value="salary_delta">Biggest pay raise</option>
+                <option value="published_at">Published at</option>
               </select>
             </div>
             {selfMode && (
