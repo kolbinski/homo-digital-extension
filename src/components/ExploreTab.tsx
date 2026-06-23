@@ -222,6 +222,8 @@ interface OfferCardProps {
   statusChangeCounterMax?: number | null;
   onUpgradeClick?: () => void;
   onRegisterUpgradeRetry?: (retryFn: (() => void) | null) => void;
+  upgradeCheckoutLoading?: boolean;
+  upgradeCheckoutError?: string | null;
   isCurrentPageOffer?: boolean;
   onScrollToPageOffer?: () => void;
   hideActions?: boolean;
@@ -270,6 +272,8 @@ function OfferCard({
   statusChangeCounterMax,
   onUpgradeClick,
   onRegisterUpgradeRetry,
+  upgradeCheckoutLoading = false,
+  upgradeCheckoutError,
   isCurrentPageOffer = false,
   onScrollToPageOffer,
   hideActions = false,
@@ -1536,10 +1540,21 @@ function OfferCard({
                   <button
                     type="button"
                     onClick={onUpgradeClick}
-                    className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded transition-colors"
+                    disabled={upgradeCheckoutLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Upgrade to Pro
+                    {upgradeCheckoutLoading && (
+                      <Spinner size={11} className="text-white" />
+                    )}
+                    {upgradeCheckoutLoading
+                      ? 'Checkout in progress…'
+                      : 'Upgrade to Pro'}
                   </button>
+                  {upgradeCheckoutError && (
+                    <p className="text-xs text-red-500">
+                      {upgradeCheckoutError}
+                    </p>
+                  )}
                 </div>
               )}
               {statusChangeError && (
@@ -1716,6 +1731,14 @@ function ClientAccordion({
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const upgradeRetryRef = useRef<(() => void) | null>(null);
+  const [upgradeCheckoutLoading, setUpgradeCheckoutLoading] = useState(false);
+  const [upgradeCheckoutError, setUpgradeCheckoutError] = useState<
+    string | null
+  >(null);
+  const upgradeCheckoutTabIdRef = useRef<number | null>(null);
+  const upgradeTabRemovedListenerRef = useRef<((tabId: number) => void) | null>(
+    null,
+  );
   const [profileRematchPending, setProfileRematchPending] = useState(false);
   const [autoTriggerReview, setAutoTriggerReview] = useState(false);
   const [byUrlLoading, setByUrlLoading] = useState(false);
@@ -1796,6 +1819,7 @@ function ClientAccordion({
         changes.upgrade_success.newValue !== undefined
       ) {
         void checkSubscription();
+        setUpgradeCheckoutLoading(false);
         upgradeRetryRef.current?.();
         upgradeRetryRef.current = null;
       }
@@ -1804,6 +1828,7 @@ function ClientAccordion({
         changes.upgrade_cancelled.newValue !== undefined
       ) {
         setUpgradeDrawerOpen(false);
+        setUpgradeCheckoutLoading(false);
         setScanPackageLoading(false);
       }
       if (
@@ -3233,6 +3258,47 @@ function ClientAccordion({
     }
   }
 
+  async function handleDirectUpgradeCheckout() {
+    if (upgradeTabRemovedListenerRef.current) {
+      chrome.tabs.onRemoved.removeListener(
+        upgradeTabRemovedListenerRef.current,
+      );
+      upgradeTabRemovedListenerRef.current = null;
+    }
+    setUpgradeCheckoutLoading(true);
+    setUpgradeCheckoutError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/v1/subscription/checkout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = (await res.json()) as { url: string };
+      const tab = await chrome.tabs.create({ url: data.url });
+      upgradeCheckoutTabIdRef.current = tab.id ?? null;
+
+      function onTabRemoved(tabId: number) {
+        if (tabId === upgradeCheckoutTabIdRef.current) {
+          upgradeCheckoutTabIdRef.current = null;
+          setUpgradeCheckoutLoading(false);
+          if (upgradeTabRemovedListenerRef.current) {
+            chrome.tabs.onRemoved.removeListener(
+              upgradeTabRemovedListenerRef.current,
+            );
+            upgradeTabRemovedListenerRef.current = null;
+          }
+        }
+      }
+
+      upgradeTabRemovedListenerRef.current = onTabRemoved;
+      chrome.tabs.onRemoved.addListener(onTabRemoved);
+    } catch {
+      setUpgradeCheckoutError('Something went wrong. Please try again.');
+      setUpgradeCheckoutLoading(false);
+    }
+  }
+
   async function handleBuyCvPackage() {
     setCvPackageBuyLoading(true);
     setCvPackageBuyError(null);
@@ -3763,10 +3829,12 @@ function ClientAccordion({
                     preferenceSalaries={preferenceSalaries}
                     isPageOffer={true}
                     statusChangeCounterMax={statusChangeCounterMax}
-                    onUpgradeClick={() => setUpgradeDrawerOpen(true)}
+                    onUpgradeClick={() => void handleDirectUpgradeCheckout()}
                     onRegisterUpgradeRetry={fn => {
                       upgradeRetryRef.current = fn;
                     }}
+                    upgradeCheckoutLoading={upgradeCheckoutLoading}
+                    upgradeCheckoutError={upgradeCheckoutError}
                     onStarToggle={async (id, starred) => {
                       const prev = pageOffer?.is_starred;
                       setPageOffer(p =>
