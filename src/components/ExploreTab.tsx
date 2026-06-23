@@ -3091,6 +3091,7 @@ function ClientAccordion({
     onLoadMore: () => void;
     badgeColor: string;
     setOffers: React.Dispatch<React.SetStateAction<UserOffer[]>>;
+    setCountFiltered: React.Dispatch<React.SetStateAction<number>>;
     emptyMessage?: string;
   }) {
     const {
@@ -3107,6 +3108,7 @@ function ClientAccordion({
       setOpen,
       onLoadMore,
       badgeColor,
+      setCountFiltered,
       setOffers,
       emptyMessage,
     } = opts;
@@ -3210,13 +3212,20 @@ function ClientAccordion({
                           },
                         );
                         if (res.ok) {
-                          setOffers(prev =>
-                            prev.map(o =>
-                              o.user_offer_id === id
-                                ? { ...o, is_starred: starred }
-                                : o,
-                            ),
-                          );
+                          if (onlyStarred && !starred) {
+                            setOffers(prev =>
+                              prev.filter(o => o.user_offer_id !== id),
+                            );
+                            setCountFiltered(prev => Math.max(0, prev - 1));
+                          } else {
+                            setOffers(prev =>
+                              prev.map(o =>
+                                o.user_offer_id === id
+                                  ? { ...o, is_starred: starred }
+                                  : o,
+                              ),
+                            );
+                          }
                         }
                       } catch {
                         /* ignore */
@@ -3574,6 +3583,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreApply,
                         badgeColor: 'bg-blue-100 text-blue-800',
                         setOffers: setApplyOffers,
+                        setCountFiltered: setApplyNowCountFiltered,
                         emptyMessage: selfMode
                           ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
                           : 'No offers found.',
@@ -3594,6 +3604,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreLevelUp,
                         badgeColor: 'bg-orange-100 text-orange-800',
                         setOffers: setLevelUpOffers,
+                        setCountFiltered: setLevelUpCountFiltered,
                       })}
                     {showApplied &&
                       renderSection({
@@ -3611,6 +3622,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreApplied,
                         badgeColor: 'bg-green-100 text-green-800',
                         setOffers: setAppliedOffers,
+                        setCountFiltered: setAppliedCountFiltered,
                       })}
                     {showWithdrawn &&
                       renderSection({
@@ -3628,6 +3640,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreWithdrawn,
                         badgeColor: 'bg-gray-100 text-gray-600',
                         setOffers: setWithdrawnOffers,
+                        setCountFiltered: setWithdrawnCountFiltered,
                       })}
                     {showRejected &&
                       renderSection({
@@ -3645,6 +3658,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreRejected,
                         badgeColor: 'bg-red-100 text-red-700',
                         setOffers: setRejectedOffers,
+                        setCountFiltered: setRejectedCountFiltered,
                       })}
                     {showOfferReceived &&
                       renderSection({
@@ -3662,6 +3676,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreOfferReceived,
                         badgeColor: 'bg-purple-100 text-purple-700',
                         setOffers: setOfferReceivedOffers,
+                        setCountFiltered: setOfferReceivedCountFiltered,
                       })}
                     {showAccepted &&
                       renderSection({
@@ -3679,6 +3694,7 @@ function ClientAccordion({
                         onLoadMore: handleLoadMoreAccepted,
                         badgeColor: 'bg-teal-100 text-teal-700',
                         setOffers: setAcceptedOffers,
+                        setCountFiltered: setAcceptedCountFiltered,
                       })}
                   </>
                 );
