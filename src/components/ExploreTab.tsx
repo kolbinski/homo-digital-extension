@@ -97,7 +97,7 @@ const STATUS_LABELS: Record<string, string> = {
   recruiter_rejected: 'Recruiter rejected',
   offer_received: 'Offer received',
   accepted: 'Accepted',
-  client_withdrawn: 'Client withdrawn',
+  client_withdrawn: 'Withdrawn',
 };
 
 function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
@@ -118,9 +118,10 @@ function sortOffers(offers: UserOffer[], sortBy: string): UserOffer[] {
 }
 
 const STATUS_OPTIONS = [
+  { value: 'pending_apply', label: 'Pending apply' },
   { value: 'applied', label: 'Applied' },
   { value: 'agent_withdrawn', label: 'Agent withdrawn' },
-  { value: 'client_withdrawn', label: 'Client withdrawn' },
+  { value: 'client_withdrawn', label: 'Withdrawn' },
   { value: 'offer_received', label: 'Offer received' },
   { value: 'accepted', label: 'Accepted' },
   { value: 'recruiter_rejected', label: 'Recruiter rejected' },
@@ -211,6 +212,7 @@ interface OfferCardProps {
   onRollback: (offer: UserOffer) => void;
   onError: (message: string) => void;
   onStatusChange402?: () => void;
+  onStatusChanged?: (offerId: string, newStatus: string) => void;
   onCvUpdate: (offerId: string, cvUrl: string, cvStatus: string) => void;
   onClUpdate: (offerId: string, clUrl: string, clStatus: string) => void;
   onSalaryUpdate?: (userOfferId: string, salary: OfferSalary) => void;
@@ -255,6 +257,7 @@ function OfferCard({
   onRollback,
   onError,
   onStatusChange402,
+  onStatusChanged,
   onCvUpdate,
   onClUpdate,
   onSalaryUpdate,
@@ -310,6 +313,7 @@ function OfferCard({
   const [salaryLoading, setSalaryLoading] = useState(false);
   const [salaryError, setSalaryError] = useState<string | null>(null);
   const [isStarLoading, setIsStarLoading] = useState(false);
+  const [statusChangeError, setStatusChangeError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
@@ -536,6 +540,7 @@ function OfferCard({
 
   async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
+    setStatusChangeError(null);
     onRemove(offer.user_offer_id);
     setStatusLoading(offer.user_offer_id);
     try {
@@ -560,11 +565,21 @@ function OfferCard({
         onStatusChange402?.();
       } else if (!res.ok) {
         onRollback(offer);
-        onError('Failed to update status. Please try again.');
+        if (isPageOffer) {
+          setStatusChangeError('Failed to update status. Please try again.');
+        } else {
+          onError('Failed to update status. Please try again.');
+        }
+      } else {
+        onStatusChanged?.(offer.user_offer_id, newStatus);
       }
     } catch {
       onRollback(offer);
-      onError('Failed to update status. Please try again.');
+      if (isPageOffer) {
+        setStatusChangeError('Failed to update status. Please try again.');
+      } else {
+        onError('Failed to update status. Please try again.');
+      }
     } finally {
       setStatusLoading(null);
     }
@@ -1184,8 +1199,7 @@ function OfferCard({
               </div>
             )}
           {isPageOffer &&
-            !hideActions &&
-            statusLoading !== offer.user_offer_id && (
+            !hideActions && (
               <div className="flex flex-col gap-1">
                 <div className="flex gap-2">
                   {/* CV section */}
@@ -1415,9 +1429,11 @@ function OfferCard({
           )}
 
           {isPageOffer && !hideActions && !isGenerating && !isClGenerating && (
+            <>
             <div ref={dropdownRef}>
               <button
                 type="button"
+                disabled={statusLoading === offer.user_offer_id}
                 onClick={() => {
                   if (!isDropdownOpen && dropdownRef.current) {
                     const rect = dropdownRef.current.getBoundingClientRect();
@@ -1431,17 +1447,21 @@ function OfferCard({
                   }
                   setIsDropdownOpen(v => !v);
                 }}
-                className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <span>Set status</span>
                 <span className="flex items-center gap-1">
-                  {offer.status && (
-                    <span className="text-xs opacity-70">
-                      curr.{' '}
-                      {(
-                        STATUS_LABELS[offer.status] ?? offer.status
-                      ).toLowerCase()}
-                    </span>
+                  {statusLoading === offer.user_offer_id ? (
+                    <Spinner size={12} className="text-white" />
+                  ) : (
+                    offer.status && (
+                      <span className="text-xs opacity-70">
+                        curr.{' '}
+                        {(
+                          STATUS_LABELS[offer.status] ?? offer.status
+                        ).toLowerCase()}
+                      </span>
+                    )
                   )}
                   <CaretDown
                     size={12}
@@ -1457,7 +1477,9 @@ function OfferCard({
                     className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
                   >
                     {STATUS_OPTIONS.filter(
-                      opt => !selfMode || opt.value !== 'agent_withdrawn',
+                      opt =>
+                        opt.value !== offer.status &&
+                        (!selfMode || opt.value !== 'agent_withdrawn'),
                     ).map(opt => (
                       <button
                         key={opt.value}
@@ -1465,15 +1487,26 @@ function OfferCard({
                         onClick={() => handleStatusChange(opt.value)}
                         className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                       >
-                        {selfMode && opt.value === 'client_withdrawn'
-                          ? 'Withdrawn'
-                          : opt.label}
+                        {opt.label}
                       </button>
                     ))}
                   </div>,
                   document.body,
                 )}
             </div>
+            {statusChangeError && (
+              <div className="mt-1 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
+                <span>{statusChangeError}</span>
+                <button
+                  type="button"
+                  onClick={() => setStatusChangeError(null)}
+                  className="shrink-0 text-red-400 hover:text-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            </>
           )}
         </div>
       )}
@@ -3641,10 +3674,15 @@ function ClientAccordion({
                     isOpen={true}
                     onToggle={() => {}}
                     activeTabId={activeTabId}
-                    onRemove={() => setPageOffer(null)}
+                    onRemove={() => {}}
                     onRollback={() => {}}
                     onError={setStatusError}
                     onStatusChange402={() => setStatusChangeLimitHit(true)}
+                    onStatusChanged={(_id, newStatus) =>
+                      setPageOffer(prev =>
+                        prev ? { ...prev, status: newStatus } : null,
+                      )
+                    }
                     onCvUpdate={handleCvUpdate}
                     onClUpdate={handleClUpdate}
                     onSalaryUpdate={handleSalaryUpdate}
