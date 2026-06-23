@@ -665,12 +665,17 @@ function OfferCard({
             type="button"
             onClick={e => {
               e.stopPropagation();
-              if (onStarToggle) onStarToggle(offer.user_offer_id, !offer.is_starred);
+              if (onStarToggle)
+                onStarToggle(offer.user_offer_id, !offer.is_starred);
             }}
-            className="shrink-0 text-yellow-400 hover:text-yellow-500 transition-colors leading-none"
+            className="shrink-0 text-gray-600 transition-colors leading-none"
             title={offer.is_starred ? 'Unstar' : 'Star'}
           >
-            {offer.is_starred ? <Star size={13} weight="fill" className="text-yellow-400" /> : <Star size={13} />}
+            {offer.is_starred ? (
+              <Star size={16} weight="fill" className="text-yellow-400" />
+            ) : (
+              <Star size={16} />
+            )}
           </button>
           {offer.work_model && (
             <span
@@ -1529,7 +1534,9 @@ function ClientAccordion({
   const [appliedOffers, setAppliedOffers] = useState<UserOffer[]>([]);
   const [withdrawnOffers, setWithdrawnOffers] = useState<UserOffer[]>([]);
   const [rejectedOffers, setRejectedOffers] = useState<UserOffer[]>([]);
-  const [offerReceivedOffers, setOfferReceivedOffers] = useState<UserOffer[]>([]);
+  const [offerReceivedOffers, setOfferReceivedOffers] = useState<UserOffer[]>(
+    [],
+  );
   const [acceptedOffers, setAcceptedOffers] = useState<UserOffer[]>([]);
 
   const [applyNowCount, setApplyNowCount] = useState(0);
@@ -1543,7 +1550,8 @@ function ClientAccordion({
   const [rejectedCount, setRejectedCount] = useState(0);
   const [rejectedCountFiltered, setRejectedCountFiltered] = useState(0);
   const [offerReceivedCount, setOfferReceivedCount] = useState(0);
-  const [offerReceivedCountFiltered, setOfferReceivedCountFiltered] = useState(0);
+  const [offerReceivedCountFiltered, setOfferReceivedCountFiltered] =
+    useState(0);
   const [acceptedCount, setAcceptedCount] = useState(0);
   const [acceptedCountFiltered, setAcceptedCountFiltered] = useState(0);
 
@@ -1568,7 +1576,9 @@ function ClientAccordion({
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusChangeCounter, setStatusChangeCounter] = useState<number>(0);
-  const [statusChangeCounterMax, setStatusChangeCounterMax] = useState<number | null>(null);
+  const [statusChangeCounterMax, setStatusChangeCounterMax] = useState<
+    number | null
+  >(null);
   const [statusChangeLimitHit, setStatusChangeLimitHit] = useState(false);
 
   const [pageApplyNow, setPageApplyNow] = useState(1);
@@ -1592,7 +1602,8 @@ function ClientAccordion({
   const [appliedLoadingMore, setAppliedLoadingMore] = useState(false);
   const [withdrawnLoadingMore, setWithdrawnLoadingMore] = useState(false);
   const [rejectedLoadingMore, setRejectedLoadingMore] = useState(false);
-  const [offerReceivedLoadingMore, setOfferReceivedLoadingMore] = useState(false);
+  const [offerReceivedLoadingMore, setOfferReceivedLoadingMore] =
+    useState(false);
   const [acceptedLoadingMore, setAcceptedLoadingMore] = useState(false);
 
   const loadMoreApplyInProgress = useRef(false);
@@ -1733,13 +1744,20 @@ function ClientAccordion({
         setRejectedOffers([]);
         setOfferReceivedOffers([]);
         setAcceptedOffers([]);
-        setApplyNowCount(0); setApplyNowCountFiltered(0);
-        setLevelUpCount(0); setLevelUpCountFiltered(0);
-        setAppliedCount(0); setAppliedCountFiltered(0);
-        setWithdrawnCount(0); setWithdrawnCountFiltered(0);
-        setRejectedCount(0); setRejectedCountFiltered(0);
-        setOfferReceivedCount(0); setOfferReceivedCountFiltered(0);
-        setAcceptedCount(0); setAcceptedCountFiltered(0);
+        setApplyNowCount(0);
+        setApplyNowCountFiltered(0);
+        setLevelUpCount(0);
+        setLevelUpCountFiltered(0);
+        setAppliedCount(0);
+        setAppliedCountFiltered(0);
+        setWithdrawnCount(0);
+        setWithdrawnCountFiltered(0);
+        setRejectedCount(0);
+        setRejectedCountFiltered(0);
+        setOfferReceivedCount(0);
+        setOfferReceivedCountFiltered(0);
+        setAcceptedCount(0);
+        setAcceptedCountFiltered(0);
         knownApplyCountRef.current = 0;
         knownLevelUpCountRef.current = 0;
         knownAppliedCountRef.current = 0;
@@ -1747,8 +1765,13 @@ function ClientAccordion({
         knownRejectedCountRef.current = 0;
         knownOfferReceivedCountRef.current = 0;
         knownAcceptedCountRef.current = 0;
-        setPageApplyNow(1); setPageLevelUp(1); setPageApplied(1);
-        setPageWithdrawn(1); setPageRejected(1); setPageOfferReceived(1); setPageAccepted(1);
+        setPageApplyNow(1);
+        setPageLevelUp(1);
+        setPageApplied(1);
+        setPageWithdrawn(1);
+        setPageRejected(1);
+        setPageOfferReceived(1);
+        setPageAccepted(1);
       }
       if (
         'profile_rematch_purchased' in changes &&
@@ -1788,13 +1811,20 @@ function ClientAccordion({
             setRejectedOffers([]);
             setOfferReceivedOffers([]);
             setAcceptedOffers([]);
-            setApplyNowCount(0); setApplyNowCountFiltered(0);
-            setLevelUpCount(0); setLevelUpCountFiltered(0);
-            setAppliedCount(0); setAppliedCountFiltered(0);
-            setWithdrawnCount(0); setWithdrawnCountFiltered(0);
-            setRejectedCount(0); setRejectedCountFiltered(0);
-            setOfferReceivedCount(0); setOfferReceivedCountFiltered(0);
-            setAcceptedCount(0); setAcceptedCountFiltered(0);
+            setApplyNowCount(0);
+            setApplyNowCountFiltered(0);
+            setLevelUpCount(0);
+            setLevelUpCountFiltered(0);
+            setAppliedCount(0);
+            setAppliedCountFiltered(0);
+            setWithdrawnCount(0);
+            setWithdrawnCountFiltered(0);
+            setRejectedCount(0);
+            setRejectedCountFiltered(0);
+            setOfferReceivedCount(0);
+            setOfferReceivedCountFiltered(0);
+            setAcceptedCount(0);
+            setAcceptedCountFiltered(0);
             knownApplyCountRef.current = 0;
             knownLevelUpCountRef.current = 0;
             knownAppliedCountRef.current = 0;
@@ -1802,8 +1832,13 @@ function ClientAccordion({
             knownRejectedCountRef.current = 0;
             knownOfferReceivedCountRef.current = 0;
             knownAcceptedCountRef.current = 0;
-            setPageApplyNow(1); setPageLevelUp(1); setPageApplied(1);
-            setPageWithdrawn(1); setPageRejected(1); setPageOfferReceived(1); setPageAccepted(1);
+            setPageApplyNow(1);
+            setPageLevelUp(1);
+            setPageApplied(1);
+            setPageWithdrawn(1);
+            setPageRejected(1);
+            setPageOfferReceived(1);
+            setPageAccepted(1);
           } catch {
             // ignore
           }
@@ -1884,14 +1919,31 @@ function ClientAccordion({
   useEffect(() => {
     if (!currentUrl) return;
     if (manualPageOfferRef.current) return;
-    const allOffers = [...applyOffers, ...levelUpOffers, ...appliedOffers, ...withdrawnOffers, ...rejectedOffers, ...offerReceivedOffers, ...acceptedOffers];
+    const allOffers = [
+      ...applyOffers,
+      ...levelUpOffers,
+      ...appliedOffers,
+      ...withdrawnOffers,
+      ...rejectedOffers,
+      ...offerReceivedOffers,
+      ...acceptedOffers,
+    ];
     const match = allOffers.find(
       o => o.offer_url && currentUrl.startsWith(o.offer_url.split('?')[0]),
     );
     if (match && match.user_offer_id !== pageOfferIdRef.current) {
       setExpandedOfferId(match.user_offer_id);
     }
-  }, [currentUrl, applyOffers, levelUpOffers, appliedOffers, withdrawnOffers, rejectedOffers, offerReceivedOffers, acceptedOffers]);
+  }, [
+    currentUrl,
+    applyOffers,
+    levelUpOffers,
+    appliedOffers,
+    withdrawnOffers,
+    rejectedOffers,
+    offerReceivedOffers,
+    acceptedOffers,
+  ]);
 
   useEffect(() => {
     if (!currentUrl || hasLoaded) return;
@@ -2001,12 +2053,27 @@ function ClientAccordion({
   useEffect(() => {
     setHasLoaded(false);
     setExpandedOfferId(null);
-    setPageApplyNow(1); setPageLevelUp(1); setPageApplied(1);
-    setPageWithdrawn(1); setPageRejected(1); setPageOfferReceived(1); setPageAccepted(1);
-    setApplyHasMore(false); setLevelUpHasMore(false); setAppliedHasMore(false);
-    setWithdrawnHasMore(false); setRejectedHasMore(false); setOfferReceivedHasMore(false); setAcceptedHasMore(false);
-    setApplyOffers([]); setLevelUpOffers([]); setAppliedOffers([]);
-    setWithdrawnOffers([]); setRejectedOffers([]); setOfferReceivedOffers([]); setAcceptedOffers([]);
+    setPageApplyNow(1);
+    setPageLevelUp(1);
+    setPageApplied(1);
+    setPageWithdrawn(1);
+    setPageRejected(1);
+    setPageOfferReceived(1);
+    setPageAccepted(1);
+    setApplyHasMore(false);
+    setLevelUpHasMore(false);
+    setAppliedHasMore(false);
+    setWithdrawnHasMore(false);
+    setRejectedHasMore(false);
+    setOfferReceivedHasMore(false);
+    setAcceptedHasMore(false);
+    setApplyOffers([]);
+    setLevelUpOffers([]);
+    setAppliedOffers([]);
+    setWithdrawnOffers([]);
+    setRejectedOffers([]);
+    setOfferReceivedOffers([]);
+    setAcceptedOffers([]);
     if (sortBy === 'salary_delta' && !isPro) return;
     let cancelled = false;
     async function refetchOffers() {
@@ -2022,7 +2089,16 @@ function ClientAccordion({
     return () => {
       cancelled = true;
     };
-  }, [statusFilter, sourceFilter, minScore, sortBy, cvGenerated, clGenerated, withSalary, onlyStarred]);
+  }, [
+    statusFilter,
+    sourceFilter,
+    minScore,
+    sortBy,
+    cvGenerated,
+    clGenerated,
+    withSalary,
+    onlyStarred,
+  ]);
 
   interface SectionBucket {
     count: number;
@@ -2042,7 +2118,12 @@ function ClientAccordion({
     status_change_counter?: number;
     status_change_counter_max?: number | null;
   }
-  const EMPTY_BUCKET: SectionBucket = { count: 0, count_after_filters: 0, offers: [], has_more: false };
+  const EMPTY_BUCKET: SectionBucket = {
+    count: 0,
+    count_after_filters: 0,
+    offers: [],
+    has_more: false,
+  };
   const EMPTY_ALL: AllOffersResponse = {
     apply_now: EMPTY_BUCKET,
     level_up: EMPTY_BUCKET,
@@ -2064,17 +2145,23 @@ function ClientAccordion({
     knownNewSkillsCount?: number;
   }
 
-  async function fetchAllOffers(pages: FetchAllPages = {}): Promise<AllOffersResponse> {
+  async function fetchAllOffers(
+    pages: FetchAllPages = {},
+  ): Promise<AllOffersResponse> {
     const token = await getToken();
     if (!token) return EMPTY_ALL;
-    const apiStatus = statusFilter === 'pending_apply' ? 'pending_apply|ai_rejected' : statusFilter;
+    const apiStatus =
+      statusFilter === 'pending_apply'
+        ? 'pending_apply|ai_rejected'
+        : statusFilter;
     const params = new URLSearchParams({ status: apiStatus });
     if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
     params.append('min_score', String(minScore));
     if (cvGenerated) params.append('generated_cv', 'true');
     if (clGenerated) params.append('generated_cl', 'true');
-    if (!(sortBy === 'salary_delta' && !isPro)) params.append('sort_by', sortBy);
+    if (!(sortBy === 'salary_delta' && !isPro))
+      params.append('sort_by', sortBy);
     if (withSalary) params.append('with_salary', 'true');
     if (onlyStarred) params.append('is_starred', 'true');
     params.append('page_size', String(pageSize));
@@ -2088,12 +2175,27 @@ function ClientAccordion({
     params.append('known_apply_count', String(knownApplyCountRef.current));
     params.append('known_level_up_count', String(knownLevelUpCountRef.current));
     params.append('known_applied_count', String(knownAppliedCountRef.current));
-    params.append('known_withdrawn_count', String(knownWithdrawnCountRef.current));
-    params.append('known_recruiter_rejected_count', String(knownRejectedCountRef.current));
-    params.append('known_offer_received_count', String(knownOfferReceivedCountRef.current));
-    params.append('known_accepted_count', String(knownAcceptedCountRef.current));
+    params.append(
+      'known_withdrawn_count',
+      String(knownWithdrawnCountRef.current),
+    );
+    params.append(
+      'known_recruiter_rejected_count',
+      String(knownRejectedCountRef.current),
+    );
+    params.append(
+      'known_offer_received_count',
+      String(knownOfferReceivedCountRef.current),
+    );
+    params.append(
+      'known_accepted_count',
+      String(knownAcceptedCountRef.current),
+    );
     if (pages.knownNewSkillsCount !== undefined)
-      params.append('known_new_skills_count', String(pages.knownNewSkillsCount));
+      params.append(
+        'known_new_skills_count',
+        String(pages.knownNewSkillsCount),
+      );
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -2191,10 +2293,23 @@ function ClientAccordion({
 
   const hasOffersRef = useRef(false);
   useEffect(() => {
-    hasOffersRef.current = applyOffers.length > 0 || levelUpOffers.length > 0 ||
-      appliedOffers.length > 0 || withdrawnOffers.length > 0 ||
-      rejectedOffers.length > 0 || offerReceivedOffers.length > 0 || acceptedOffers.length > 0;
-  }, [applyOffers, levelUpOffers, appliedOffers, withdrawnOffers, rejectedOffers, offerReceivedOffers, acceptedOffers]);
+    hasOffersRef.current =
+      applyOffers.length > 0 ||
+      levelUpOffers.length > 0 ||
+      appliedOffers.length > 0 ||
+      withdrawnOffers.length > 0 ||
+      rejectedOffers.length > 0 ||
+      offerReceivedOffers.length > 0 ||
+      acceptedOffers.length > 0;
+  }, [
+    applyOffers,
+    levelUpOffers,
+    appliedOffers,
+    withdrawnOffers,
+    rejectedOffers,
+    offerReceivedOffers,
+    acceptedOffers,
+  ]);
 
   async function handleRefresh(sectionKey?: string) {
     setIsRefreshing(true);
@@ -2206,15 +2321,30 @@ function ClientAccordion({
     if (all || sectionKey === 'rejected') setIsLoadingRejected(true);
     if (all || sectionKey === 'offer_received') setIsLoadingOfferReceived(true);
     if (all || sectionKey === 'accepted') setIsLoadingAccepted(true);
-    setHasNewApply(false); setHasNewLevelUp(false); setHasNewApplied(false);
-    setHasNewWithdrawn(false); setHasNewRejected(false); setHasNewOfferReceived(false); setHasNewAccepted(false);
+    setHasNewApply(false);
+    setHasNewLevelUp(false);
+    setHasNewApplied(false);
+    setHasNewWithdrawn(false);
+    setHasNewRejected(false);
+    setHasNewOfferReceived(false);
+    setHasNewAccepted(false);
     setExpandedOfferId(null);
-    setPageApplyNow(1); setPageLevelUp(1); setPageApplied(1);
-    setPageWithdrawn(1); setPageRejected(1); setPageOfferReceived(1); setPageAccepted(1);
+    setPageApplyNow(1);
+    setPageLevelUp(1);
+    setPageApplied(1);
+    setPageWithdrawn(1);
+    setPageRejected(1);
+    setPageOfferReceived(1);
+    setPageAccepted(1);
     const result = await fetchAllOffers();
     applyAllOffersResponse(result);
-    setIsLoadingApplyNow(false); setIsLoadingLevelUp(false); setIsLoadingApplied(false);
-    setIsLoadingWithdrawn(false); setIsLoadingRejected(false); setIsLoadingOfferReceived(false); setIsLoadingAccepted(false);
+    setIsLoadingApplyNow(false);
+    setIsLoadingLevelUp(false);
+    setIsLoadingApplied(false);
+    setIsLoadingWithdrawn(false);
+    setIsLoadingRejected(false);
+    setIsLoadingOfferReceived(false);
+    setIsLoadingAccepted(false);
     setHasLoaded(true);
     setIsRefreshing(false);
   }
@@ -2244,11 +2374,22 @@ function ClientAccordion({
     setApplyLoadingMore(true);
     try {
       const next = pageApplyNow + 1;
-      const result = await fetchAllOffers({ pageApplyNow: next, pageLevelUp: 1, pageApplied: 1, pageWithdrawn: 1, pageRejected: 1, pageOfferReceived: 1, pageAccepted: 1 });
+      const result = await fetchAllOffers({
+        pageApplyNow: next,
+        pageLevelUp: 1,
+        pageApplied: 1,
+        pageWithdrawn: 1,
+        pageRejected: 1,
+        pageOfferReceived: 1,
+        pageAccepted: 1,
+      });
       setApplyOffers(prev => [...prev, ...result.apply_now.offers]);
       setApplyHasMore(result.apply_now.has_more);
       setPageApplyNow(next);
-    } finally { setApplyLoadingMore(false); loadMoreApplyInProgress.current = false; }
+    } finally {
+      setApplyLoadingMore(false);
+      loadMoreApplyInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreLevelUp() {
@@ -2257,11 +2398,22 @@ function ClientAccordion({
     setLevelUpLoadingMore(true);
     try {
       const next = pageLevelUp + 1;
-      const result = await fetchAllOffers({ pageApplyNow: 1, pageLevelUp: next, pageApplied: 1, pageWithdrawn: 1, pageRejected: 1, pageOfferReceived: 1, pageAccepted: 1 });
+      const result = await fetchAllOffers({
+        pageApplyNow: 1,
+        pageLevelUp: next,
+        pageApplied: 1,
+        pageWithdrawn: 1,
+        pageRejected: 1,
+        pageOfferReceived: 1,
+        pageAccepted: 1,
+      });
       setLevelUpOffers(prev => [...prev, ...result.level_up.offers]);
       setLevelUpHasMore(result.level_up.has_more);
       setPageLevelUp(next);
-    } finally { setLevelUpLoadingMore(false); loadMoreLevelUpInProgress.current = false; }
+    } finally {
+      setLevelUpLoadingMore(false);
+      loadMoreLevelUpInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreApplied() {
@@ -2270,11 +2422,22 @@ function ClientAccordion({
     setAppliedLoadingMore(true);
     try {
       const next = pageApplied + 1;
-      const result = await fetchAllOffers({ pageApplyNow: 1, pageLevelUp: 1, pageApplied: next, pageWithdrawn: 1, pageRejected: 1, pageOfferReceived: 1, pageAccepted: 1 });
+      const result = await fetchAllOffers({
+        pageApplyNow: 1,
+        pageLevelUp: 1,
+        pageApplied: next,
+        pageWithdrawn: 1,
+        pageRejected: 1,
+        pageOfferReceived: 1,
+        pageAccepted: 1,
+      });
       setAppliedOffers(prev => [...prev, ...result.applied.offers]);
       setAppliedHasMore(result.applied.has_more);
       setPageApplied(next);
-    } finally { setAppliedLoadingMore(false); loadMoreAppliedInProgress.current = false; }
+    } finally {
+      setAppliedLoadingMore(false);
+      loadMoreAppliedInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreWithdrawn() {
@@ -2283,11 +2446,22 @@ function ClientAccordion({
     setWithdrawnLoadingMore(true);
     try {
       const next = pageWithdrawn + 1;
-      const result = await fetchAllOffers({ pageApplyNow: 1, pageLevelUp: 1, pageApplied: 1, pageWithdrawn: next, pageRejected: 1, pageOfferReceived: 1, pageAccepted: 1 });
+      const result = await fetchAllOffers({
+        pageApplyNow: 1,
+        pageLevelUp: 1,
+        pageApplied: 1,
+        pageWithdrawn: next,
+        pageRejected: 1,
+        pageOfferReceived: 1,
+        pageAccepted: 1,
+      });
       setWithdrawnOffers(prev => [...prev, ...result.client_withdrawn.offers]);
       setWithdrawnHasMore(result.client_withdrawn.has_more);
       setPageWithdrawn(next);
-    } finally { setWithdrawnLoadingMore(false); loadMoreWithdrawnInProgress.current = false; }
+    } finally {
+      setWithdrawnLoadingMore(false);
+      loadMoreWithdrawnInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreRejected() {
@@ -2296,11 +2470,22 @@ function ClientAccordion({
     setRejectedLoadingMore(true);
     try {
       const next = pageRejected + 1;
-      const result = await fetchAllOffers({ pageApplyNow: 1, pageLevelUp: 1, pageApplied: 1, pageWithdrawn: 1, pageRejected: next, pageOfferReceived: 1, pageAccepted: 1 });
+      const result = await fetchAllOffers({
+        pageApplyNow: 1,
+        pageLevelUp: 1,
+        pageApplied: 1,
+        pageWithdrawn: 1,
+        pageRejected: next,
+        pageOfferReceived: 1,
+        pageAccepted: 1,
+      });
       setRejectedOffers(prev => [...prev, ...result.recruiter_rejected.offers]);
       setRejectedHasMore(result.recruiter_rejected.has_more);
       setPageRejected(next);
-    } finally { setRejectedLoadingMore(false); loadMoreRejectedInProgress.current = false; }
+    } finally {
+      setRejectedLoadingMore(false);
+      loadMoreRejectedInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreOfferReceived() {
@@ -2309,11 +2494,25 @@ function ClientAccordion({
     setOfferReceivedLoadingMore(true);
     try {
       const next = pageOfferReceived + 1;
-      const result = await fetchAllOffers({ pageApplyNow: 1, pageLevelUp: 1, pageApplied: 1, pageWithdrawn: 1, pageRejected: 1, pageOfferReceived: next, pageAccepted: 1 });
-      setOfferReceivedOffers(prev => [...prev, ...result.offer_received.offers]);
+      const result = await fetchAllOffers({
+        pageApplyNow: 1,
+        pageLevelUp: 1,
+        pageApplied: 1,
+        pageWithdrawn: 1,
+        pageRejected: 1,
+        pageOfferReceived: next,
+        pageAccepted: 1,
+      });
+      setOfferReceivedOffers(prev => [
+        ...prev,
+        ...result.offer_received.offers,
+      ]);
       setOfferReceivedHasMore(result.offer_received.has_more);
       setPageOfferReceived(next);
-    } finally { setOfferReceivedLoadingMore(false); loadMoreOfferReceivedInProgress.current = false; }
+    } finally {
+      setOfferReceivedLoadingMore(false);
+      loadMoreOfferReceivedInProgress.current = false;
+    }
   }
 
   async function handleLoadMoreAccepted() {
@@ -2322,11 +2521,22 @@ function ClientAccordion({
     setAcceptedLoadingMore(true);
     try {
       const next = pageAccepted + 1;
-      const result = await fetchAllOffers({ pageApplyNow: 1, pageLevelUp: 1, pageApplied: 1, pageWithdrawn: 1, pageRejected: 1, pageOfferReceived: 1, pageAccepted: next });
+      const result = await fetchAllOffers({
+        pageApplyNow: 1,
+        pageLevelUp: 1,
+        pageApplied: 1,
+        pageWithdrawn: 1,
+        pageRejected: 1,
+        pageOfferReceived: 1,
+        pageAccepted: next,
+      });
       setAcceptedOffers(prev => [...prev, ...result.accepted.offers]);
       setAcceptedHasMore(result.accepted.has_more);
       setPageAccepted(next);
-    } finally { setAcceptedLoadingMore(false); loadMoreAcceptedInProgress.current = false; }
+    } finally {
+      setAcceptedLoadingMore(false);
+      loadMoreAcceptedInProgress.current = false;
+    }
   }
 
   function closeWizard() {
@@ -2418,6 +2628,8 @@ function ClientAccordion({
   pollSortByRef.current = sortBy;
   const pollWithSalaryRef = useRef(withSalary);
   pollWithSalaryRef.current = withSalary;
+  const pollOnlyStarredRef = useRef(onlyStarred);
+  pollOnlyStarredRef.current = onlyStarred;
   const pollPageSizeRef = useRef(pageSize);
   pollPageSizeRef.current = pageSize;
   const pollPageApplyNowRef = useRef(pageApplyNow);
@@ -2453,9 +2665,10 @@ function ClientAccordion({
         // Build request from refs so polling always uses current param values
         const pollToken = await getToken();
         if (!pollToken) return;
-        const pollApiStatus = pollStatusRef.current === 'pending_apply'
-          ? 'pending_apply|ai_rejected'
-          : pollStatusRef.current;
+        const pollApiStatus =
+          pollStatusRef.current === 'pending_apply'
+            ? 'pending_apply|ai_rejected'
+            : pollStatusRef.current;
         const pollParams = new URLSearchParams({ status: pollApiStatus });
         if (!selfMode) pollParams.append('client_id', client.id);
         if (sourceFilter !== 'all') pollParams.append('source', sourceFilter);
@@ -2465,30 +2678,69 @@ function ClientAccordion({
         if (!(pollSortByRef.current === 'salary_delta' && !isPro))
           pollParams.append('sort_by', pollSortByRef.current);
         if (pollWithSalaryRef.current) pollParams.append('with_salary', 'true');
-        if (onlyStarred) pollParams.append('is_starred', 'true');
+        if (pollOnlyStarredRef.current) pollParams.append('is_starred', 'true');
         pollParams.append('page_size', String(pollPageSizeRef.current));
-        pollParams.append('page_apply_now', String(pollPageApplyNowRef.current));
+        pollParams.append(
+          'page_apply_now',
+          String(pollPageApplyNowRef.current),
+        );
         pollParams.append('page_level_up', String(pollPageLevelUpRef.current));
         pollParams.append('page_applied', String(pollPageAppliedRef.current));
-        pollParams.append('page_client_withdrawn', String(pollPageWithdrawnRef.current));
-        pollParams.append('page_recruiter_rejected', String(pollPageRejectedRef.current));
-        pollParams.append('page_offer_received', String(pollPageOfferReceivedRef.current));
+        pollParams.append(
+          'page_client_withdrawn',
+          String(pollPageWithdrawnRef.current),
+        );
+        pollParams.append(
+          'page_recruiter_rejected',
+          String(pollPageRejectedRef.current),
+        );
+        pollParams.append(
+          'page_offer_received',
+          String(pollPageOfferReceivedRef.current),
+        );
         pollParams.append('page_accepted', String(pollPageAcceptedRef.current));
-        pollParams.append('known_apply_count', String(knownApplyCountRef.current));
-        pollParams.append('known_level_up_count', String(knownLevelUpCountRef.current));
-        pollParams.append('known_applied_count', String(knownAppliedCountRef.current));
-        pollParams.append('known_withdrawn_count', String(knownWithdrawnCountRef.current));
-        pollParams.append('known_recruiter_rejected_count', String(knownRejectedCountRef.current));
-        pollParams.append('known_offer_received_count', String(knownOfferReceivedCountRef.current));
-        pollParams.append('known_accepted_count', String(knownAcceptedCountRef.current));
+        pollParams.append(
+          'known_apply_count',
+          String(knownApplyCountRef.current),
+        );
+        pollParams.append(
+          'known_level_up_count',
+          String(knownLevelUpCountRef.current),
+        );
+        pollParams.append(
+          'known_applied_count',
+          String(knownAppliedCountRef.current),
+        );
+        pollParams.append(
+          'known_withdrawn_count',
+          String(knownWithdrawnCountRef.current),
+        );
+        pollParams.append(
+          'known_recruiter_rejected_count',
+          String(knownRejectedCountRef.current),
+        );
+        pollParams.append(
+          'known_offer_received_count',
+          String(knownOfferReceivedCountRef.current),
+        );
+        pollParams.append(
+          'known_accepted_count',
+          String(knownAcceptedCountRef.current),
+        );
         if (knownNewSkillsCountRef.current !== null)
-          pollParams.append('known_new_skills_count', String(knownNewSkillsCountRef.current));
+          pollParams.append(
+            'known_new_skills_count',
+            String(knownNewSkillsCountRef.current),
+          );
 
         let polled: AllOffersResponse;
         try {
-          const pollRes = await fetch(`${API_BASE_URL}/v1/user-offers?${pollParams}`, {
-            headers: { Authorization: `Bearer ${pollToken}` },
-          });
+          const pollRes = await fetch(
+            `${API_BASE_URL}/v1/user-offers?${pollParams}`,
+            {
+              headers: { Authorization: `Bearer ${pollToken}` },
+            },
+          );
           if (!pollRes.ok) return;
           const pollRaw = (await pollRes.json()) as Partial<AllOffersResponse>;
           polled = {
@@ -2501,7 +2753,9 @@ function ClientAccordion({
             accepted: pollRaw.accepted ?? EMPTY_BUCKET,
             new_skills_count: pollRaw.new_skills_count,
           };
-        } catch { return; }
+        } catch {
+          return;
+        }
 
         if (
           polled.new_skills_count !== undefined &&
@@ -2517,9 +2771,12 @@ function ClientAccordion({
         if (polled.apply_now.count !== oldApply) setHasNewApply(true);
         if (polled.level_up.count !== oldLevelUp) setHasNewLevelUp(true);
         if (polled.applied.count !== oldApplied) setHasNewApplied(true);
-        if (polled.client_withdrawn.count !== oldWithdrawn) setHasNewWithdrawn(true);
-        if (polled.recruiter_rejected.count !== oldRejected) setHasNewRejected(true);
-        if (polled.offer_received.count !== oldOfferReceived) setHasNewOfferReceived(true);
+        if (polled.client_withdrawn.count !== oldWithdrawn)
+          setHasNewWithdrawn(true);
+        if (polled.recruiter_rejected.count !== oldRejected)
+          setHasNewRejected(true);
+        if (polled.offer_received.count !== oldOfferReceived)
+          setHasNewOfferReceived(true);
         if (polled.accepted.count !== oldAccepted) setHasNewAccepted(true);
 
         // Update counts and known refs (does not reset offer arrays or pages)
@@ -2544,7 +2801,9 @@ function ClientAccordion({
         knownRejectedCountRef.current = polled.recruiter_rejected.count;
 
         setOfferReceivedCount(polled.offer_received.count);
-        setOfferReceivedCountFiltered(polled.offer_received.count_after_filters);
+        setOfferReceivedCountFiltered(
+          polled.offer_received.count_after_filters,
+        );
         knownOfferReceivedCountRef.current = polled.offer_received.count;
 
         setAcceptedCount(polled.accepted.count);
@@ -2579,7 +2838,9 @@ function ClientAccordion({
   function handleCvUpdate(offerId: string, cvUrl: string, cvStatus: string) {
     const patch = (offers: UserOffer[]) =>
       offers.map(o =>
-        o.user_offer_id === offerId ? { ...o, cv_url: cvUrl, cv_status: cvStatus } : o,
+        o.user_offer_id === offerId
+          ? { ...o, cv_url: cvUrl, cv_status: cvStatus }
+          : o,
       );
     setApplyOffers(patch);
     setLevelUpOffers(patch);
@@ -2593,7 +2854,9 @@ function ClientAccordion({
   function handleClUpdate(offerId: string, clUrl: string, clStatus: string) {
     const patch = (offers: UserOffer[]) =>
       offers.map(o =>
-        o.user_offer_id === offerId ? { ...o, cl_url: clUrl, cl_status: clStatus } : o,
+        o.user_offer_id === offerId
+          ? { ...o, cl_url: clUrl, cl_status: clStatus }
+          : o,
       );
     setApplyOffers(patch);
     setLevelUpOffers(patch);
@@ -2821,7 +3084,23 @@ function ClientAccordion({
     setOffers: React.Dispatch<React.SetStateAction<UserOffer[]>>;
     emptyMessage?: string;
   }) {
-    const { title, sectionKey, offers, count, countFiltered, hasMore, loadingMore, isOpen: sectionOpen, hasNew, isLoadingSection, setOpen, onLoadMore, badgeColor, setOffers, emptyMessage } = opts;
+    const {
+      title,
+      sectionKey,
+      offers,
+      count,
+      countFiltered,
+      hasMore,
+      loadingMore,
+      isOpen: sectionOpen,
+      hasNew,
+      isLoadingSection,
+      setOpen,
+      onLoadMore,
+      badgeColor,
+      setOffers,
+      emptyMessage,
+    } = opts;
     return (
       <div className="border-b border-gray-100 last:border-b-0">
         <button
@@ -2833,7 +3112,9 @@ function ClientAccordion({
             <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
               {title}
             </span>
-            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${badgeColor}`}>
+            <span
+              className={`text-xs font-medium px-1.5 py-0.5 rounded ${badgeColor}`}
+            >
               {countFiltered}/{count}
             </span>
           </div>
@@ -2885,7 +3166,9 @@ function ClientAccordion({
                     isOpen={expandedOfferId === offer.user_offer_id}
                     onToggle={() =>
                       setExpandedOfferId(prev =>
-                        prev === offer.user_offer_id ? null : offer.user_offer_id,
+                        prev === offer.user_offer_id
+                          ? null
+                          : offer.user_offer_id,
                       )
                     }
                     onShowOffer={
@@ -2894,7 +3177,11 @@ function ClientAccordion({
                         : undefined
                     }
                     activeTabId={activeTabId}
-                    onRemove={id => setOffers(prev => prev.filter(o => o.user_offer_id !== id))}
+                    onRemove={id =>
+                      setOffers(prev =>
+                        prev.filter(o => o.user_offer_id !== id),
+                      )
+                    }
                     onRollback={o => setOffers(prev => [...prev, o])}
                     onError={setStatusError}
                     onStatusChange402={() => setStatusChangeLimitHit(true)}
@@ -2904,19 +3191,34 @@ function ClientAccordion({
                     onStarToggle={async (id, starred) => {
                       try {
                         const token = await getToken();
-                        const res = await fetch(`${API_BASE_URL}/v1/user-offers/${id}/star`, {
-                          method: 'PATCH',
-                          headers: token ? { Authorization: `Bearer ${token}` } : {},
-                        });
+                        const res = await fetch(
+                          `${API_BASE_URL}/v1/user-offers/${id}/star`,
+                          {
+                            method: 'PATCH',
+                            headers: token
+                              ? { Authorization: `Bearer ${token}` }
+                              : {},
+                          },
+                        );
                         if (res.ok) {
-                          setOffers(prev => prev.map(o => o.user_offer_id === id ? { ...o, is_starred: starred } : o));
+                          setOffers(prev =>
+                            prev.map(o =>
+                              o.user_offer_id === id
+                                ? { ...o, is_starred: starred }
+                                : o,
+                            ),
+                          );
                         }
-                      } catch { /* ignore */ }
+                      } catch {
+                        /* ignore */
+                      }
                     }}
                     candidateSkills={candidateSkills}
                     isOfferLoading={isLoading}
                     selfMode={selfMode}
-                    isCurrentPageOffer={offer.user_offer_id === pageOffer?.user_offer_id}
+                    isCurrentPageOffer={
+                      offer.user_offer_id === pageOffer?.user_offer_id
+                    }
                     onScrollToPageOffer={handleScrollToPageOffer}
                     onCvLimitReached={() => void handleBuyCvPackage()}
                     onClLimitReached={() => void handleBuyClPackage()}
@@ -2925,9 +3227,13 @@ function ClientAccordion({
                     clPackageBuyLoading={clPackageBuyLoading}
                     clPackageBuyError={clPackageBuyError}
                     cvPackageAmount={generalSettings?.cv_package_amount}
-                    cvPackagePrice={generalSettings?.cv_package_price?.formatted}
+                    cvPackagePrice={
+                      generalSettings?.cv_package_price?.formatted
+                    }
                     clPackageAmount={generalSettings?.cl_package_amount}
-                    clPackagePrice={generalSettings?.cl_package_price?.formatted}
+                    clPackagePrice={
+                      generalSettings?.cl_package_price?.formatted
+                    }
                     preferenceSalaries={preferenceSalaries}
                   />
                 ))}
@@ -2939,7 +3245,9 @@ function ClientAccordion({
                       disabled={loadingMore}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white text-gray-600 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                     >
-                      {loadingMore && <Spinner size={11} className="text-gray-500" />}
+                      {loadingMore && (
+                        <Spinner size={11} className="text-gray-500" />
+                      )}
                       {loadingMore ? 'Loading…' : 'Show more'}
                     </button>
                   </div>
@@ -3061,7 +3369,9 @@ function ClientAccordion({
               </button>
             </div>
           )}
-          {(statusChangeLimitHit || (statusChangeCounterMax !== null && statusChangeCounter > statusChangeCounterMax)) && (
+          {(statusChangeLimitHit ||
+            (statusChangeCounterMax !== null &&
+              statusChangeCounter > statusChangeCounterMax)) && (
             <PlanLimitBanner
               onButtonClick={() => setUpgradeDrawerOpen(true)}
               buttonText="Upgrade to Pro"
@@ -3069,73 +3379,74 @@ function ClientAccordion({
               onClose={() => setStatusChangeLimitHit(false)}
             >
               <p className="text-xs text-gray-500">
-                You've used all {statusChangeCounterMax} free status changes. Upgrade to Pro to continue.
+                You've used all {statusChangeCounterMax} free status changes.
+                Upgrade to Pro to continue.
               </p>
             </PlanLimitBanner>
           )}
           <>
-              {/* Salary delta upsell */}
-              {showSalaryDeltaBanner && !isPro && (
-                <PlanLimitBanner
-                  onButtonClick={() => setUpgradeDrawerOpen(true)}
-                  buttonText="Upgrade to Pro"
-                  closable
-                  onClose={() => setShowSalaryDeltaBanner(false)}
-                  withMX={false}
-                >
-                  <p className="text-xs text-gray-500">
-                    Sorting by biggest pay raise is not available in Free plan.
-                  </p>
-                </PlanLimitBanner>
-              )}
-              {/* Scan box */}
-              {scanLimitReached ? (
-                <PlanLimitBanner
-                  onButtonClick={() => void handleBuyScanPackage()}
-                  buttonText={`Buy ${generalSettings?.package_page_scans_amount ?? '...'} scans for ${generalSettings?.scan_package_price?.formatted ?? '...'}`}
-                  isLoading={scanPackageLoading}
-                  errorMessage={scanPackageError}
-                >
-                  <p className="text-xs text-gray-500">
-                    You've reached your scan limit.
-                  </p>
-                </PlanLimitBanner>
-              ) : (
-                !pageOffer && (
-                  <div className="my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center">
-                    {byUrlLoading ? (
-                      <Spinner size={16} className="text-gray-400" />
-                    ) : (
-                      <>
-                        <p className="text-xs font-medium text-gray-700">
-                          Scan this page for a job offer
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Open any job posting and click Scan to instantly match
-                          it with your profile.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => void handleScanPage()}
-                          disabled={isScanning}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isScanning && (
-                            <Spinner size={12} className="text-white" />
-                          )}
-                          {isScanning ? 'Scanning...' : 'Scan this page'}
-                        </button>
-                        {scanMessage && (
-                          <p className="text-xs text-gray-500">{scanMessage}</p>
+            {/* Salary delta upsell */}
+            {showSalaryDeltaBanner && !isPro && (
+              <PlanLimitBanner
+                onButtonClick={() => setUpgradeDrawerOpen(true)}
+                buttonText="Upgrade to Pro"
+                closable
+                onClose={() => setShowSalaryDeltaBanner(false)}
+                withMX={false}
+              >
+                <p className="text-xs text-gray-500">
+                  Sorting by biggest pay raise is not available in Free plan.
+                </p>
+              </PlanLimitBanner>
+            )}
+            {/* Scan box */}
+            {scanLimitReached ? (
+              <PlanLimitBanner
+                onButtonClick={() => void handleBuyScanPackage()}
+                buttonText={`Buy ${generalSettings?.package_page_scans_amount ?? '...'} scans for ${generalSettings?.scan_package_price?.formatted ?? '...'}`}
+                isLoading={scanPackageLoading}
+                errorMessage={scanPackageError}
+              >
+                <p className="text-xs text-gray-500">
+                  You've reached your scan limit.
+                </p>
+              </PlanLimitBanner>
+            ) : (
+              !pageOffer && (
+                <div className="my-2 px-4 py-4 rounded-md border border-gray-200 bg-white flex flex-col items-center gap-2 text-center">
+                  {byUrlLoading ? (
+                    <Spinner size={16} className="text-gray-400" />
+                  ) : (
+                    <>
+                      <p className="text-xs font-medium text-gray-700">
+                        Scan this page for a job offer
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Open any job posting and click Scan to instantly match
+                        it with your profile.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void handleScanPage()}
+                        disabled={isScanning}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isScanning && (
+                          <Spinner size={12} className="text-white" />
                         )}
-                        {scanError && (
-                          <p className="text-xs text-red-500">{scanError}</p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )
-              )}
+                        {isScanning ? 'Scanning...' : 'Scan this page'}
+                      </button>
+                      {scanMessage && (
+                        <p className="text-xs text-gray-500">{scanMessage}</p>
+                      )}
+                      {scanError && (
+                        <p className="text-xs text-red-500">{scanError}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            )}
           </>
           {/* Offer on this page sub-section — shown for all status filters */}
           {pageOffer && (
@@ -3219,130 +3530,147 @@ function ClientAccordion({
           ) : (
             <>
               {(() => {
-                const showApplyNow = statusFilter === 'all' || statusFilter === 'pending_apply';
-                const showLevelUp = statusFilter === 'all' || statusFilter === 'pending_apply';
-                const showApplied = statusFilter === 'all' || statusFilter === 'applied';
-                const showWithdrawn = statusFilter === 'all' || statusFilter === 'client_withdrawn' || statusFilter === 'agent_withdrawn';
-                const showRejected = statusFilter === 'all' || statusFilter === 'recruiter_rejected';
-                const showOfferReceived = statusFilter === 'all' || statusFilter === 'offer_received';
-                const showAccepted = statusFilter === 'all' || statusFilter === 'accepted';
+                const showApplyNow =
+                  statusFilter === 'all' || statusFilter === 'pending_apply';
+                const showLevelUp =
+                  statusFilter === 'all' || statusFilter === 'pending_apply';
+                const showApplied =
+                  statusFilter === 'all' || statusFilter === 'applied';
+                const showWithdrawn =
+                  statusFilter === 'all' ||
+                  statusFilter === 'client_withdrawn' ||
+                  statusFilter === 'agent_withdrawn';
+                const showRejected =
+                  statusFilter === 'all' ||
+                  statusFilter === 'recruiter_rejected';
+                const showOfferReceived =
+                  statusFilter === 'all' || statusFilter === 'offer_received';
+                const showAccepted =
+                  statusFilter === 'all' || statusFilter === 'accepted';
                 return (
                   <>
-                    {showApplyNow && renderSection({
-                      title: 'Apply now',
-                      sectionKey: 'apply_now',
-                      isLoadingSection: isLoadingApplyNow,
-                      offers: filteredApplyOffers,
-                      count: applyNowCount,
-                      countFiltered: applyNowCountFiltered,
-                      hasMore: applyHasMore,
-                      loadingMore: applyLoadingMore,
-                      isOpen: applyOpen,
-                      hasNew: hasNewApply,
-                      setOpen: setApplyOpen,
-                      onLoadMore: handleLoadMoreApply,
-                      badgeColor: 'bg-blue-100 text-blue-800',
-                      setOffers: setApplyOffers,
-                      emptyMessage: selfMode
-                        ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
-                        : 'No offers found.',
-                    })}
-                    {showLevelUp && renderSection({
-                      title: 'Level up & earn more',
-                      sectionKey: 'level_up',
-                      isLoadingSection: isLoadingLevelUp,
-                      offers: filteredLevelUpOffers,
-                      count: levelUpCount,
-                      countFiltered: levelUpCountFiltered,
-                      hasMore: levelUpHasMore,
-                      loadingMore: levelUpLoadingMore,
-                      isOpen: levelUpOpen,
-                      hasNew: hasNewLevelUp,
-                      setOpen: setLevelUpOpen,
-                      onLoadMore: handleLoadMoreLevelUp,
-                      badgeColor: 'bg-orange-100 text-orange-800',
-                      setOffers: setLevelUpOffers,
-                    })}
-                    {showApplied && renderSection({
-                      title: 'Applied',
-                      sectionKey: 'applied',
-                      isLoadingSection: isLoadingApplied,
-                      offers: appliedOffers,
-                      count: appliedCount,
-                      countFiltered: appliedCountFiltered,
-                      hasMore: appliedHasMore,
-                      loadingMore: appliedLoadingMore,
-                      isOpen: appliedOpen,
-                      hasNew: hasNewApplied,
-                      setOpen: setAppliedOpen,
-                      onLoadMore: handleLoadMoreApplied,
-                      badgeColor: 'bg-green-100 text-green-800',
-                      setOffers: setAppliedOffers,
-                    })}
-                    {showWithdrawn && renderSection({
-                      title: 'Withdrawn',
-                      sectionKey: 'withdrawn',
-                      isLoadingSection: isLoadingWithdrawn,
-                      offers: withdrawnOffers,
-                      count: withdrawnCount,
-                      countFiltered: withdrawnCountFiltered,
-                      hasMore: withdrawnHasMore,
-                      loadingMore: withdrawnLoadingMore,
-                      isOpen: withdrawnOpen,
-                      hasNew: hasNewWithdrawn,
-                      setOpen: setWithdrawnOpen,
-                      onLoadMore: handleLoadMoreWithdrawn,
-                      badgeColor: 'bg-gray-100 text-gray-600',
-                      setOffers: setWithdrawnOffers,
-                    })}
-                    {showRejected && renderSection({
-                      title: 'Recruiter rejected',
-                      sectionKey: 'rejected',
-                      isLoadingSection: isLoadingRejected,
-                      offers: rejectedOffers,
-                      count: rejectedCount,
-                      countFiltered: rejectedCountFiltered,
-                      hasMore: rejectedHasMore,
-                      loadingMore: rejectedLoadingMore,
-                      isOpen: rejectedOpen,
-                      hasNew: hasNewRejected,
-                      setOpen: setRejectedOpen,
-                      onLoadMore: handleLoadMoreRejected,
-                      badgeColor: 'bg-red-100 text-red-700',
-                      setOffers: setRejectedOffers,
-                    })}
-                    {showOfferReceived && renderSection({
-                      title: 'Offer received',
-                      sectionKey: 'offer_received',
-                      isLoadingSection: isLoadingOfferReceived,
-                      offers: offerReceivedOffers,
-                      count: offerReceivedCount,
-                      countFiltered: offerReceivedCountFiltered,
-                      hasMore: offerReceivedHasMore,
-                      loadingMore: offerReceivedLoadingMore,
-                      isOpen: offerReceivedOpen,
-                      hasNew: hasNewOfferReceived,
-                      setOpen: setOfferReceivedOpen,
-                      onLoadMore: handleLoadMoreOfferReceived,
-                      badgeColor: 'bg-purple-100 text-purple-700',
-                      setOffers: setOfferReceivedOffers,
-                    })}
-                    {showAccepted && renderSection({
-                      title: 'Accepted',
-                      sectionKey: 'accepted',
-                      isLoadingSection: isLoadingAccepted,
-                      offers: acceptedOffers,
-                      count: acceptedCount,
-                      countFiltered: acceptedCountFiltered,
-                      hasMore: acceptedHasMore,
-                      loadingMore: acceptedLoadingMore,
-                      isOpen: acceptedOpen,
-                      hasNew: hasNewAccepted,
-                      setOpen: setAcceptedOpen,
-                      onLoadMore: handleLoadMoreAccepted,
-                      badgeColor: 'bg-teal-100 text-teal-700',
-                      setOffers: setAcceptedOffers,
-                    })}
+                    {showApplyNow &&
+                      renderSection({
+                        title: 'Apply now',
+                        sectionKey: 'apply_now',
+                        isLoadingSection: isLoadingApplyNow,
+                        offers: filteredApplyOffers,
+                        count: applyNowCount,
+                        countFiltered: applyNowCountFiltered,
+                        hasMore: applyHasMore,
+                        loadingMore: applyLoadingMore,
+                        isOpen: applyOpen,
+                        hasNew: hasNewApply,
+                        setOpen: setApplyOpen,
+                        onLoadMore: handleLoadMoreApply,
+                        badgeColor: 'bg-blue-100 text-blue-800',
+                        setOffers: setApplyOffers,
+                        emptyMessage: selfMode
+                          ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
+                          : 'No offers found.',
+                      })}
+                    {showLevelUp &&
+                      renderSection({
+                        title: 'Level up & earn more',
+                        sectionKey: 'level_up',
+                        isLoadingSection: isLoadingLevelUp,
+                        offers: filteredLevelUpOffers,
+                        count: levelUpCount,
+                        countFiltered: levelUpCountFiltered,
+                        hasMore: levelUpHasMore,
+                        loadingMore: levelUpLoadingMore,
+                        isOpen: levelUpOpen,
+                        hasNew: hasNewLevelUp,
+                        setOpen: setLevelUpOpen,
+                        onLoadMore: handleLoadMoreLevelUp,
+                        badgeColor: 'bg-orange-100 text-orange-800',
+                        setOffers: setLevelUpOffers,
+                      })}
+                    {showApplied &&
+                      renderSection({
+                        title: 'Applied',
+                        sectionKey: 'applied',
+                        isLoadingSection: isLoadingApplied,
+                        offers: appliedOffers,
+                        count: appliedCount,
+                        countFiltered: appliedCountFiltered,
+                        hasMore: appliedHasMore,
+                        loadingMore: appliedLoadingMore,
+                        isOpen: appliedOpen,
+                        hasNew: hasNewApplied,
+                        setOpen: setAppliedOpen,
+                        onLoadMore: handleLoadMoreApplied,
+                        badgeColor: 'bg-green-100 text-green-800',
+                        setOffers: setAppliedOffers,
+                      })}
+                    {showWithdrawn &&
+                      renderSection({
+                        title: 'Withdrawn',
+                        sectionKey: 'withdrawn',
+                        isLoadingSection: isLoadingWithdrawn,
+                        offers: withdrawnOffers,
+                        count: withdrawnCount,
+                        countFiltered: withdrawnCountFiltered,
+                        hasMore: withdrawnHasMore,
+                        loadingMore: withdrawnLoadingMore,
+                        isOpen: withdrawnOpen,
+                        hasNew: hasNewWithdrawn,
+                        setOpen: setWithdrawnOpen,
+                        onLoadMore: handleLoadMoreWithdrawn,
+                        badgeColor: 'bg-gray-100 text-gray-600',
+                        setOffers: setWithdrawnOffers,
+                      })}
+                    {showRejected &&
+                      renderSection({
+                        title: 'Recruiter rejected',
+                        sectionKey: 'rejected',
+                        isLoadingSection: isLoadingRejected,
+                        offers: rejectedOffers,
+                        count: rejectedCount,
+                        countFiltered: rejectedCountFiltered,
+                        hasMore: rejectedHasMore,
+                        loadingMore: rejectedLoadingMore,
+                        isOpen: rejectedOpen,
+                        hasNew: hasNewRejected,
+                        setOpen: setRejectedOpen,
+                        onLoadMore: handleLoadMoreRejected,
+                        badgeColor: 'bg-red-100 text-red-700',
+                        setOffers: setRejectedOffers,
+                      })}
+                    {showOfferReceived &&
+                      renderSection({
+                        title: 'Offer received',
+                        sectionKey: 'offer_received',
+                        isLoadingSection: isLoadingOfferReceived,
+                        offers: offerReceivedOffers,
+                        count: offerReceivedCount,
+                        countFiltered: offerReceivedCountFiltered,
+                        hasMore: offerReceivedHasMore,
+                        loadingMore: offerReceivedLoadingMore,
+                        isOpen: offerReceivedOpen,
+                        hasNew: hasNewOfferReceived,
+                        setOpen: setOfferReceivedOpen,
+                        onLoadMore: handleLoadMoreOfferReceived,
+                        badgeColor: 'bg-purple-100 text-purple-700',
+                        setOffers: setOfferReceivedOffers,
+                      })}
+                    {showAccepted &&
+                      renderSection({
+                        title: 'Accepted',
+                        sectionKey: 'accepted',
+                        isLoadingSection: isLoadingAccepted,
+                        offers: acceptedOffers,
+                        count: acceptedCount,
+                        countFiltered: acceptedCountFiltered,
+                        hasMore: acceptedHasMore,
+                        loadingMore: acceptedLoadingMore,
+                        isOpen: acceptedOpen,
+                        hasNew: hasNewAccepted,
+                        setOpen: setAcceptedOpen,
+                        onLoadMore: handleLoadMoreAccepted,
+                        badgeColor: 'bg-teal-100 text-teal-700',
+                        setOffers: setAcceptedOffers,
+                      })}
                   </>
                 );
               })()}
@@ -3403,15 +3731,27 @@ function ClientAccordion({
                     requestAnimationFrame(() => setProfileVisible(true));
                   }}
                   onSyncTriggered={() => {
-                    setApplyOffers([]); setLevelUpOffers([]); setAppliedOffers([]);
-                    setWithdrawnOffers([]); setRejectedOffers([]); setOfferReceivedOffers([]); setAcceptedOffers([]);
-                    setApplyNowCount(0); setApplyNowCountFiltered(0);
-                    setLevelUpCount(0); setLevelUpCountFiltered(0);
-                    setAppliedCount(0); setAppliedCountFiltered(0);
-                    setWithdrawnCount(0); setWithdrawnCountFiltered(0);
-                    setRejectedCount(0); setRejectedCountFiltered(0);
-                    setOfferReceivedCount(0); setOfferReceivedCountFiltered(0);
-                    setAcceptedCount(0); setAcceptedCountFiltered(0);
+                    setApplyOffers([]);
+                    setLevelUpOffers([]);
+                    setAppliedOffers([]);
+                    setWithdrawnOffers([]);
+                    setRejectedOffers([]);
+                    setOfferReceivedOffers([]);
+                    setAcceptedOffers([]);
+                    setApplyNowCount(0);
+                    setApplyNowCountFiltered(0);
+                    setLevelUpCount(0);
+                    setLevelUpCountFiltered(0);
+                    setAppliedCount(0);
+                    setAppliedCountFiltered(0);
+                    setWithdrawnCount(0);
+                    setWithdrawnCountFiltered(0);
+                    setRejectedCount(0);
+                    setRejectedCountFiltered(0);
+                    setOfferReceivedCount(0);
+                    setOfferReceivedCountFiltered(0);
+                    setAcceptedCount(0);
+                    setAcceptedCountFiltered(0);
                     knownApplyCountRef.current = 0;
                     knownLevelUpCountRef.current = 0;
                     knownAppliedCountRef.current = 0;
@@ -3420,9 +3760,15 @@ function ClientAccordion({
                     knownOfferReceivedCountRef.current = 0;
                     knownAcceptedCountRef.current = 0;
                     knownNewSkillsCountRef.current = 0;
-                    setPageApplyNow(1); setPageLevelUp(1); setPageApplied(1);
-                    setPageWithdrawn(1); setPageRejected(1); setPageOfferReceived(1); setPageAccepted(1);
-                    const currency = wizardProfile?.preferences?.salary[0]?.currency;
+                    setPageApplyNow(1);
+                    setPageLevelUp(1);
+                    setPageApplied(1);
+                    setPageWithdrawn(1);
+                    setPageRejected(1);
+                    setPageOfferReceived(1);
+                    setPageAccepted(1);
+                    const currency =
+                      wizardProfile?.preferences?.salary[0]?.currency;
                     if (currency) {
                       void (async () => {
                         try {
@@ -3431,19 +3777,28 @@ function ClientAccordion({
                             method: 'PATCH',
                             headers: {
                               'Content-Type': 'application/json',
-                              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                              ...(token
+                                ? { Authorization: `Bearer ${token}` }
+                                : {}),
                             },
-                            body: JSON.stringify({ preferred_currency: currency }),
+                            body: JSON.stringify({
+                              preferred_currency: currency,
+                            }),
                           });
-                        } catch { /* ignore */ }
+                        } catch {
+                          /* ignore */
+                        }
                       })();
                     }
                     void (async () => {
                       try {
                         const result = await fetchAllOffers();
                         applyAllOffersResponse(result);
-                        knownNewSkillsCountRef.current = result.new_skills_count ?? 0;
-                      } catch { /* ignore */ }
+                        knownNewSkillsCountRef.current =
+                          result.new_skills_count ?? 0;
+                      } catch {
+                        /* ignore */
+                      }
                     })();
                   }}
                   onSubmitted={closeWizard}
@@ -3702,7 +4057,15 @@ export default function ExploreTab({
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">With:</span>
+              <label className="flex items-center gap-1.5 cursor-pointer text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={onlyStarred}
+                  onChange={e => handleOnlyStarredChange(e.target.checked)}
+                  className="w-4 h-4 accent-blue-600 cursor-pointer"
+                />
+                <Star size={16} />
+              </label>
               <label className="flex items-center gap-1 cursor-pointer">
                 <input
                   type="checkbox"
@@ -3756,18 +4119,9 @@ export default function ExploreTab({
                   type="checkbox"
                   checked={withSalary}
                   onChange={e => handleWithSalaryChange(e.target.checked)}
-                  className="w-3.5 h-3.5 accent-indigo-600 cursor-pointer"
+                  className="w-4 h-4 accent-blue-600 cursor-pointer"
                 />
-                <span className="text-xs text-gray-500">With salary</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={onlyStarred}
-                  onChange={e => handleOnlyStarredChange(e.target.checked)}
-                  className="w-3.5 h-3.5 accent-indigo-600 cursor-pointer"
-                />
-                <span className="text-xs text-gray-500">Only starred</span>
+                <span className="text-xs text-gray-700">With salary</span>
               </label>
             </div>
           </div>
