@@ -219,6 +219,9 @@ interface OfferCardProps {
   onStarToggle?: (id: string, starred: boolean) => Promise<void> | void;
   isOfferLoading: boolean;
   isPageOffer?: boolean;
+  statusChangeCounterMax?: number | null;
+  onUpgradeClick?: () => void;
+  onRegisterUpgradeRetry?: (retryFn: (() => void) | null) => void;
   isCurrentPageOffer?: boolean;
   onScrollToPageOffer?: () => void;
   hideActions?: boolean;
@@ -264,6 +267,9 @@ function OfferCard({
   onStarToggle,
   isOfferLoading,
   isPageOffer = false,
+  statusChangeCounterMax,
+  onUpgradeClick,
+  onRegisterUpgradeRetry,
   isCurrentPageOffer = false,
   onScrollToPageOffer,
   hideActions = false,
@@ -313,7 +319,13 @@ function OfferCard({
   const [salaryLoading, setSalaryLoading] = useState(false);
   const [salaryError, setSalaryError] = useState<string | null>(null);
   const [isStarLoading, setIsStarLoading] = useState(false);
-  const [statusChangeError, setStatusChangeError] = useState<string | null>(null);
+  const [statusChangeError, setStatusChangeError] = useState<string | null>(
+    null,
+  );
+  const [status402Error, setStatus402Error] = useState(false);
+  const pendingStatus402Ref = useRef<string | null>(null);
+  const onRegisterUpgradeRetryRef = useRef(onRegisterUpgradeRetry);
+  onRegisterUpgradeRetryRef.current = onRegisterUpgradeRetry;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
@@ -541,6 +553,7 @@ function OfferCard({
   async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
     setStatusChangeError(null);
+    setStatus402Error(false);
     onRemove(offer.user_offer_id);
     setStatusLoading(offer.user_offer_id);
     try {
@@ -562,7 +575,15 @@ function OfferCard({
       );
       if (res.status === 402) {
         onRollback(offer);
-        onStatusChange402?.();
+        if (isPageOffer) {
+          pendingStatus402Ref.current = newStatus;
+          onRegisterUpgradeRetryRef.current?.(() => {
+            void handleStatusChange(pendingStatus402Ref.current!);
+          });
+          setStatus402Error(true);
+        } else {
+          onStatusChange402?.();
+        }
       } else if (!res.ok) {
         onRollback(offer);
         if (isPageOffer) {
@@ -1198,223 +1219,222 @@ function OfferCard({
                 ))}
               </div>
             )}
-          {isPageOffer &&
-            !hideActions && (
-              <div className="flex flex-col gap-1">
-                <div className="flex gap-2">
-                  {/* CV section */}
-                  <div className="flex-1 flex gap-2 items-center">
-                    <div ref={cvDropdownRef} className="flex-1">
-                      {isGenerating ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
-                        >
-                          <Spinner size={14} className="text-white" />
-                          CV…
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={isOfferLoading}
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (!isCvDropdownOpen && cvDropdownRef.current) {
-                              const rect =
-                                cvDropdownRef.current.getBoundingClientRect();
-                              setCvPortalStyle({
-                                position: 'fixed',
-                                top: rect.bottom + 4,
-                                left: rect.left,
-                                zIndex: 9999,
-                              });
-                            }
-                            setIsCvDropdownOpen(v => !v);
-                          }}
-                          className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            {offer.cv_status === 'done' ? (
-                              <ArrowsClockwise size={15} />
-                            ) : (
-                              <FilePlusIcon size={15} />
-                            )}
-                            CV
-                          </span>
-                          <CaretDown
-                            size={16}
-                            className={`text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
-                          />
-                        </button>
-                      )}
-                      {isCvDropdownOpen &&
-                        createPortal(
-                          <div
-                            ref={cvPortalRef}
-                            style={cvPortalStyle}
-                            className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
-                          >
-                            {sortedLanguages.map(l => (
-                              <button
-                                key={l.code}
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleCvSelect(l.code);
-                                }}
-                                className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                              >
-                                {l.name}
-                              </button>
-                            ))}
-                          </div>,
-                          document.body,
-                        )}
-                    </div>
-                    {!isGenerating &&
-                      offer.cv_status === 'done' &&
-                      offer.cv_url && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            chrome.tabs.create({
-                              url: `${offer.cv_url}?r=${Date.now()}`,
-                            })
+          {isPageOffer && !hideActions && (
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                {/* CV section */}
+                <div className="flex-1 flex gap-2 items-center">
+                  <div ref={cvDropdownRef} className="flex-1">
+                    {isGenerating ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
+                      >
+                        <Spinner size={14} className="text-white" />
+                        CV…
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isOfferLoading}
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (!isCvDropdownOpen && cvDropdownRef.current) {
+                            const rect =
+                              cvDropdownRef.current.getBoundingClientRect();
+                            setCvPortalStyle({
+                              position: 'fixed',
+                              top: rect.bottom + 4,
+                              left: rect.left,
+                              zIndex: 9999,
+                            });
                           }
-                          className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                        >
+                          setIsCvDropdownOpen(v => !v);
+                        }}
+                        className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {offer.cv_status === 'done' ? (
+                            <ArrowsClockwise size={15} />
+                          ) : (
+                            <FilePlusIcon size={15} />
+                          )}
                           CV
-                        </button>
+                        </span>
+                        <CaretDown
+                          size={16}
+                          className={`text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    )}
+                    {isCvDropdownOpen &&
+                      createPortal(
+                        <div
+                          ref={cvPortalRef}
+                          style={cvPortalStyle}
+                          className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
+                        >
+                          {sortedLanguages.map(l => (
+                            <button
+                              key={l.code}
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleCvSelect(l.code);
+                              }}
+                              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                            >
+                              {l.name}
+                            </button>
+                          ))}
+                        </div>,
+                        document.body,
                       )}
                   </div>
-                  {/* CL section */}
-                  <div className="flex-1 flex gap-2 items-center">
-                    <div ref={clDropdownRef} className="flex-1">
-                      {isClGenerating ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
-                        >
-                          <Spinner size={14} className="text-white" />
-                          CL…
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={isOfferLoading}
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (!isClDropdownOpen && clDropdownRef.current) {
-                              const rect =
-                                clDropdownRef.current.getBoundingClientRect();
-                              setClPortalStyle({
-                                position: 'fixed',
-                                top: rect.bottom + 4,
-                                left: rect.left,
-                                zIndex: 9999,
-                              });
-                            }
-                            setIsClDropdownOpen(v => !v);
-                          }}
-                          className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            {offer.cl_status === 'done' ? (
-                              <ArrowsClockwise size={15} />
-                            ) : (
-                              <FilePlusIcon size={15} />
-                            )}
-                            CL
-                          </span>
-                          <CaretDown
-                            size={16}
-                            className={`text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
-                          />
-                        </button>
-                      )}
-                      {isClDropdownOpen &&
-                        createPortal(
-                          <div
-                            ref={clPortalRef}
-                            style={clPortalStyle}
-                            className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
-                          >
-                            {sortedLanguages.map(l => (
-                              <button
-                                key={l.code}
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleClSelect(l.code);
-                                }}
-                                className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                              >
-                                {l.name}
-                              </button>
-                            ))}
-                          </div>,
-                          document.body,
-                        )}
-                    </div>
-                    {!isClGenerating &&
-                      offer.cl_status === 'done' &&
-                      offer.cl_url && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            chrome.tabs.create({
-                              url: `${offer.cl_url}?r=${Date.now()}`,
-                            })
-                          }
-                          className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-                        >
-                          CL
-                        </button>
-                      )}
-                  </div>
+                  {!isGenerating &&
+                    offer.cv_status === 'done' &&
+                    offer.cv_url && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          chrome.tabs.create({
+                            url: `${offer.cv_url}?r=${Date.now()}`,
+                          })
+                        }
+                        className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                      >
+                        CV
+                      </button>
+                    )}
                 </div>
-                {cvLimitHit && !cvLimitBannerClosed && (
-                  <PlanLimitBanner
-                    onButtonClick={() => {
-                      setCvLimitHit(false);
-                      setCvLimitBannerClosed(false);
-                      onCvLimitReached?.();
-                    }}
-                    buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
-                    isLoading={cvPackageBuyLoading}
-                    errorMessage={cvPackageBuyError}
-                    withMX={false}
-                    closable
-                    onClose={() => setCvLimitBannerClosed(true)}
-                  >
-                    <p className="text-xs text-gray-500">
-                      You've reached your CV generation limit.
-                    </p>
-                  </PlanLimitBanner>
-                )}
-                {clLimitHit && !clLimitBannerClosed && (
-                  <PlanLimitBanner
-                    onButtonClick={() => {
-                      setClLimitHit(false);
-                      setClLimitBannerClosed(false);
-                      onClLimitReached?.();
-                    }}
-                    buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
-                    isLoading={clPackageBuyLoading}
-                    errorMessage={clPackageBuyError}
-                    withMX={false}
-                    closable
-                    onClose={() => setClLimitBannerClosed(true)}
-                  >
-                    <p className="text-xs text-gray-500">
-                      You've reached your cover letter generation limit.
-                    </p>
-                  </PlanLimitBanner>
-                )}
+                {/* CL section */}
+                <div className="flex-1 flex gap-2 items-center">
+                  <div ref={clDropdownRef} className="flex-1">
+                    {isClGenerating ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 bg-blue-500 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm"
+                      >
+                        <Spinner size={14} className="text-white" />
+                        CL…
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isOfferLoading}
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (!isClDropdownOpen && clDropdownRef.current) {
+                            const rect =
+                              clDropdownRef.current.getBoundingClientRect();
+                            setClPortalStyle({
+                              position: 'fixed',
+                              top: rect.bottom + 4,
+                              left: rect.left,
+                              zIndex: 9999,
+                            });
+                          }
+                          setIsClDropdownOpen(v => !v);
+                        }}
+                        className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {offer.cl_status === 'done' ? (
+                            <ArrowsClockwise size={15} />
+                          ) : (
+                            <FilePlusIcon size={15} />
+                          )}
+                          CL
+                        </span>
+                        <CaretDown
+                          size={16}
+                          className={`text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    )}
+                    {isClDropdownOpen &&
+                      createPortal(
+                        <div
+                          ref={clPortalRef}
+                          style={clPortalStyle}
+                          className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
+                        >
+                          {sortedLanguages.map(l => (
+                            <button
+                              key={l.code}
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleClSelect(l.code);
+                              }}
+                              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                            >
+                              {l.name}
+                            </button>
+                          ))}
+                        </div>,
+                        document.body,
+                      )}
+                  </div>
+                  {!isClGenerating &&
+                    offer.cl_status === 'done' &&
+                    offer.cl_url && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          chrome.tabs.create({
+                            url: `${offer.cl_url}?r=${Date.now()}`,
+                          })
+                        }
+                        className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                      >
+                        CL
+                      </button>
+                    )}
+                </div>
               </div>
-            )}
+              {cvLimitHit && !cvLimitBannerClosed && (
+                <PlanLimitBanner
+                  onButtonClick={() => {
+                    setCvLimitHit(false);
+                    setCvLimitBannerClosed(false);
+                    onCvLimitReached?.();
+                  }}
+                  buttonText={`Buy ${cvPackageAmount ?? generalSettings?.cv_package_amount ?? '...'} CVs${cvPackagePrice ? ` for ${cvPackagePrice}` : ''}`}
+                  isLoading={cvPackageBuyLoading}
+                  errorMessage={cvPackageBuyError}
+                  withMX={false}
+                  closable
+                  onClose={() => setCvLimitBannerClosed(true)}
+                >
+                  <p className="text-xs text-gray-500">
+                    You've reached your CV generation limit.
+                  </p>
+                </PlanLimitBanner>
+              )}
+              {clLimitHit && !clLimitBannerClosed && (
+                <PlanLimitBanner
+                  onButtonClick={() => {
+                    setClLimitHit(false);
+                    setClLimitBannerClosed(false);
+                    onClLimitReached?.();
+                  }}
+                  buttonText={`Buy ${clPackageAmount ?? generalSettings?.cl_package_amount ?? '...'} CLs${clPackagePrice ? ` for ${clPackagePrice}` : ''}`}
+                  isLoading={clPackageBuyLoading}
+                  errorMessage={clPackageBuyError}
+                  withMX={false}
+                  closable
+                  onClose={() => setClLimitBannerClosed(true)}
+                >
+                  <p className="text-xs text-gray-500">
+                    You've reached your cover letter generation limit.
+                  </p>
+                </PlanLimitBanner>
+              )}
+            </div>
+          )}
 
           {isPageOffer && status && (
             <div
@@ -1430,82 +1450,110 @@ function OfferCard({
 
           {isPageOffer && !hideActions && !isGenerating && !isClGenerating && (
             <>
-            <div ref={dropdownRef}>
-              <button
-                type="button"
-                disabled={statusLoading === offer.user_offer_id}
-                onClick={() => {
-                  if (!isDropdownOpen && dropdownRef.current) {
-                    const rect = dropdownRef.current.getBoundingClientRect();
-                    setPortalStyle({
-                      position: 'fixed',
-                      top: rect.bottom + 4,
-                      left: rect.left,
-                      width: rect.width,
-                      zIndex: 9999,
-                    });
-                  }
-                  setIsDropdownOpen(v => !v);
-                }}
-                className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <span>Set status</span>
-                <span className="flex items-center gap-1">
-                  {statusLoading === offer.user_offer_id ? (
-                    <Spinner size={12} className="text-white" />
-                  ) : (
-                    offer.status && (
-                      <span className="text-xs opacity-70">
-                        curr.{' '}
-                        {(
-                          STATUS_LABELS[offer.status] ?? offer.status
-                        ).toLowerCase()}
-                      </span>
-                    )
-                  )}
-                  <CaretDown
-                    size={12}
-                    className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                  />
-                </span>
-              </button>
-              {isDropdownOpen &&
-                createPortal(
-                  <div
-                    ref={portalRef}
-                    style={portalStyle}
-                    className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
-                  >
-                    {STATUS_OPTIONS.filter(
-                      opt =>
-                        opt.value !== offer.status &&
-                        (!selfMode || opt.value !== 'agent_withdrawn'),
-                    ).map(opt => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleStatusChange(opt.value)}
-                        className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>,
-                  document.body,
-                )}
-            </div>
-            {statusChangeError && (
-              <div className="mt-1 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
-                <span>{statusChangeError}</span>
+              <div ref={dropdownRef}>
                 <button
                   type="button"
-                  onClick={() => setStatusChangeError(null)}
-                  className="shrink-0 text-red-400 hover:text-red-600"
+                  disabled={statusLoading === offer.user_offer_id}
+                  onClick={() => {
+                    if (!isDropdownOpen && dropdownRef.current) {
+                      const rect = dropdownRef.current.getBoundingClientRect();
+                      setPortalStyle({
+                        position: 'fixed',
+                        top: rect.bottom + 4,
+                        left: rect.left,
+                        width: rect.width,
+                        zIndex: 9999,
+                      });
+                    }
+                    setIsDropdownOpen(v => !v);
+                  }}
+                  className="w-full flex items-center justify-between gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  ✕
+                  <span>Set status</span>
+                  <span className="flex items-center gap-1">
+                    {statusLoading === offer.user_offer_id ? (
+                      <Spinner size={12} className="text-white" />
+                    ) : (
+                      offer.status && (
+                        <span className="text-xs opacity-70">
+                          curr.{' '}
+                          {(
+                            STATUS_LABELS[offer.status] ?? offer.status
+                          ).toLowerCase()}
+                        </span>
+                      )
+                    )}
+                    <CaretDown
+                      size={12}
+                      className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                    />
+                  </span>
                 </button>
+                {isDropdownOpen &&
+                  createPortal(
+                    <div
+                      ref={portalRef}
+                      style={portalStyle}
+                      className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+                    >
+                      {STATUS_OPTIONS.filter(
+                        opt =>
+                          opt.value !== offer.status &&
+                          (!selfMode || opt.value !== 'agent_withdrawn'),
+                      ).map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleStatusChange(opt.value)}
+                          className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>,
+                    document.body,
+                  )}
               </div>
-            )}
+              {status402Error && (
+                <div className="mt-1 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-md flex flex-col gap-2 items-center">
+                  <div className="flex items-center justify-between gap-2">
+                    <span style={{ textAlign: 'center' }}>
+                      You've used all {statusChangeCounterMax ?? '?'} free
+                      status changes. Upgrade to Pro to continue.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatus402Error(false);
+                        pendingStatus402Ref.current = null;
+                        onRegisterUpgradeRetryRef.current?.(null);
+                      }}
+                      className="shrink-0 text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onUpgradeClick}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded transition-colors"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+              )}
+              {statusChangeError && (
+                <div className="mt-1 px-3 py-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center justify-between gap-2">
+                  <span>{statusChangeError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setStatusChangeError(null)}
+                    className="shrink-0 text-red-400 hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1667,6 +1715,7 @@ function ClientAccordion({
 
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const upgradeRetryRef = useRef<(() => void) | null>(null);
   const [profileRematchPending, setProfileRematchPending] = useState(false);
   const [autoTriggerReview, setAutoTriggerReview] = useState(false);
   const [byUrlLoading, setByUrlLoading] = useState(false);
@@ -1747,6 +1796,8 @@ function ClientAccordion({
         changes.upgrade_success.newValue !== undefined
       ) {
         void checkSubscription();
+        upgradeRetryRef.current?.();
+        upgradeRetryRef.current = null;
       }
       if (
         'upgrade_cancelled' in changes &&
@@ -3407,7 +3458,9 @@ function ClientAccordion({
                           }
                           // Sync to page offer if same offer
                           if (pageOffer?.user_offer_id === id) {
-                            setPageOffer(p => p ? { ...p, is_starred: starred } : null);
+                            setPageOffer(p =>
+                              p ? { ...p, is_starred: starred } : null,
+                            );
                           }
                         }
                       } catch {
@@ -3709,9 +3762,16 @@ function ClientAccordion({
                     }
                     preferenceSalaries={preferenceSalaries}
                     isPageOffer={true}
+                    statusChangeCounterMax={statusChangeCounterMax}
+                    onUpgradeClick={() => setUpgradeDrawerOpen(true)}
+                    onRegisterUpgradeRetry={fn => {
+                      upgradeRetryRef.current = fn;
+                    }}
                     onStarToggle={async (id, starred) => {
                       const prev = pageOffer?.is_starred;
-                      setPageOffer(p => p ? { ...p, is_starred: starred } : null);
+                      setPageOffer(p =>
+                        p ? { ...p, is_starred: starred } : null,
+                      );
                       try {
                         const token = await getToken();
                         const res = await fetch(
@@ -3727,7 +3787,9 @@ function ClientAccordion({
                           // Sync to all section arrays
                           const patch = (offers: UserOffer[]) =>
                             offers.map(o =>
-                              o.user_offer_id === id ? { ...o, is_starred: starred } : o,
+                              o.user_offer_id === id
+                                ? { ...o, is_starred: starred }
+                                : o,
                             );
                           setApplyOffers(patch);
                           setLevelUpOffers(patch);
@@ -3737,10 +3799,14 @@ function ClientAccordion({
                           setOfferReceivedOffers(patch);
                           setAcceptedOffers(patch);
                         } else {
-                          setPageOffer(p => p ? { ...p, is_starred: prev } : null);
+                          setPageOffer(p =>
+                            p ? { ...p, is_starred: prev } : null,
+                          );
                         }
                       } catch {
-                        setPageOffer(p => p ? { ...p, is_starred: prev } : null);
+                        setPageOffer(p =>
+                          p ? { ...p, is_starred: prev } : null,
+                        );
                       }
                     }}
                   />
@@ -4262,8 +4328,16 @@ export default function ExploreTab({
               step={5}
               value={minScore}
               onChange={e => setMinScore(Number(e.target.value))}
-              onMouseUp={e => handleMinScoreCommit(Number((e.target as HTMLInputElement).value))}
-              onTouchEnd={e => handleMinScoreCommit(Number((e.target as HTMLInputElement).value))}
+              onMouseUp={e =>
+                handleMinScoreCommit(
+                  Number((e.target as HTMLInputElement).value),
+                )
+              }
+              onTouchEnd={e =>
+                handleMinScoreCommit(
+                  Number((e.target as HTMLInputElement).value),
+                )
+              }
               className="flex-1"
             />
             <span className="text-xs font-medium text-gray-700 w-7 text-right">
