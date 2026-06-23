@@ -2322,6 +2322,152 @@ function ClientAccordion({
 
   async function handleRefresh(sectionKey?: string) {
     setIsRefreshing(true);
+
+    // Section-scoped refresh: only when a specific section is clicked in status=all view
+    if (sectionKey && statusFilter === 'all') {
+      const isPendingGroup =
+        sectionKey === 'apply_now' || sectionKey === 'level_up';
+      if (isPendingGroup) {
+        setIsLoadingApplyNow(true);
+        setIsLoadingLevelUp(true);
+        setHasNewApply(false);
+        setHasNewLevelUp(false);
+      } else if (sectionKey === 'applied') {
+        setIsLoadingApplied(true);
+        setHasNewApplied(false);
+      } else if (sectionKey === 'withdrawn') {
+        setIsLoadingWithdrawn(true);
+        setHasNewWithdrawn(false);
+      } else if (sectionKey === 'rejected') {
+        setIsLoadingRejected(true);
+        setHasNewRejected(false);
+      } else if (sectionKey === 'offer_received') {
+        setIsLoadingOfferReceived(true);
+        setHasNewOfferReceived(false);
+      } else if (sectionKey === 'accepted') {
+        setIsLoadingAccepted(true);
+        setHasNewAccepted(false);
+      }
+
+      const sectionStatusMap: Record<string, string> = {
+        apply_now: 'pending_apply|ai_rejected',
+        level_up: 'pending_apply|ai_rejected',
+        applied: 'applied',
+        withdrawn: 'client_withdrawn',
+        rejected: 'recruiter_rejected',
+        offer_received: 'offer_received',
+        accepted: 'accepted',
+      };
+      const sectionStatus = sectionStatusMap[sectionKey] ?? 'all';
+
+      const token = await getToken();
+      if (token) {
+        const params = new URLSearchParams({ status: sectionStatus });
+        if (!selfMode) params.append('client_id', client.id);
+        if (sourceFilter !== 'all') params.append('source', sourceFilter);
+        params.append('min_score', String(minScore));
+        if (cvGenerated) params.append('generated_cv', 'true');
+        if (clGenerated) params.append('generated_cl', 'true');
+        if (!(sortBy === 'salary_delta' && !isPro))
+          params.append('sort_by', sortBy);
+        if (withSalary) params.append('with_salary', 'true');
+        if (onlyStarred) params.append('is_starred', 'true');
+        params.append('page_size', String(pageSize));
+        if (isPendingGroup) {
+          setPageApplyNow(1);
+          setPageLevelUp(1);
+          params.append('page_apply_now', '1');
+          params.append('page_level_up', '1');
+        } else if (sectionKey === 'applied') {
+          setPageApplied(1);
+          params.append('page_applied', '1');
+        } else if (sectionKey === 'withdrawn') {
+          setPageWithdrawn(1);
+          params.append('page_client_withdrawn', '1');
+        } else if (sectionKey === 'rejected') {
+          setPageRejected(1);
+          params.append('page_recruiter_rejected', '1');
+        } else if (sectionKey === 'offer_received') {
+          setPageOfferReceived(1);
+          params.append('page_offer_received', '1');
+        } else if (sectionKey === 'accepted') {
+          setPageAccepted(1);
+          params.append('page_accepted', '1');
+        }
+        try {
+          const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const raw = (await res.json()) as Partial<AllOffersResponse>;
+            if (isPendingGroup) {
+              const applyBucket = raw.apply_now ?? EMPTY_BUCKET;
+              const levelBucket = raw.level_up ?? EMPTY_BUCKET;
+              setApplyOffers(applyBucket.offers);
+              setApplyHasMore(applyBucket.has_more);
+              setApplyNowCount(applyBucket.count);
+              setApplyNowCountFiltered(applyBucket.count_after_filters);
+              knownApplyCountRef.current = applyBucket.count;
+              setLevelUpOffers(levelBucket.offers);
+              setLevelUpHasMore(levelBucket.has_more);
+              setLevelUpCount(levelBucket.count);
+              setLevelUpCountFiltered(levelBucket.count_after_filters);
+              knownLevelUpCountRef.current = levelBucket.count;
+            } else if (sectionKey === 'applied') {
+              const b = raw.applied ?? EMPTY_BUCKET;
+              setAppliedOffers(b.offers);
+              setAppliedHasMore(b.has_more);
+              setAppliedCount(b.count);
+              setAppliedCountFiltered(b.count_after_filters);
+              knownAppliedCountRef.current = b.count;
+            } else if (sectionKey === 'withdrawn') {
+              const b = raw.client_withdrawn ?? EMPTY_BUCKET;
+              setWithdrawnOffers(b.offers);
+              setWithdrawnHasMore(b.has_more);
+              setWithdrawnCount(b.count);
+              setWithdrawnCountFiltered(b.count_after_filters);
+              knownWithdrawnCountRef.current = b.count;
+            } else if (sectionKey === 'rejected') {
+              const b = raw.recruiter_rejected ?? EMPTY_BUCKET;
+              setRejectedOffers(b.offers);
+              setRejectedHasMore(b.has_more);
+              setRejectedCount(b.count);
+              setRejectedCountFiltered(b.count_after_filters);
+              knownRejectedCountRef.current = b.count;
+            } else if (sectionKey === 'offer_received') {
+              const b = raw.offer_received ?? EMPTY_BUCKET;
+              setOfferReceivedOffers(b.offers);
+              setOfferReceivedHasMore(b.has_more);
+              setOfferReceivedCount(b.count);
+              setOfferReceivedCountFiltered(b.count_after_filters);
+              knownOfferReceivedCountRef.current = b.count;
+            } else if (sectionKey === 'accepted') {
+              const b = raw.accepted ?? EMPTY_BUCKET;
+              setAcceptedOffers(b.offers);
+              setAcceptedHasMore(b.has_more);
+              setAcceptedCount(b.count);
+              setAcceptedCountFiltered(b.count_after_filters);
+              knownAcceptedCountRef.current = b.count;
+            }
+          }
+        } catch {
+          // ignore, leave existing data in place
+        }
+      }
+
+      setIsLoadingApplyNow(false);
+      setIsLoadingLevelUp(false);
+      setIsLoadingApplied(false);
+      setIsLoadingWithdrawn(false);
+      setIsLoadingRejected(false);
+      setIsLoadingOfferReceived(false);
+      setIsLoadingAccepted(false);
+      setHasLoaded(true);
+      setIsRefreshing(false);
+      return;
+    }
+
+    // Global refresh (no sectionKey, or status filter is not 'all')
     const all = !sectionKey;
     if (all || sectionKey === 'apply_now') setIsLoadingApplyNow(true);
     if (all || sectionKey === 'level_up') setIsLoadingLevelUp(true);
@@ -3872,9 +4018,7 @@ export default function ExploreTab({
   const [debouncedMinScore, setDebouncedMinScore] = useState(0);
   const [withSalary, setWithSalary] = useState(false);
   const [onlyStarred, setOnlyStarred] = useState(false);
-  const minScoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -3931,13 +4075,6 @@ export default function ExploreTab({
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (minScoreDebounceRef.current)
-        clearTimeout(minScoreDebounceRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
     const el = document.getElementById('main-scroll');
     if (!el) return;
     function handleScroll() {
@@ -3983,15 +4120,11 @@ export default function ExploreTab({
     }
   }
 
-  function handleMinScoreChange(value: number) {
-    setMinScore(value);
-    if (minScoreDebounceRef.current) clearTimeout(minScoreDebounceRef.current);
-    minScoreDebounceRef.current = setTimeout(() => {
-      setDebouncedMinScore(value);
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.set({ hd_min_score: value });
-      }
-    }, 400);
+  function handleMinScoreCommit(value: number) {
+    setDebouncedMinScore(value);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ hd_min_score: value });
+    }
   }
 
   function handleWithSalaryChange(value: boolean) {
@@ -4052,7 +4185,9 @@ export default function ExploreTab({
               max={100}
               step={5}
               value={minScore}
-              onChange={e => handleMinScoreChange(Number(e.target.value))}
+              onChange={e => setMinScore(Number(e.target.value))}
+              onMouseUp={e => handleMinScoreCommit(Number((e.target as HTMLInputElement).value))}
+              onTouchEnd={e => handleMinScoreCommit(Number((e.target as HTMLInputElement).value))}
               className="flex-1"
             />
             <span className="text-xs font-medium text-gray-700 w-7 text-right">
