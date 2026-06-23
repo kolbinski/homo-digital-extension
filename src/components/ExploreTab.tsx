@@ -214,7 +214,7 @@ interface OfferCardProps {
   onCvUpdate: (offerId: string, cvUrl: string, cvStatus: string) => void;
   onClUpdate: (offerId: string, clUrl: string, clStatus: string) => void;
   onSalaryUpdate?: (userOfferId: string, salary: OfferSalary) => void;
-  onStarToggle?: (id: string, starred: boolean) => void;
+  onStarToggle?: (id: string, starred: boolean) => Promise<void> | void;
   isOfferLoading: boolean;
   isPageOffer?: boolean;
   isCurrentPageOffer?: boolean;
@@ -309,6 +309,7 @@ function OfferCard({
   );
   const [salaryLoading, setSalaryLoading] = useState(false);
   const [salaryError, setSalaryError] = useState<string | null>(null);
+  const [isStarLoading, setIsStarLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClGenerating, setIsClGenerating] = useState(false);
   const [cvLimitHit, setCvLimitHit] = useState(false);
@@ -663,15 +664,23 @@ function OfferCard({
         <div className="flex items-center gap-1 flex-wrap">
           <button
             type="button"
-            onClick={e => {
+            onClick={async e => {
               e.stopPropagation();
-              if (onStarToggle)
-                onStarToggle(offer.user_offer_id, !offer.is_starred);
+              if (!onStarToggle || isStarLoading) return;
+              setIsStarLoading(true);
+              try {
+                await onStarToggle(offer.user_offer_id, !offer.is_starred);
+              } finally {
+                setIsStarLoading(false);
+              }
             }}
-            className="shrink-0 text-gray-600 transition-colors leading-none"
+            disabled={isStarLoading}
+            className="shrink-0 text-gray-600 transition-colors leading-none disabled:cursor-wait"
             title={offer.is_starred ? 'Unstar' : 'Star'}
           >
-            {offer.is_starred ? (
+            {isStarLoading ? (
+              <Spinner size={16} />
+            ) : offer.is_starred ? (
               <Star size={16} weight="fill" className="text-yellow-400" />
             ) : (
               <Star size={16} />
