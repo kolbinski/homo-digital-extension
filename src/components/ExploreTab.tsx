@@ -1602,6 +1602,9 @@ async function openOfferUrl(url: string) {
   await chrome.tabs.create({ url });
 }
 
+type SectionState = { offers: UserOffer[]; count: number; countFiltered: number; hasMore: boolean };
+const EMPTY_SECTION: SectionState = { offers: [], count: 0, countFiltered: 0, hasMore: false };
+
 function ClientAccordion({
   client,
   activeTabId,
@@ -1634,31 +1637,13 @@ function ClientAccordion({
     client.profile_ready ?? true,
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [applyOffers, setApplyOffers] = useState<UserOffer[]>([]);
-  const [levelUpOffers, setLevelUpOffers] = useState<UserOffer[]>([]);
-  const [appliedOffers, setAppliedOffers] = useState<UserOffer[]>([]);
-  const [withdrawnOffers, setWithdrawnOffers] = useState<UserOffer[]>([]);
-  const [rejectedOffers, setRejectedOffers] = useState<UserOffer[]>([]);
-  const [offerReceivedOffers, setOfferReceivedOffers] = useState<UserOffer[]>(
-    [],
-  );
-  const [acceptedOffers, setAcceptedOffers] = useState<UserOffer[]>([]);
-
-  const [applyNowCount, setApplyNowCount] = useState(0);
-  const [applyNowCountFiltered, setApplyNowCountFiltered] = useState(0);
-  const [levelUpCount, setLevelUpCount] = useState(0);
-  const [levelUpCountFiltered, setLevelUpCountFiltered] = useState(0);
-  const [appliedCount, setAppliedCount] = useState(0);
-  const [appliedCountFiltered, setAppliedCountFiltered] = useState(0);
-  const [withdrawnCount, setWithdrawnCount] = useState(0);
-  const [withdrawnCountFiltered, setWithdrawnCountFiltered] = useState(0);
-  const [rejectedCount, setRejectedCount] = useState(0);
-  const [rejectedCountFiltered, setRejectedCountFiltered] = useState(0);
-  const [offerReceivedCount, setOfferReceivedCount] = useState(0);
-  const [offerReceivedCountFiltered, setOfferReceivedCountFiltered] =
-    useState(0);
-  const [acceptedCount, setAcceptedCount] = useState(0);
-  const [acceptedCountFiltered, setAcceptedCountFiltered] = useState(0);
+  const [applySection, setApplySection] = useState<SectionState>(EMPTY_SECTION);
+  const [levelUpSection, setLevelUpSection] = useState<SectionState>(EMPTY_SECTION);
+  const [appliedSection, setAppliedSection] = useState<SectionState>(EMPTY_SECTION);
+  const [withdrawnSection, setWithdrawnSection] = useState<SectionState>(EMPTY_SECTION);
+  const [rejectedSection, setRejectedSection] = useState<SectionState>(EMPTY_SECTION);
+  const [offerReceivedSection, setOfferReceivedSection] = useState<SectionState>(EMPTY_SECTION);
+  const [acceptedSection, setAcceptedSection] = useState<SectionState>(EMPTY_SECTION);
 
   // For polling known_*_count params
   const knownApplyCountRef = useRef(0);
@@ -1694,13 +1679,7 @@ function ClientAccordion({
   const [pageOfferReceived, setPageOfferReceived] = useState(1);
   const [pageAccepted, setPageAccepted] = useState(1);
 
-  const [applyHasMore, setApplyHasMore] = useState(false);
-  const [levelUpHasMore, setLevelUpHasMore] = useState(false);
-  const [appliedHasMore, setAppliedHasMore] = useState(false);
-  const [withdrawnHasMore, setWithdrawnHasMore] = useState(false);
-  const [rejectedHasMore, setRejectedHasMore] = useState(false);
-  const [offerReceivedHasMore, setOfferReceivedHasMore] = useState(false);
-  const [acceptedHasMore, setAcceptedHasMore] = useState(false);
+  // hasMore is now part of SectionState
 
   const [applyLoadingMore, setApplyLoadingMore] = useState(false);
   const [levelUpLoadingMore, setLevelUpLoadingMore] = useState(false);
@@ -1855,27 +1834,13 @@ function ClientAccordion({
         'offers_cleared' in changes &&
         changes.offers_cleared.newValue !== undefined
       ) {
-        setApplyOffers([]);
-        setLevelUpOffers([]);
-        setAppliedOffers([]);
-        setWithdrawnOffers([]);
-        setRejectedOffers([]);
-        setOfferReceivedOffers([]);
-        setAcceptedOffers([]);
-        setApplyNowCount(0);
-        setApplyNowCountFiltered(0);
-        setLevelUpCount(0);
-        setLevelUpCountFiltered(0);
-        setAppliedCount(0);
-        setAppliedCountFiltered(0);
-        setWithdrawnCount(0);
-        setWithdrawnCountFiltered(0);
-        setRejectedCount(0);
-        setRejectedCountFiltered(0);
-        setOfferReceivedCount(0);
-        setOfferReceivedCountFiltered(0);
-        setAcceptedCount(0);
-        setAcceptedCountFiltered(0);
+        setApplySection(EMPTY_SECTION);
+        setLevelUpSection(EMPTY_SECTION);
+        setAppliedSection(EMPTY_SECTION);
+        setWithdrawnSection(EMPTY_SECTION);
+        setRejectedSection(EMPTY_SECTION);
+        setOfferReceivedSection(EMPTY_SECTION);
+        setAcceptedSection(EMPTY_SECTION);
         knownApplyCountRef.current = 0;
         knownLevelUpCountRef.current = 0;
         knownAppliedCountRef.current = 0;
@@ -1922,27 +1887,13 @@ function ClientAccordion({
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
               });
             }
-            setApplyOffers([]);
-            setLevelUpOffers([]);
-            setAppliedOffers([]);
-            setWithdrawnOffers([]);
-            setRejectedOffers([]);
-            setOfferReceivedOffers([]);
-            setAcceptedOffers([]);
-            setApplyNowCount(0);
-            setApplyNowCountFiltered(0);
-            setLevelUpCount(0);
-            setLevelUpCountFiltered(0);
-            setAppliedCount(0);
-            setAppliedCountFiltered(0);
-            setWithdrawnCount(0);
-            setWithdrawnCountFiltered(0);
-            setRejectedCount(0);
-            setRejectedCountFiltered(0);
-            setOfferReceivedCount(0);
-            setOfferReceivedCountFiltered(0);
-            setAcceptedCount(0);
-            setAcceptedCountFiltered(0);
+            setApplySection(EMPTY_SECTION);
+            setLevelUpSection(EMPTY_SECTION);
+            setAppliedSection(EMPTY_SECTION);
+            setWithdrawnSection(EMPTY_SECTION);
+            setRejectedSection(EMPTY_SECTION);
+            setOfferReceivedSection(EMPTY_SECTION);
+            setAcceptedSection(EMPTY_SECTION);
             knownApplyCountRef.current = 0;
             knownLevelUpCountRef.current = 0;
             knownAppliedCountRef.current = 0;
@@ -2019,13 +1970,13 @@ function ClientAccordion({
   useEffect(() => {
     if (!expandedOfferId || !currentUrl) return;
     const expandedOffer =
-      applyOffers.find(o => o.user_offer_id === expandedOfferId) ??
-      levelUpOffers.find(o => o.user_offer_id === expandedOfferId) ??
-      appliedOffers.find(o => o.user_offer_id === expandedOfferId) ??
-      withdrawnOffers.find(o => o.user_offer_id === expandedOfferId) ??
-      rejectedOffers.find(o => o.user_offer_id === expandedOfferId) ??
-      offerReceivedOffers.find(o => o.user_offer_id === expandedOfferId) ??
-      acceptedOffers.find(o => o.user_offer_id === expandedOfferId);
+      applySection.offers.find(o => o.user_offer_id === expandedOfferId) ??
+      levelUpSection.offers.find(o => o.user_offer_id === expandedOfferId) ??
+      appliedSection.offers.find(o => o.user_offer_id === expandedOfferId) ??
+      withdrawnSection.offers.find(o => o.user_offer_id === expandedOfferId) ??
+      rejectedSection.offers.find(o => o.user_offer_id === expandedOfferId) ??
+      offerReceivedSection.offers.find(o => o.user_offer_id === expandedOfferId) ??
+      acceptedSection.offers.find(o => o.user_offer_id === expandedOfferId);
     if (expandedOffer?.offer_url) {
       const offerBaseUrl = expandedOffer.offer_url.split('?')[0];
       if (!currentUrl.startsWith(offerBaseUrl)) {
@@ -2038,13 +1989,13 @@ function ClientAccordion({
     if (!currentUrl) return;
     if (manualPageOfferRef.current) return;
     const allOffers = [
-      ...applyOffers,
-      ...levelUpOffers,
-      ...appliedOffers,
-      ...withdrawnOffers,
-      ...rejectedOffers,
-      ...offerReceivedOffers,
-      ...acceptedOffers,
+      ...applySection.offers,
+      ...levelUpSection.offers,
+      ...appliedSection.offers,
+      ...withdrawnSection.offers,
+      ...rejectedSection.offers,
+      ...offerReceivedSection.offers,
+      ...acceptedSection.offers,
     ];
     const match = allOffers.find(
       o => o.offer_url && currentUrl.startsWith(o.offer_url.split('?')[0]),
@@ -2054,13 +2005,13 @@ function ClientAccordion({
     }
   }, [
     currentUrl,
-    applyOffers,
-    levelUpOffers,
-    appliedOffers,
-    withdrawnOffers,
-    rejectedOffers,
-    offerReceivedOffers,
-    acceptedOffers,
+    applySection,
+    levelUpSection,
+    appliedSection,
+    withdrawnSection,
+    rejectedSection,
+    offerReceivedSection,
+    acceptedSection,
   ]);
 
   useEffect(() => {
@@ -2073,13 +2024,13 @@ function ClientAccordion({
       applyAllOffersResponse(result);
       setHasLoaded(true);
       const allOffers = [
-        ...result.apply_now.offers,
-        ...result.level_up.offers,
-        ...result.applied.offers,
-        ...result.client_withdrawn.offers,
-        ...result.recruiter_rejected.offers,
-        ...result.offer_received.offers,
-        ...result.accepted.offers,
+        ...(result.apply_now?.offers ?? []),
+        ...(result.level_up?.offers ?? []),
+        ...(result.applied?.offers ?? []),
+        ...(result.client_withdrawn?.offers ?? []),
+        ...(result.recruiter_rejected?.offers ?? []),
+        ...(result.offer_received?.offers ?? []),
+        ...(result.accepted?.offers ?? []),
       ];
       const match = url
         ? allOffers.find(
@@ -2178,20 +2129,13 @@ function ClientAccordion({
     setPageRejected(1);
     setPageOfferReceived(1);
     setPageAccepted(1);
-    setApplyHasMore(false);
-    setLevelUpHasMore(false);
-    setAppliedHasMore(false);
-    setWithdrawnHasMore(false);
-    setRejectedHasMore(false);
-    setOfferReceivedHasMore(false);
-    setAcceptedHasMore(false);
-    setApplyOffers([]);
-    setLevelUpOffers([]);
-    setAppliedOffers([]);
-    setWithdrawnOffers([]);
-    setRejectedOffers([]);
-    setOfferReceivedOffers([]);
-    setAcceptedOffers([]);
+    setApplySection(EMPTY_SECTION);
+    setLevelUpSection(EMPTY_SECTION);
+    setAppliedSection(EMPTY_SECTION);
+    setWithdrawnSection(EMPTY_SECTION);
+    setRejectedSection(EMPTY_SECTION);
+    setOfferReceivedSection(EMPTY_SECTION);
+    setAcceptedSection(EMPTY_SECTION);
     if (sortBy === 'salary_delta' && !isPro) return;
     let cancelled = false;
     async function refetchOffers() {
@@ -2242,16 +2186,6 @@ function ClientAccordion({
     offers: [],
     has_more: false,
   };
-  const EMPTY_ALL: AllOffersResponse = {
-    apply_now: EMPTY_BUCKET,
-    level_up: EMPTY_BUCKET,
-    applied: EMPTY_BUCKET,
-    client_withdrawn: EMPTY_BUCKET,
-    recruiter_rejected: EMPTY_BUCKET,
-    offer_received: EMPTY_BUCKET,
-    accepted: EMPTY_BUCKET,
-  };
-
   interface FetchAllPages {
     pageApplyNow?: number;
     pageLevelUp?: number;
@@ -2265,9 +2199,9 @@ function ClientAccordion({
 
   async function fetchAllOffers(
     pages: FetchAllPages = {},
-  ): Promise<AllOffersResponse> {
+  ): Promise<Partial<AllOffersResponse>> {
     const token = await getToken();
-    if (!token) return EMPTY_ALL;
+    if (!token) return {};
     const apiStatus =
       statusFilter === 'pending_apply'
         ? 'pending_apply|ai_rejected'
@@ -2318,68 +2252,61 @@ function ClientAccordion({
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return EMPTY_ALL;
+      if (!res.ok) return {};
       const raw = (await res.json()) as Partial<AllOffersResponse>;
       return {
-        apply_now: raw.apply_now ?? EMPTY_BUCKET,
-        level_up: raw.level_up ?? EMPTY_BUCKET,
-        applied: raw.applied ?? EMPTY_BUCKET,
-        client_withdrawn: raw.client_withdrawn ?? EMPTY_BUCKET,
-        recruiter_rejected: raw.recruiter_rejected ?? EMPTY_BUCKET,
-        offer_received: raw.offer_received ?? EMPTY_BUCKET,
-        accepted: raw.accepted ?? EMPTY_BUCKET,
+        apply_now: raw.apply_now,
+        level_up: raw.level_up,
+        applied: raw.applied,
+        client_withdrawn: raw.client_withdrawn,
+        recruiter_rejected: raw.recruiter_rejected,
+        offer_received: raw.offer_received,
+        accepted: raw.accepted,
         new_skills_count: raw.new_skills_count,
         status_change_counter: raw.status_change_counter,
         status_change_counter_max: raw.status_change_counter_max,
       };
     } catch {
-      return EMPTY_ALL;
+      return {};
     }
   }
 
-  function applyAllOffersResponse(result: AllOffersResponse) {
-    setApplyOffers(result.apply_now.offers);
-    setApplyHasMore(result.apply_now.has_more);
-    setApplyNowCount(result.apply_now.count);
-    setApplyNowCountFiltered(result.apply_now.count_after_filters);
-    knownApplyCountRef.current = result.apply_now.count;
-
-    setLevelUpOffers(result.level_up.offers);
-    setLevelUpHasMore(result.level_up.has_more);
-    setLevelUpCount(result.level_up.count);
-    setLevelUpCountFiltered(result.level_up.count_after_filters);
-    knownLevelUpCountRef.current = result.level_up.count;
-
-    setAppliedOffers(result.applied.offers);
-    setAppliedHasMore(result.applied.has_more);
-    setAppliedCount(result.applied.count);
-    setAppliedCountFiltered(result.applied.count_after_filters);
-    knownAppliedCountRef.current = result.applied.count;
-
-    setWithdrawnOffers(result.client_withdrawn.offers);
-    setWithdrawnHasMore(result.client_withdrawn.has_more);
-    setWithdrawnCount(result.client_withdrawn.count);
-    setWithdrawnCountFiltered(result.client_withdrawn.count_after_filters);
-    knownWithdrawnCountRef.current = result.client_withdrawn.count;
-
-    setRejectedOffers(result.recruiter_rejected.offers);
-    setRejectedHasMore(result.recruiter_rejected.has_more);
-    setRejectedCount(result.recruiter_rejected.count);
-    setRejectedCountFiltered(result.recruiter_rejected.count_after_filters);
-    knownRejectedCountRef.current = result.recruiter_rejected.count;
-
-    setOfferReceivedOffers(result.offer_received.offers);
-    setOfferReceivedHasMore(result.offer_received.has_more);
-    setOfferReceivedCount(result.offer_received.count);
-    setOfferReceivedCountFiltered(result.offer_received.count_after_filters);
-    knownOfferReceivedCountRef.current = result.offer_received.count;
-
-    setAcceptedOffers(result.accepted.offers);
-    setAcceptedHasMore(result.accepted.has_more);
-    setAcceptedCount(result.accepted.count);
-    setAcceptedCountFiltered(result.accepted.count_after_filters);
-    knownAcceptedCountRef.current = result.accepted.count;
-
+  function applyAllOffersResponse(result: Partial<AllOffersResponse>) {
+    if (result.apply_now) {
+      const b = result.apply_now;
+      setApplySection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownApplyCountRef.current = b.count;
+    }
+    if (result.level_up) {
+      const b = result.level_up;
+      setLevelUpSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownLevelUpCountRef.current = b.count;
+    }
+    if (result.applied) {
+      const b = result.applied;
+      setAppliedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownAppliedCountRef.current = b.count;
+    }
+    if (result.client_withdrawn) {
+      const b = result.client_withdrawn;
+      setWithdrawnSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownWithdrawnCountRef.current = b.count;
+    }
+    if (result.recruiter_rejected) {
+      const b = result.recruiter_rejected;
+      setRejectedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownRejectedCountRef.current = b.count;
+    }
+    if (result.offer_received) {
+      const b = result.offer_received;
+      setOfferReceivedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownOfferReceivedCountRef.current = b.count;
+    }
+    if (result.accepted) {
+      const b = result.accepted;
+      setAcceptedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+      knownAcceptedCountRef.current = b.count;
+    }
     if (result.status_change_counter !== undefined) {
       setStatusChangeCounter(result.status_change_counter);
     }
@@ -2412,21 +2339,21 @@ function ClientAccordion({
   const hasOffersRef = useRef(false);
   useEffect(() => {
     hasOffersRef.current =
-      applyOffers.length > 0 ||
-      levelUpOffers.length > 0 ||
-      appliedOffers.length > 0 ||
-      withdrawnOffers.length > 0 ||
-      rejectedOffers.length > 0 ||
-      offerReceivedOffers.length > 0 ||
-      acceptedOffers.length > 0;
+      applySection.offers.length > 0 ||
+      levelUpSection.offers.length > 0 ||
+      appliedSection.offers.length > 0 ||
+      withdrawnSection.offers.length > 0 ||
+      rejectedSection.offers.length > 0 ||
+      offerReceivedSection.offers.length > 0 ||
+      acceptedSection.offers.length > 0;
   }, [
-    applyOffers,
-    levelUpOffers,
-    appliedOffers,
-    withdrawnOffers,
-    rejectedOffers,
-    offerReceivedOffers,
-    acceptedOffers,
+    applySection,
+    levelUpSection,
+    appliedSection,
+    withdrawnSection,
+    rejectedSection,
+    offerReceivedSection,
+    acceptedSection,
   ]);
 
   async function handleRefresh(sectionKey?: string) {
@@ -2512,50 +2439,29 @@ function ClientAccordion({
             if (isPendingGroup) {
               const applyBucket = raw.apply_now ?? EMPTY_BUCKET;
               const levelBucket = raw.level_up ?? EMPTY_BUCKET;
-              setApplyOffers(applyBucket.offers);
-              setApplyHasMore(applyBucket.has_more);
-              setApplyNowCount(applyBucket.count);
-              setApplyNowCountFiltered(applyBucket.count_after_filters);
+              setApplySection({ offers: applyBucket.offers, count: applyBucket.count, countFiltered: applyBucket.count_after_filters, hasMore: applyBucket.has_more });
               knownApplyCountRef.current = applyBucket.count;
-              setLevelUpOffers(levelBucket.offers);
-              setLevelUpHasMore(levelBucket.has_more);
-              setLevelUpCount(levelBucket.count);
-              setLevelUpCountFiltered(levelBucket.count_after_filters);
+              setLevelUpSection({ offers: levelBucket.offers, count: levelBucket.count, countFiltered: levelBucket.count_after_filters, hasMore: levelBucket.has_more });
               knownLevelUpCountRef.current = levelBucket.count;
             } else if (sectionKey === 'applied') {
               const b = raw.applied ?? EMPTY_BUCKET;
-              setAppliedOffers(b.offers);
-              setAppliedHasMore(b.has_more);
-              setAppliedCount(b.count);
-              setAppliedCountFiltered(b.count_after_filters);
+              setAppliedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
               knownAppliedCountRef.current = b.count;
             } else if (sectionKey === 'withdrawn') {
               const b = raw.client_withdrawn ?? EMPTY_BUCKET;
-              setWithdrawnOffers(b.offers);
-              setWithdrawnHasMore(b.has_more);
-              setWithdrawnCount(b.count);
-              setWithdrawnCountFiltered(b.count_after_filters);
+              setWithdrawnSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
               knownWithdrawnCountRef.current = b.count;
             } else if (sectionKey === 'rejected') {
               const b = raw.recruiter_rejected ?? EMPTY_BUCKET;
-              setRejectedOffers(b.offers);
-              setRejectedHasMore(b.has_more);
-              setRejectedCount(b.count);
-              setRejectedCountFiltered(b.count_after_filters);
+              setRejectedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
               knownRejectedCountRef.current = b.count;
             } else if (sectionKey === 'offer_received') {
               const b = raw.offer_received ?? EMPTY_BUCKET;
-              setOfferReceivedOffers(b.offers);
-              setOfferReceivedHasMore(b.has_more);
-              setOfferReceivedCount(b.count);
-              setOfferReceivedCountFiltered(b.count_after_filters);
+              setOfferReceivedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
               knownOfferReceivedCountRef.current = b.count;
             } else if (sectionKey === 'accepted') {
               const b = raw.accepted ?? EMPTY_BUCKET;
-              setAcceptedOffers(b.offers);
-              setAcceptedHasMore(b.has_more);
-              setAcceptedCount(b.count);
-              setAcceptedCountFiltered(b.count_after_filters);
+              setAcceptedSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
               knownAcceptedCountRef.current = b.count;
             }
           }
@@ -2647,8 +2553,8 @@ function ClientAccordion({
         pageOfferReceived: 1,
         pageAccepted: 1,
       });
-      setApplyOffers(prev => [...prev, ...result.apply_now.offers]);
-      setApplyHasMore(result.apply_now.has_more);
+      const applyMore = result.apply_now ?? EMPTY_BUCKET;
+      setApplySection(prev => ({ ...prev, offers: [...prev.offers, ...applyMore.offers], hasMore: applyMore.has_more }));
       setPageApplyNow(next);
     } finally {
       setApplyLoadingMore(false);
@@ -2671,8 +2577,8 @@ function ClientAccordion({
         pageOfferReceived: 1,
         pageAccepted: 1,
       });
-      setLevelUpOffers(prev => [...prev, ...result.level_up.offers]);
-      setLevelUpHasMore(result.level_up.has_more);
+      const levelMore = result.level_up ?? EMPTY_BUCKET;
+      setLevelUpSection(prev => ({ ...prev, offers: [...prev.offers, ...levelMore.offers], hasMore: levelMore.has_more }));
       setPageLevelUp(next);
     } finally {
       setLevelUpLoadingMore(false);
@@ -2695,8 +2601,8 @@ function ClientAccordion({
         pageOfferReceived: 1,
         pageAccepted: 1,
       });
-      setAppliedOffers(prev => [...prev, ...result.applied.offers]);
-      setAppliedHasMore(result.applied.has_more);
+      const appliedMore = result.applied ?? EMPTY_BUCKET;
+      setAppliedSection(prev => ({ ...prev, offers: [...prev.offers, ...appliedMore.offers], hasMore: appliedMore.has_more }));
       setPageApplied(next);
     } finally {
       setAppliedLoadingMore(false);
@@ -2719,8 +2625,8 @@ function ClientAccordion({
         pageOfferReceived: 1,
         pageAccepted: 1,
       });
-      setWithdrawnOffers(prev => [...prev, ...result.client_withdrawn.offers]);
-      setWithdrawnHasMore(result.client_withdrawn.has_more);
+      const withdrawnMore = result.client_withdrawn ?? EMPTY_BUCKET;
+      setWithdrawnSection(prev => ({ ...prev, offers: [...prev.offers, ...withdrawnMore.offers], hasMore: withdrawnMore.has_more }));
       setPageWithdrawn(next);
     } finally {
       setWithdrawnLoadingMore(false);
@@ -2743,8 +2649,8 @@ function ClientAccordion({
         pageOfferReceived: 1,
         pageAccepted: 1,
       });
-      setRejectedOffers(prev => [...prev, ...result.recruiter_rejected.offers]);
-      setRejectedHasMore(result.recruiter_rejected.has_more);
+      const rejectedMore = result.recruiter_rejected ?? EMPTY_BUCKET;
+      setRejectedSection(prev => ({ ...prev, offers: [...prev.offers, ...rejectedMore.offers], hasMore: rejectedMore.has_more }));
       setPageRejected(next);
     } finally {
       setRejectedLoadingMore(false);
@@ -2767,11 +2673,8 @@ function ClientAccordion({
         pageOfferReceived: next,
         pageAccepted: 1,
       });
-      setOfferReceivedOffers(prev => [
-        ...prev,
-        ...result.offer_received.offers,
-      ]);
-      setOfferReceivedHasMore(result.offer_received.has_more);
+      const offerReceivedMore = result.offer_received ?? EMPTY_BUCKET;
+      setOfferReceivedSection(prev => ({ ...prev, offers: [...prev.offers, ...offerReceivedMore.offers], hasMore: offerReceivedMore.has_more }));
       setPageOfferReceived(next);
     } finally {
       setOfferReceivedLoadingMore(false);
@@ -2794,8 +2697,8 @@ function ClientAccordion({
         pageOfferReceived: 1,
         pageAccepted: next,
       });
-      setAcceptedOffers(prev => [...prev, ...result.accepted.offers]);
-      setAcceptedHasMore(result.accepted.has_more);
+      const acceptedMore = result.accepted ?? EMPTY_BUCKET;
+      setAcceptedSection(prev => ({ ...prev, offers: [...prev.offers, ...acceptedMore.offers], hasMore: acceptedMore.has_more }));
       setPageAccepted(next);
     } finally {
       setAcceptedLoadingMore(false);
@@ -3044,45 +2947,34 @@ function ClientAccordion({
         if (polled.accepted.count !== oldAccepted) setHasNewAccepted(true);
 
         // Update counts and known refs (does not reset offer arrays or pages)
-        setApplyNowCount(polled.apply_now.count);
-        setApplyNowCountFiltered(polled.apply_now.count_after_filters);
+        setApplySection(prev => ({ ...prev, count: polled.apply_now.count, countFiltered: polled.apply_now.count_after_filters }));
         knownApplyCountRef.current = polled.apply_now.count;
 
-        setLevelUpCount(polled.level_up.count);
-        setLevelUpCountFiltered(polled.level_up.count_after_filters);
+        setLevelUpSection(prev => ({ ...prev, count: polled.level_up.count, countFiltered: polled.level_up.count_after_filters }));
         knownLevelUpCountRef.current = polled.level_up.count;
 
-        setAppliedCount(polled.applied.count);
-        setAppliedCountFiltered(polled.applied.count_after_filters);
+        setAppliedSection(prev => ({ ...prev, count: polled.applied.count, countFiltered: polled.applied.count_after_filters }));
         knownAppliedCountRef.current = polled.applied.count;
 
-        setWithdrawnCount(polled.client_withdrawn.count);
-        setWithdrawnCountFiltered(polled.client_withdrawn.count_after_filters);
+        setWithdrawnSection(prev => ({ ...prev, count: polled.client_withdrawn.count, countFiltered: polled.client_withdrawn.count_after_filters }));
         knownWithdrawnCountRef.current = polled.client_withdrawn.count;
 
-        setRejectedCount(polled.recruiter_rejected.count);
-        setRejectedCountFiltered(polled.recruiter_rejected.count_after_filters);
+        setRejectedSection(prev => ({ ...prev, count: polled.recruiter_rejected.count, countFiltered: polled.recruiter_rejected.count_after_filters }));
         knownRejectedCountRef.current = polled.recruiter_rejected.count;
 
-        setOfferReceivedCount(polled.offer_received.count);
-        setOfferReceivedCountFiltered(
-          polled.offer_received.count_after_filters,
-        );
+        setOfferReceivedSection(prev => ({ ...prev, count: polled.offer_received.count, countFiltered: polled.offer_received.count_after_filters }));
         knownOfferReceivedCountRef.current = polled.offer_received.count;
 
-        setAcceptedCount(polled.accepted.count);
-        setAcceptedCountFiltered(polled.accepted.count_after_filters);
+        setAcceptedSection(prev => ({ ...prev, count: polled.accepted.count, countFiltered: polled.accepted.count_after_filters }));
         knownAcceptedCountRef.current = polled.accepted.count;
 
         // Populate arrays on 0→N transitions
         if (oldApply === 0 && polled.apply_now.count > 0) {
-          setApplyOffers(polled.apply_now.offers);
-          setApplyHasMore(polled.apply_now.has_more);
+          setApplySection(prev => ({ ...prev, offers: polled.apply_now.offers, hasMore: polled.apply_now.has_more }));
           setPageApplyNow(1);
         }
         if (oldLevelUp === 0 && polled.level_up.count > 0) {
-          setLevelUpOffers(polled.level_up.offers);
-          setLevelUpHasMore(polled.level_up.has_more);
+          setLevelUpSection(prev => ({ ...prev, offers: polled.level_up.offers, hasMore: polled.level_up.has_more }));
           setPageLevelUp(1);
         }
       }, 30000);
@@ -3106,13 +2998,13 @@ function ClientAccordion({
           ? { ...o, cv_url: cvUrl, cv_status: cvStatus }
           : o,
       );
-    setApplyOffers(patch);
-    setLevelUpOffers(patch);
-    setAppliedOffers(patch);
-    setWithdrawnOffers(patch);
-    setRejectedOffers(patch);
-    setOfferReceivedOffers(patch);
-    setAcceptedOffers(patch);
+    setApplySection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setLevelUpSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setAppliedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setWithdrawnSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
   }
 
   function handleClUpdate(offerId: string, clUrl: string, clStatus: string) {
@@ -3122,13 +3014,13 @@ function ClientAccordion({
           ? { ...o, cl_url: clUrl, cl_status: clStatus }
           : o,
       );
-    setApplyOffers(patch);
-    setLevelUpOffers(patch);
-    setAppliedOffers(patch);
-    setWithdrawnOffers(patch);
-    setRejectedOffers(patch);
-    setOfferReceivedOffers(patch);
-    setAcceptedOffers(patch);
+    setApplySection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setLevelUpSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setAppliedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setWithdrawnSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
   }
 
   function handleSalaryUpdate(userOfferId: string, salary: OfferSalary) {
@@ -3136,13 +3028,13 @@ function ClientAccordion({
       (offers ?? []).map(o =>
         o.user_offer_id === userOfferId ? { ...o, salary: [salary] } : o,
       );
-    setApplyOffers(patch);
-    setLevelUpOffers(patch);
-    setAppliedOffers(patch);
-    setWithdrawnOffers(patch);
-    setRejectedOffers(patch);
-    setOfferReceivedOffers(patch);
-    setAcceptedOffers(patch);
+    setApplySection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setLevelUpSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setAppliedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setWithdrawnSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
   }
 
   async function handleScanPage() {
@@ -3357,19 +3249,19 @@ function ClientAccordion({
 
   const filteredApplyOffers = useMemo(
     () =>
-      (applyOffers ?? [])
+      applySection.offers
         .filter(o => (o.claude_score ?? 0) >= minScore)
         .filter(o => !cvGenerated || o.cv_status === 'done')
         .filter(o => !clGenerated || o.cl_status === 'done'),
-    [applyOffers, minScore, cvGenerated, clGenerated],
+    [applySection.offers, minScore, cvGenerated, clGenerated],
   );
   const filteredLevelUpOffers = useMemo(
     () =>
-      (levelUpOffers ?? [])
+      levelUpSection.offers
         .filter(o => (o.claude_score ?? 0) >= minScore)
         .filter(o => !cvGenerated || o.cv_status === 'done')
         .filter(o => !clGenerated || o.cl_status === 'done'),
-    [levelUpOffers, minScore, cvGenerated, clGenerated],
+    [levelUpSection.offers, minScore, cvGenerated, clGenerated],
   );
 
   function renderSection(opts: {
@@ -3859,13 +3751,13 @@ function ClientAccordion({
                                 ? { ...o, is_starred: starred }
                                 : o,
                             );
-                          setApplyOffers(patch);
-                          setLevelUpOffers(patch);
-                          setAppliedOffers(patch);
-                          setWithdrawnOffers(patch);
-                          setRejectedOffers(patch);
-                          setOfferReceivedOffers(patch);
-                          setAcceptedOffers(patch);
+                          setApplySection(prev => ({ ...prev, offers: patch(prev.offers) }));
+                          setLevelUpSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+                          setAppliedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+                          setWithdrawnSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+                          setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+                          setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+                          setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
                         } else {
                           setPageOffer(p =>
                             p ? { ...p, is_starred: prev } : null,
@@ -3929,17 +3821,17 @@ function ClientAccordion({
                         sectionKey: 'apply_now',
                         isLoadingSection: isLoadingApplyNow,
                         offers: filteredApplyOffers,
-                        count: applyNowCount,
-                        countFiltered: applyNowCountFiltered,
-                        hasMore: applyHasMore,
+                        count: applySection.count,
+                        countFiltered: applySection.countFiltered,
+                        hasMore: applySection.hasMore,
                         loadingMore: applyLoadingMore,
                         isOpen: applyOpen,
                         hasNew: hasNewApply,
                         setOpen: setApplyOpen,
                         onLoadMore: handleLoadMoreApply,
                         badgeColor: 'bg-blue-100 text-blue-800',
-                        setOffers: setApplyOffers,
-                        setCountFiltered: setApplyNowCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setApplySection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setApplySection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                         emptyMessage: selfMode
                           ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
                           : 'No offers found.',
@@ -3950,107 +3842,107 @@ function ClientAccordion({
                         sectionKey: 'level_up',
                         isLoadingSection: isLoadingLevelUp,
                         offers: filteredLevelUpOffers,
-                        count: levelUpCount,
-                        countFiltered: levelUpCountFiltered,
-                        hasMore: levelUpHasMore,
+                        count: levelUpSection.count,
+                        countFiltered: levelUpSection.countFiltered,
+                        hasMore: levelUpSection.hasMore,
                         loadingMore: levelUpLoadingMore,
                         isOpen: levelUpOpen,
                         hasNew: hasNewLevelUp,
                         setOpen: setLevelUpOpen,
                         onLoadMore: handleLoadMoreLevelUp,
                         badgeColor: 'bg-orange-100 text-orange-800',
-                        setOffers: setLevelUpOffers,
-                        setCountFiltered: setLevelUpCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setLevelUpSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setLevelUpSection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                       })}
                     {showApplied &&
                       renderSection({
                         title: 'Applied',
                         sectionKey: 'applied',
                         isLoadingSection: isLoadingApplied,
-                        offers: appliedOffers,
-                        count: appliedCount,
-                        countFiltered: appliedCountFiltered,
-                        hasMore: appliedHasMore,
+                        offers: appliedSection.offers,
+                        count: appliedSection.count,
+                        countFiltered: appliedSection.countFiltered,
+                        hasMore: appliedSection.hasMore,
                         loadingMore: appliedLoadingMore,
                         isOpen: appliedOpen,
                         hasNew: hasNewApplied,
                         setOpen: setAppliedOpen,
                         onLoadMore: handleLoadMoreApplied,
                         badgeColor: 'bg-green-100 text-green-800',
-                        setOffers: setAppliedOffers,
-                        setCountFiltered: setAppliedCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setAppliedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setAppliedSection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                       })}
                     {showWithdrawn &&
                       renderSection({
                         title: 'Withdrawn',
                         sectionKey: 'withdrawn',
                         isLoadingSection: isLoadingWithdrawn,
-                        offers: withdrawnOffers,
-                        count: withdrawnCount,
-                        countFiltered: withdrawnCountFiltered,
-                        hasMore: withdrawnHasMore,
+                        offers: withdrawnSection.offers,
+                        count: withdrawnSection.count,
+                        countFiltered: withdrawnSection.countFiltered,
+                        hasMore: withdrawnSection.hasMore,
                         loadingMore: withdrawnLoadingMore,
                         isOpen: withdrawnOpen,
                         hasNew: hasNewWithdrawn,
                         setOpen: setWithdrawnOpen,
                         onLoadMore: handleLoadMoreWithdrawn,
                         badgeColor: 'bg-gray-100 text-gray-600',
-                        setOffers: setWithdrawnOffers,
-                        setCountFiltered: setWithdrawnCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setWithdrawnSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setWithdrawnSection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                       })}
                     {showRejected &&
                       renderSection({
                         title: 'Recruiter rejected',
                         sectionKey: 'rejected',
                         isLoadingSection: isLoadingRejected,
-                        offers: rejectedOffers,
-                        count: rejectedCount,
-                        countFiltered: rejectedCountFiltered,
-                        hasMore: rejectedHasMore,
+                        offers: rejectedSection.offers,
+                        count: rejectedSection.count,
+                        countFiltered: rejectedSection.countFiltered,
+                        hasMore: rejectedSection.hasMore,
                         loadingMore: rejectedLoadingMore,
                         isOpen: rejectedOpen,
                         hasNew: hasNewRejected,
                         setOpen: setRejectedOpen,
                         onLoadMore: handleLoadMoreRejected,
                         badgeColor: 'bg-red-100 text-red-700',
-                        setOffers: setRejectedOffers,
-                        setCountFiltered: setRejectedCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setRejectedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setRejectedSection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                       })}
                     {showOfferReceived &&
                       renderSection({
                         title: 'Offer received',
                         sectionKey: 'offer_received',
                         isLoadingSection: isLoadingOfferReceived,
-                        offers: offerReceivedOffers,
-                        count: offerReceivedCount,
-                        countFiltered: offerReceivedCountFiltered,
-                        hasMore: offerReceivedHasMore,
+                        offers: offerReceivedSection.offers,
+                        count: offerReceivedSection.count,
+                        countFiltered: offerReceivedSection.countFiltered,
+                        hasMore: offerReceivedSection.hasMore,
                         loadingMore: offerReceivedLoadingMore,
                         isOpen: offerReceivedOpen,
                         hasNew: hasNewOfferReceived,
                         setOpen: setOfferReceivedOpen,
                         onLoadMore: handleLoadMoreOfferReceived,
                         badgeColor: 'bg-purple-100 text-purple-700',
-                        setOffers: setOfferReceivedOffers,
-                        setCountFiltered: setOfferReceivedCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setOfferReceivedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setOfferReceivedSection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                       })}
                     {showAccepted &&
                       renderSection({
                         title: 'Accepted',
                         sectionKey: 'accepted',
                         isLoadingSection: isLoadingAccepted,
-                        offers: acceptedOffers,
-                        count: acceptedCount,
-                        countFiltered: acceptedCountFiltered,
-                        hasMore: acceptedHasMore,
+                        offers: acceptedSection.offers,
+                        count: acceptedSection.count,
+                        countFiltered: acceptedSection.countFiltered,
+                        hasMore: acceptedSection.hasMore,
                         loadingMore: acceptedLoadingMore,
                         isOpen: acceptedOpen,
                         hasNew: hasNewAccepted,
                         setOpen: setAcceptedOpen,
                         onLoadMore: handleLoadMoreAccepted,
                         badgeColor: 'bg-teal-100 text-teal-700',
-                        setOffers: setAcceptedOffers,
-                        setCountFiltered: setAcceptedCountFiltered,
+                        setOffers: (updater: React.SetStateAction<UserOffer[]>) => setAcceptedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
+                        setCountFiltered: (updater: React.SetStateAction<number>) => setAcceptedSection(prev => ({ ...prev, countFiltered: typeof updater === 'function' ? (updater as (p: number) => number)(prev.countFiltered) : updater })),
                       })}
                   </>
                 );
@@ -4112,27 +4004,13 @@ function ClientAccordion({
                     requestAnimationFrame(() => setProfileVisible(true));
                   }}
                   onSyncTriggered={() => {
-                    setApplyOffers([]);
-                    setLevelUpOffers([]);
-                    setAppliedOffers([]);
-                    setWithdrawnOffers([]);
-                    setRejectedOffers([]);
-                    setOfferReceivedOffers([]);
-                    setAcceptedOffers([]);
-                    setApplyNowCount(0);
-                    setApplyNowCountFiltered(0);
-                    setLevelUpCount(0);
-                    setLevelUpCountFiltered(0);
-                    setAppliedCount(0);
-                    setAppliedCountFiltered(0);
-                    setWithdrawnCount(0);
-                    setWithdrawnCountFiltered(0);
-                    setRejectedCount(0);
-                    setRejectedCountFiltered(0);
-                    setOfferReceivedCount(0);
-                    setOfferReceivedCountFiltered(0);
-                    setAcceptedCount(0);
-                    setAcceptedCountFiltered(0);
+                    setApplySection(EMPTY_SECTION);
+                    setLevelUpSection(EMPTY_SECTION);
+                    setAppliedSection(EMPTY_SECTION);
+                    setWithdrawnSection(EMPTY_SECTION);
+                    setRejectedSection(EMPTY_SECTION);
+                    setOfferReceivedSection(EMPTY_SECTION);
+                    setAcceptedSection(EMPTY_SECTION);
                     knownApplyCountRef.current = 0;
                     knownLevelUpCountRef.current = 0;
                     knownAppliedCountRef.current = 0;
