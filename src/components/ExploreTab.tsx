@@ -3405,6 +3405,10 @@ function ClientAccordion({
                               ),
                             );
                           }
+                          // Sync to page offer if same offer
+                          if (pageOffer?.user_offer_id === id) {
+                            setPageOffer(p => p ? { ...p, is_starred: starred } : null);
+                          }
                         }
                       } catch {
                         /* ignore */
@@ -3719,7 +3723,20 @@ function ClientAccordion({
                               : {},
                           },
                         );
-                        if (!res.ok) {
+                        if (res.ok) {
+                          // Sync to all section arrays
+                          const patch = (offers: UserOffer[]) =>
+                            offers.map(o =>
+                              o.user_offer_id === id ? { ...o, is_starred: starred } : o,
+                            );
+                          setApplyOffers(patch);
+                          setLevelUpOffers(patch);
+                          setAppliedOffers(patch);
+                          setWithdrawnOffers(patch);
+                          setRejectedOffers(patch);
+                          setOfferReceivedOffers(patch);
+                          setAcceptedOffers(patch);
+                        } else {
                           setPageOffer(p => p ? { ...p, is_starred: prev } : null);
                         }
                       } catch {
