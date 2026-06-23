@@ -3705,6 +3705,27 @@ function ClientAccordion({
                     }
                     preferenceSalaries={preferenceSalaries}
                     isPageOffer={true}
+                    onStarToggle={async (id, starred) => {
+                      const prev = pageOffer?.is_starred;
+                      setPageOffer(p => p ? { ...p, is_starred: starred } : null);
+                      try {
+                        const token = await getToken();
+                        const res = await fetch(
+                          `${API_BASE_URL}/v1/user-offers/${id}/star`,
+                          {
+                            method: 'PATCH',
+                            headers: token
+                              ? { Authorization: `Bearer ${token}` }
+                              : {},
+                          },
+                        );
+                        if (!res.ok) {
+                          setPageOffer(p => p ? { ...p, is_starred: prev } : null);
+                        }
+                      } catch {
+                        setPageOffer(p => p ? { ...p, is_starred: prev } : null);
+                      }
+                    }}
                   />
                 </div>
               )}
