@@ -4609,6 +4609,22 @@ export default function ExploreTab({
   }, []);
 
   useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_generated_cv', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_generated_cv) setCvGenerated(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('hd_generated_cl', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.hd_generated_cl) setClGenerated(true);
+    });
+  }, []);
+
+  useEffect(() => {
     const el = document.getElementById('main-scroll');
     if (!el) return;
     function handleScroll() {
@@ -4772,7 +4788,12 @@ export default function ExploreTab({
                 <input
                   type="checkbox"
                   checked={cvGenerated}
-                  onChange={e => setCvGenerated(e.target.checked)}
+                  onChange={e => {
+                    setCvGenerated(e.target.checked);
+                    if (typeof chrome !== 'undefined' && chrome.storage) {
+                      chrome.storage.local.set({ hd_generated_cv: e.target.checked });
+                    }
+                  }}
                   className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
                 />
                 <span className="text-xs text-gray-700">CV</span>
@@ -4781,7 +4802,12 @@ export default function ExploreTab({
                 <input
                   type="checkbox"
                   checked={clGenerated}
-                  onChange={e => setClGenerated(e.target.checked)}
+                  onChange={e => {
+                    setClGenerated(e.target.checked);
+                    if (typeof chrome !== 'undefined' && chrome.storage) {
+                      chrome.storage.local.set({ hd_generated_cl: e.target.checked });
+                    }
+                  }}
                   className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
                 />
                 <span className="text-xs text-gray-700">CL</span>
