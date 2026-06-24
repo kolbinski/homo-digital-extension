@@ -1534,7 +1534,8 @@ function OfferCard({
                       {STATUS_OPTIONS.filter(
                         opt =>
                           opt.value !== offer.status &&
-                          (!selfMode || opt.value !== 'agent_withdrawn'),
+                          (!selfMode || opt.value !== 'agent_withdrawn') &&
+                          !(offer.status === 'ai_rejected' && opt.value === 'pending_apply'),
                       ).map(opt => (
                         <button
                           key={opt.value}
