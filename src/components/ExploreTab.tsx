@@ -66,6 +66,18 @@ interface UserOffer {
   work_model?: string;
   claude_recommended?: boolean | null;
   is_starred?: boolean;
+  published_at?: string | null;
+}
+
+function publishedLabel(publishedAt: string): string {
+  const pub = new Date(publishedAt);
+  const today = new Date();
+  const pubDate = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate());
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const days = Math.round((todayDate.getTime() - pubDate.getTime()) / 86400000);
+  if (days <= 0) return 'Published today';
+  if (days === 1) return 'Published yesterday';
+  return `Published ${days} days ago`;
 }
 
 function formatNum(n: number): string {
@@ -1069,6 +1081,9 @@ function OfferCard({
             </div>
           );
         })()}
+        {offer.published_at && (
+          <p className="text-xs text-gray-400">{publishedLabel(offer.published_at)}</p>
+        )}
         {offer.required_skills && offer.required_skills.length > 0 && (
           <div className="flex flex-wrap gap-1 items-center">
             <span className="text-xs text-gray-500">Required skills:</span>
