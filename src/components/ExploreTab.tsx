@@ -1654,13 +1654,25 @@ function ClientAccordion({
   const knownOfferReceivedCountRef = useRef(0);
   const knownAcceptedCountRef = useRef(0);
 
-  const [applyOpen, setApplyOpen] = useState(true);
-  const [levelUpOpen, setLevelUpOpen] = useState(false);
-  const [appliedOpen, setAppliedOpen] = useState(false);
-  const [withdrawnOpen, setWithdrawnOpen] = useState(false);
-  const [rejectedOpen, setRejectedOpen] = useState(false);
-  const [offerReceivedOpen, setOfferReceivedOpen] = useState(false);
-  const [acceptedOpen, setAcceptedOpen] = useState(false);
+  type AccordionKey = 'apply_now' | 'level_up' | 'applied' | 'client_withdrawn' | 'recruiter_rejected' | 'offer_received' | 'accepted';
+  const DEFAULT_ACCORDION_OPEN: Record<AccordionKey, boolean> = { apply_now: true, level_up: true, applied: true, client_withdrawn: true, recruiter_rejected: true, offer_received: true, accepted: true };
+  const [accordionOpen, setAccordionOpen] = useState<Record<AccordionKey, boolean>>(DEFAULT_ACCORDION_OPEN);
+  function setAccordionSection(key: AccordionKey, value: boolean) {
+    const next = { ...accordionOpen, [key]: value };
+    setAccordionOpen(next);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ accordion_state: next });
+    }
+  }
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    chrome.storage.local.get('accordion_state', result => {
+      if (chrome.runtime.lastError) return;
+      if (result.accordion_state) {
+        setAccordionOpen(prev => ({ ...prev, ...(result.accordion_state as Record<AccordionKey, boolean>) }));
+      }
+    });
+  }, []);
 
   const [pageOfferOpen, setPageOfferOpen] = useState(true);
   const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
@@ -3825,9 +3837,9 @@ function ClientAccordion({
                         countFiltered: applySection.countFiltered,
                         hasMore: applySection.hasMore,
                         loadingMore: applyLoadingMore,
-                        isOpen: applyOpen,
+                        isOpen: accordionOpen.apply_now,
                         hasNew: hasNewApply,
-                        setOpen: setApplyOpen,
+                        setOpen: v => setAccordionSection('apply_now', v),
                         onLoadMore: handleLoadMoreApply,
                         badgeColor: 'bg-blue-100 text-blue-800',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setApplySection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
@@ -3846,9 +3858,9 @@ function ClientAccordion({
                         countFiltered: levelUpSection.countFiltered,
                         hasMore: levelUpSection.hasMore,
                         loadingMore: levelUpLoadingMore,
-                        isOpen: levelUpOpen,
+                        isOpen: accordionOpen.level_up,
                         hasNew: hasNewLevelUp,
-                        setOpen: setLevelUpOpen,
+                        setOpen: v => setAccordionSection('level_up', v),
                         onLoadMore: handleLoadMoreLevelUp,
                         badgeColor: 'bg-orange-100 text-orange-800',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setLevelUpSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
@@ -3864,9 +3876,9 @@ function ClientAccordion({
                         countFiltered: appliedSection.countFiltered,
                         hasMore: appliedSection.hasMore,
                         loadingMore: appliedLoadingMore,
-                        isOpen: appliedOpen,
+                        isOpen: accordionOpen.applied,
                         hasNew: hasNewApplied,
-                        setOpen: setAppliedOpen,
+                        setOpen: v => setAccordionSection('applied', v),
                         onLoadMore: handleLoadMoreApplied,
                         badgeColor: 'bg-green-100 text-green-800',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setAppliedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
@@ -3882,9 +3894,9 @@ function ClientAccordion({
                         countFiltered: withdrawnSection.countFiltered,
                         hasMore: withdrawnSection.hasMore,
                         loadingMore: withdrawnLoadingMore,
-                        isOpen: withdrawnOpen,
+                        isOpen: accordionOpen.client_withdrawn,
                         hasNew: hasNewWithdrawn,
-                        setOpen: setWithdrawnOpen,
+                        setOpen: v => setAccordionSection('client_withdrawn', v),
                         onLoadMore: handleLoadMoreWithdrawn,
                         badgeColor: 'bg-gray-100 text-gray-600',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setWithdrawnSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
@@ -3900,9 +3912,9 @@ function ClientAccordion({
                         countFiltered: rejectedSection.countFiltered,
                         hasMore: rejectedSection.hasMore,
                         loadingMore: rejectedLoadingMore,
-                        isOpen: rejectedOpen,
+                        isOpen: accordionOpen.recruiter_rejected,
                         hasNew: hasNewRejected,
-                        setOpen: setRejectedOpen,
+                        setOpen: v => setAccordionSection('recruiter_rejected', v),
                         onLoadMore: handleLoadMoreRejected,
                         badgeColor: 'bg-red-100 text-red-700',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setRejectedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
@@ -3918,9 +3930,9 @@ function ClientAccordion({
                         countFiltered: offerReceivedSection.countFiltered,
                         hasMore: offerReceivedSection.hasMore,
                         loadingMore: offerReceivedLoadingMore,
-                        isOpen: offerReceivedOpen,
+                        isOpen: accordionOpen.offer_received,
                         hasNew: hasNewOfferReceived,
-                        setOpen: setOfferReceivedOpen,
+                        setOpen: v => setAccordionSection('offer_received', v),
                         onLoadMore: handleLoadMoreOfferReceived,
                         badgeColor: 'bg-purple-100 text-purple-700',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setOfferReceivedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
@@ -3936,9 +3948,9 @@ function ClientAccordion({
                         countFiltered: acceptedSection.countFiltered,
                         hasMore: acceptedSection.hasMore,
                         loadingMore: acceptedLoadingMore,
-                        isOpen: acceptedOpen,
+                        isOpen: accordionOpen.accepted,
                         hasNew: hasNewAccepted,
-                        setOpen: setAcceptedOpen,
+                        setOpen: v => setAccordionSection('accepted', v),
                         onLoadMore: handleLoadMoreAccepted,
                         badgeColor: 'bg-teal-100 text-teal-700',
                         setOffers: (updater: React.SetStateAction<UserOffer[]>) => setAcceptedSection(prev => ({ ...prev, offers: typeof updater === 'function' ? (updater as (p: UserOffer[]) => UserOffer[])(prev.offers) : updater })),
