@@ -92,6 +92,7 @@ function offerScoreBadgeClass(score: number): string {
 
 const STATUS_LABELS: Record<string, string> = {
   pending_apply: 'Pending apply',
+  ai_rejected: 'Pending apply',
   applied: 'Applied',
   agent_withdrawn: 'Agent withdrawn',
   recruiter_rejected: 'Recruiter rejected',
