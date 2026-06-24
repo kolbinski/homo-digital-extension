@@ -1777,6 +1777,9 @@ function ClientAccordion({
   const loadMoreOfferReceivedInProgress = useRef(false);
   const loadMoreAcceptedInProgress = useRef(false);
 
+  const filterDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchAbortControllerRef = useRef<AbortController | null>(null);
+
   // Per-section blue-dot flags (count changed since last refresh)
   const [hasNewApply, setHasNewApply] = useState(false);
   const [hasNewLevelUp, setHasNewLevelUp] = useState(false);
@@ -2218,19 +2221,29 @@ function ClientAccordion({
     setOfferReceivedSection(EMPTY_SECTION);
     setAcceptedSection(EMPTY_SECTION);
     if (sortBy === 'salary_delta' && !isPro) return;
-    let cancelled = false;
-    async function refetchOffers() {
-      if (isOpen) setIsLoading(true);
-      const result = await fetchAllOffers();
-      if (cancelled) return;
-      applyAllOffersResponse(result);
-      if (cancelled) return;
-      if (isOpen) setIsLoading(false);
-      setHasLoaded(true);
-    }
-    refetchOffers();
+    // Abort any in-flight filter fetch immediately
+    fetchAbortControllerRef.current?.abort();
+    fetchAbortControllerRef.current = null;
+    // Clear any pending debounce, then wait 300ms before fetching
+    if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
+    filterDebounceRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      fetchAbortControllerRef.current = controller;
+      async function refetchOffers() {
+        if (isOpen) setIsLoading(true);
+        const result = await fetchAllOffers({}, controller.signal);
+        if (controller.signal.aborted) return;
+        applyAllOffersResponse(result);
+        if (controller.signal.aborted) return;
+        if (isOpen) setIsLoading(false);
+        setHasLoaded(true);
+      }
+      void refetchOffers();
+    }, 300);
     return () => {
-      cancelled = true;
+      if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
+      fetchAbortControllerRef.current?.abort();
+      fetchAbortControllerRef.current = null;
     };
   }, [
     statusFilter,
@@ -2280,6 +2293,7 @@ function ClientAccordion({
 
   async function fetchAllOffers(
     pages: FetchAllPages = {},
+    signal?: AbortSignal,
   ): Promise<Partial<AllOffersResponse>> {
     const token = await getToken();
     if (!token) return {};
@@ -2332,6 +2346,7 @@ function ClientAccordion({
     try {
       const res = await fetch(`${API_BASE_URL}/v1/user-offers?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
+        signal,
       });
       if (!res.ok) return {};
       const raw = (await res.json()) as Partial<AllOffersResponse>;
