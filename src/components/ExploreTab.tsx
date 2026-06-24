@@ -4144,7 +4144,7 @@ function ClientAccordion({
                                   )
                                 : updater,
                           })),
-                        emptyMessage: selfMode
+                        emptyMessage: applySection.count === 0
                           ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
                           : 'No offers found.',
                       })}
