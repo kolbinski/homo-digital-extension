@@ -3705,11 +3705,34 @@ function ClientAccordion({
                     onRollback={() => {}}
                     onError={setStatusError}
                     onStatusChange402={() => setStatusChangeLimitHit(true)}
-                    onStatusChanged={(_id, newStatus) =>
+                    onStatusChanged={(offerId, newStatus) => {
+                      const oldStatus = pageOffer.status;
                       setPageOffer(prev =>
                         prev ? { ...prev, status: newStatus } : null,
-                      )
-                    }
+                      );
+                      // Remove from source section
+                      function dec(setter: React.Dispatch<React.SetStateAction<SectionState>>) {
+                        setter(prev => ({
+                          ...prev,
+                          offers: prev.offers.filter(o => o.user_offer_id !== offerId),
+                          count: Math.max(0, prev.count - 1),
+                          countFiltered: Math.max(0, prev.countFiltered - 1),
+                        }));
+                      }
+                      if (oldStatus === 'pending_apply') dec(setApplySection);
+                      else if (oldStatus === 'ai_rejected') dec(setLevelUpSection);
+                      else if (oldStatus === 'applied') dec(setAppliedSection);
+                      else if (oldStatus === 'client_withdrawn') dec(setWithdrawnSection);
+                      else if (oldStatus === 'recruiter_rejected') dec(setRejectedSection);
+                      else if (oldStatus === 'offer_received') dec(setOfferReceivedSection);
+                      else if (oldStatus === 'accepted') dec(setAcceptedSection);
+                      // Decrement target section known count so next poll detects change → blue dot
+                      if (newStatus === 'applied') knownAppliedCountRef.current = Math.max(0, knownAppliedCountRef.current - 1);
+                      else if (newStatus === 'client_withdrawn') knownWithdrawnCountRef.current = Math.max(0, knownWithdrawnCountRef.current - 1);
+                      else if (newStatus === 'recruiter_rejected') knownRejectedCountRef.current = Math.max(0, knownRejectedCountRef.current - 1);
+                      else if (newStatus === 'offer_received') knownOfferReceivedCountRef.current = Math.max(0, knownOfferReceivedCountRef.current - 1);
+                      else if (newStatus === 'accepted') knownAcceptedCountRef.current = Math.max(0, knownAcceptedCountRef.current - 1);
+                    }}
                     onCvUpdate={handleCvUpdate}
                     onClUpdate={handleClUpdate}
                     onSalaryUpdate={handleSalaryUpdate}
