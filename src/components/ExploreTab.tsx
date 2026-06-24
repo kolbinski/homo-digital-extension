@@ -3680,7 +3680,7 @@ function ClientAccordion({
                   />
                 ))}
                 {hasMore && (
-                  <div className="flex justify-center py-2">
+                  <div className="flex justify-center pb-2">
                     <button
                       type="button"
                       onClick={() => void onLoadMore()}
@@ -4159,9 +4159,10 @@ function ClientAccordion({
                                   )
                                 : updater,
                           })),
-                        emptyMessage: applySection.count === 0
-                          ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
-                          : 'No offers found.',
+                        emptyMessage:
+                          applySection.count === 0
+                            ? "We're scanning thousands of offers for you. Your matches will appear here shortly."
+                            : 'No offers found.',
                       })}
                     {showLevelUp &&
                       renderSection({
@@ -4806,7 +4807,9 @@ export default function ExploreTab({
                   onChange={e => {
                     setCvGenerated(e.target.checked);
                     if (typeof chrome !== 'undefined' && chrome.storage) {
-                      chrome.storage.local.set({ hd_generated_cv: e.target.checked });
+                      chrome.storage.local.set({
+                        hd_generated_cv: e.target.checked,
+                      });
                     }
                   }}
                   className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
@@ -4820,7 +4823,9 @@ export default function ExploreTab({
                   onChange={e => {
                     setClGenerated(e.target.checked);
                     if (typeof chrome !== 'undefined' && chrome.storage) {
-                      chrome.storage.local.set({ hd_generated_cl: e.target.checked });
+                      chrome.storage.local.set({
+                        hd_generated_cl: e.target.checked,
+                      });
                     }
                   }}
                   className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"

@@ -28,6 +28,8 @@ interface SubscriptionStatus {
   profile_relevant_change_counter_max?: number;
   review_by_ai_counter?: number;
   review_by_ai_counter_max?: number;
+  status_change_counter?: number;
+  status_change_counter_max?: number | null;
   is_admin?: boolean;
 }
 
@@ -1059,7 +1061,13 @@ export default function SettingsDrawer({ onClose, onLogout }: Props) {
                         counter: subscription.review_by_ai_counter ?? 0,
                         max: subscription.review_by_ai_counter_max ?? 0,
                       },
-                    ].map(({ label, counter, max }) => {
+                    ]
+                    .concat(
+                      subscription.status_change_counter_max != null
+                        ? [{ label: 'Change status', counter: subscription.status_change_counter ?? 0, max: subscription.status_change_counter_max ?? 0 }]
+                        : []
+                    )
+                    .map(({ label, counter, max }) => {
                       const pct =
                         max === 0 ? 0 : Math.round((100 * counter) / max);
                       const barColor =
