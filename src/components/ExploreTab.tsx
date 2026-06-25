@@ -312,20 +312,6 @@ function OfferCard({
   const unitOptions = ['month', 'day', 'hour', 'year'];
   const currencyOptions = generalSettings?.currencies ?? [];
 
-  const browserLang = navigator.language.split('-')[0];
-  const sortedLanguages = (() => {
-    const langs = generalSettings?.languages ?? [];
-    const browser = langs.find(l => l.code === browserLang);
-    const english = langs.find(l => l.code === 'en');
-    const rest = langs
-      .filter(l => l.code !== browserLang && l.code !== 'en')
-      .sort((a, b) => a.name.localeCompare(b.name));
-    const top: typeof langs = [];
-    if (browser) top.push(browser);
-    if (english && english.code !== browserLang) top.push(english);
-    return [...top, ...rest];
-  })();
-
   const [editSalaryOpen, setEditSalaryOpen] = useState(false);
   const [salaryFrom, setSalaryFrom] = useState('');
   const [salaryTo, setSalaryTo] = useState('');
@@ -364,20 +350,12 @@ function OfferCard({
     message: string;
   } | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isCvDropdownOpen, setIsCvDropdownOpen] = useState(false);
-  const [isClDropdownOpen, setIsClDropdownOpen] = useState(false);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
-  const [cvPortalStyle, setCvPortalStyle] = useState<React.CSSProperties>({});
-  const [clPortalStyle, setClPortalStyle] = useState<React.CSSProperties>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
-  const cvDropdownRef = useRef<HTMLDivElement>(null);
-  const cvPortalRef = useRef<HTMLDivElement>(null);
-  const clDropdownRef = useRef<HTMLDivElement>(null);
-  const clPortalRef = useRef<HTMLDivElement>(null);
 
-  async function handleGenerate(language: string) {
+  async function handleGenerate() {
     setCvLimitBannerClosed(false);
     if (activeTabId === undefined) {
       setStatus({ type: 'error', message: 'Could not read page content.' });
@@ -397,7 +375,6 @@ function OfferCard({
     const result = await generateCV(
       clientId,
       offerText,
-      language,
       clientFirstName,
       clientLastName,
       offer.offer_company,
@@ -418,12 +395,7 @@ function OfferCard({
     }
   }
 
-  async function handleCvSelect(language: string) {
-    setIsCvDropdownOpen(false);
-    await handleGenerate(language);
-  }
-
-  async function handleGenerateCl(language: string) {
+  async function handleGenerateCl() {
     setClLimitBannerClosed(false);
     if (activeTabId === undefined) {
       setStatus({ type: 'error', message: 'Could not read page content.' });
@@ -455,7 +427,6 @@ function OfferCard({
         body: JSON.stringify({
           client_id: clientId,
           offer_text: offerText,
-          cl_language: language,
           job_title: offer.offer_title,
           company_name: offer.offer_company,
           user_offer_id: offer.user_offer_id,
@@ -492,10 +463,7 @@ function OfferCard({
     }
   }
 
-  async function handleClSelect(language: string) {
-    setIsClDropdownOpen(false);
-    await handleGenerateCl(language);
-  }
+
 
   useEffect(() => {
     if (!isDropdownOpen) return;
@@ -509,29 +477,7 @@ function OfferCard({
   }, [isDropdownOpen]);
 
   useEffect(() => {
-    if (!isCvDropdownOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      const inTrigger = cvDropdownRef.current?.contains(e.target as Node);
-      const inPortal = cvPortalRef.current?.contains(e.target as Node);
-      if (!inTrigger && !inPortal) setIsCvDropdownOpen(false);
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isCvDropdownOpen]);
-
-  useEffect(() => {
-    if (!isClDropdownOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      const inTrigger = clDropdownRef.current?.contains(e.target as Node);
-      const inPortal = clPortalRef.current?.contains(e.target as Node);
-      if (!inTrigger && !inPortal) setIsClDropdownOpen(false);
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isClDropdownOpen]);
-
-  useEffect(() => {
-    if (!isDropdownOpen && !isCvDropdownOpen && !isClDropdownOpen) return;
+    if (!isDropdownOpen) return;
     const scrollEl =
       document.getElementById('main-scroll') ?? document.documentElement;
     let rafId: number;
@@ -545,22 +491,6 @@ function OfferCard({
             left: r.left,
           }));
         }
-        if (isCvDropdownOpen && cvDropdownRef.current) {
-          const r = cvDropdownRef.current.getBoundingClientRect();
-          setCvPortalStyle(prev => ({
-            ...prev,
-            top: r.bottom + 4,
-            left: r.left,
-          }));
-        }
-        if (isClDropdownOpen && clDropdownRef.current) {
-          const r = clDropdownRef.current.getBoundingClientRect();
-          setClPortalStyle(prev => ({
-            ...prev,
-            top: r.bottom + 4,
-            left: r.left,
-          }));
-        }
       });
     }
     scrollEl.addEventListener('scroll', reposition, { passive: true });
@@ -568,7 +498,7 @@ function OfferCard({
       scrollEl.removeEventListener('scroll', reposition);
       cancelAnimationFrame(rafId);
     };
-  }, [isDropdownOpen, isCvDropdownOpen, isClDropdownOpen]);
+  }, [isDropdownOpen]);
 
   async function handleStatusChange(newStatus: string) {
     setIsDropdownOpen(false);
@@ -1274,7 +1204,7 @@ function OfferCard({
               <div className="flex gap-2">
                 {/* CV section */}
                 <div className="flex-1 flex gap-2 items-center">
-                  <div ref={cvDropdownRef} className="flex-1">
+                  <div className="flex-1">
                     {isGenerating ? (
                       <button
                         type="button"
@@ -1290,19 +1220,9 @@ function OfferCard({
                         disabled={isOfferLoading}
                         onClick={e => {
                           e.stopPropagation();
-                          if (!isCvDropdownOpen && cvDropdownRef.current) {
-                            const rect =
-                              cvDropdownRef.current.getBoundingClientRect();
-                            setCvPortalStyle({
-                              position: 'fixed',
-                              top: rect.bottom + 4,
-                              left: rect.left,
-                              zIndex: 9999,
-                            });
-                          }
-                          setIsCvDropdownOpen(v => !v);
+                          void handleGenerate();
                         }}
-                        className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                       >
                         <span className="flex items-center gap-1.5">
                           {offer.cv_status === 'done' ? (
@@ -1312,35 +1232,8 @@ function OfferCard({
                           )}
                           CV
                         </span>
-                        <CaretDown
-                          size={16}
-                          className={`text-white transition-transform ${isCvDropdownOpen ? 'rotate-180' : ''}`}
-                        />
                       </button>
                     )}
-                    {isCvDropdownOpen &&
-                      createPortal(
-                        <div
-                          ref={cvPortalRef}
-                          style={cvPortalStyle}
-                          className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
-                        >
-                          {sortedLanguages.map(l => (
-                            <button
-                              key={l.code}
-                              type="button"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleCvSelect(l.code);
-                              }}
-                              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                            >
-                              {l.name}
-                            </button>
-                          ))}
-                        </div>,
-                        document.body,
-                      )}
                   </div>
                   {!isGenerating &&
                     offer.cv_status === 'done' &&
@@ -1360,7 +1253,7 @@ function OfferCard({
                 </div>
                 {/* CL section */}
                 <div className="flex-1 flex gap-2 items-center">
-                  <div ref={clDropdownRef} className="flex-1">
+                  <div className="flex-1">
                     {isClGenerating ? (
                       <button
                         type="button"
@@ -1376,19 +1269,9 @@ function OfferCard({
                         disabled={isOfferLoading}
                         onClick={e => {
                           e.stopPropagation();
-                          if (!isClDropdownOpen && clDropdownRef.current) {
-                            const rect =
-                              clDropdownRef.current.getBoundingClientRect();
-                            setClPortalStyle({
-                              position: 'fixed',
-                              top: rect.bottom + 4,
-                              left: rect.left,
-                              zIndex: 9999,
-                            });
-                          }
-                          setIsClDropdownOpen(v => !v);
+                          void handleGenerateCl();
                         }}
-                        className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
+                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
                       >
                         <span className="flex items-center gap-1.5">
                           {offer.cl_status === 'done' ? (
@@ -1398,35 +1281,8 @@ function OfferCard({
                           )}
                           CL
                         </span>
-                        <CaretDown
-                          size={16}
-                          className={`text-white transition-transform ${isClDropdownOpen ? 'rotate-180' : ''}`}
-                        />
                       </button>
                     )}
-                    {isClDropdownOpen &&
-                      createPortal(
-                        <div
-                          ref={clPortalRef}
-                          style={clPortalStyle}
-                          className="w-max max-w-[180px] max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg"
-                        >
-                          {sortedLanguages.map(l => (
-                            <button
-                              key={l.code}
-                              type="button"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleClSelect(l.code);
-                              }}
-                              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-                            >
-                              {l.name}
-                            </button>
-                          ))}
-                        </div>,
-                        document.body,
-                      )}
                   </div>
                   {!isClGenerating &&
                     offer.cl_status === 'done' &&

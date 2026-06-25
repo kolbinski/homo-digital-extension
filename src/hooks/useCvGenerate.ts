@@ -12,7 +12,6 @@ export function useCvGenerate() {
   async function generateCV(
     clientId: string,
     offerText: string,
-    cvLanguage: string,
     _clientFirstName: string,
     _clientLastName: string,
     companyName: string,
@@ -37,7 +36,6 @@ export function useCvGenerate() {
         body: JSON.stringify({
           client_id: clientId,
           offer_text: offerText,
-          cv_language: cvLanguage,
           job_title: jobTitle,
           company_name: companyName,
           user_offer_id: userOfferId,
