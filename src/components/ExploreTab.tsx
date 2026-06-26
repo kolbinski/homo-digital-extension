@@ -73,7 +73,11 @@ function publishedLabel(publishedAt: string): string {
   const pub = new Date(publishedAt);
   const today = new Date();
   const pubDate = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate());
-  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
   const days = Math.round((todayDate.getTime() - pubDate.getTime()) / 86400000);
   if (days <= 0) return 'Published today';
   if (days === 1) return 'Published yesterday';
@@ -463,8 +467,6 @@ function OfferCard({
     }
   }
 
-
-
   useEffect(() => {
     if (!isDropdownOpen) return;
     function handleClickOutside(e: MouseEvent) {
@@ -725,6 +727,7 @@ function OfferCard({
               )}
             </button>
           )}
+          {offer.source}
           {onShowOffer && (
             <button
               type="button"
@@ -1012,7 +1015,9 @@ function OfferCard({
           );
         })()}
         {offer.published_at && (
-          <p className="text-xs text-gray-400">{publishedLabel(offer.published_at)}</p>
+          <p className="text-xs text-gray-400">
+            {publishedLabel(offer.published_at)}
+          </p>
         )}
         {offer.required_skills && offer.required_skills.length > 0 && (
           <div className="flex flex-wrap gap-1 items-center">
@@ -1406,7 +1411,10 @@ function OfferCard({
                         opt =>
                           opt.value !== offer.status &&
                           (!selfMode || opt.value !== 'agent_withdrawn') &&
-                          !(offer.status === 'ai_rejected' && opt.value === 'pending_apply'),
+                          !(
+                            offer.status === 'ai_rejected' &&
+                            opt.value === 'pending_apply'
+                          ),
                       ).map(opt => (
                         <button
                           key={opt.value}
@@ -2169,11 +2177,7 @@ function ClientAccordion({
   ): Promise<Partial<AllOffersResponse>> {
     const token = await getToken();
     if (!token) return {};
-    const apiStatus =
-      statusFilter === 'pending_apply'
-        ? 'pending_apply|ai_rejected'
-        : statusFilter;
-    const params = new URLSearchParams({ status: apiStatus });
+    const params = new URLSearchParams({ status: statusFilter });
     if (!selfMode) params.append('client_id', client.id);
     if (sourceFilter !== 'all') params.append('source', sourceFilter);
     params.append('min_score', String(minScore));
@@ -2364,12 +2368,11 @@ function ClientAccordion({
 
     // Section-scoped refresh: only when a specific section is clicked in status=all view
     if (sectionKey && statusFilter === 'all') {
-      const isPendingGroup =
-        sectionKey === 'apply_now' || sectionKey === 'level_up';
-      if (isPendingGroup) {
+      if (sectionKey === 'apply_now') {
         setIsLoadingApplyNow(true);
-        setIsLoadingLevelUp(true);
         setHasNewApply(false);
+      } else if (sectionKey === 'level_up') {
+        setIsLoadingLevelUp(true);
         setHasNewLevelUp(false);
       } else if (sectionKey === 'applied') {
         setIsLoadingApplied(true);
@@ -2389,8 +2392,8 @@ function ClientAccordion({
       }
 
       const sectionStatusMap: Record<string, string> = {
-        apply_now: 'pending_apply|ai_rejected',
-        level_up: 'pending_apply|ai_rejected',
+        apply_now: 'pending_apply',
+        level_up: 'ai_rejected',
         applied: 'applied',
         withdrawn: 'client_withdrawn',
         rejected: 'recruiter_rejected',
@@ -2412,10 +2415,11 @@ function ClientAccordion({
         if (withSalary) params.append('with_salary', 'true');
         if (onlyStarred) params.append('is_starred', 'true');
         params.append('page_size', String(pageSize));
-        if (isPendingGroup) {
+        if (sectionKey === 'apply_now') {
           setPageApplyNow(1);
-          setPageLevelUp(1);
           params.append('page_apply_now', '1');
+        } else if (sectionKey === 'level_up') {
+          setPageLevelUp(1);
           params.append('page_level_up', '1');
         } else if (sectionKey === 'applied') {
           setPageApplied(1);
@@ -2439,23 +2443,14 @@ function ClientAccordion({
           });
           if (res.ok) {
             const raw = (await res.json()) as Partial<AllOffersResponse>;
-            if (isPendingGroup) {
-              const applyBucket = raw.apply_now ?? EMPTY_BUCKET;
-              const levelBucket = raw.level_up ?? EMPTY_BUCKET;
-              setApplySection({
-                offers: applyBucket.offers,
-                count: applyBucket.count,
-                countFiltered: applyBucket.count_after_filters,
-                hasMore: applyBucket.has_more,
-              });
-              knownApplyCountRef.current = applyBucket.count;
-              setLevelUpSection({
-                offers: levelBucket.offers,
-                count: levelBucket.count,
-                countFiltered: levelBucket.count_after_filters,
-                hasMore: levelBucket.has_more,
-              });
-              knownLevelUpCountRef.current = levelBucket.count;
+            if (sectionKey === 'apply_now') {
+              const b = raw.apply_now ?? EMPTY_BUCKET;
+              setApplySection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+              knownApplyCountRef.current = b.count;
+            } else if (sectionKey === 'level_up') {
+              const b = raw.level_up ?? EMPTY_BUCKET;
+              setLevelUpSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+              knownLevelUpCountRef.current = b.count;
             } else if (sectionKey === 'applied') {
               const b = raw.applied ?? EMPTY_BUCKET;
               setAppliedSection({
@@ -2898,11 +2893,7 @@ function ClientAccordion({
         // Build request from refs so polling always uses current param values
         const pollToken = await getToken();
         if (!pollToken) return;
-        const pollApiStatus =
-          pollStatusRef.current === 'pending_apply'
-            ? 'pending_apply|ai_rejected'
-            : pollStatusRef.current;
-        const pollParams = new URLSearchParams({ status: pollApiStatus });
+        const pollParams = new URLSearchParams({ status: pollStatusRef.current });
         if (!selfMode) pollParams.append('client_id', client.id);
         if (sourceFilter !== 'all') pollParams.append('source', sourceFilter);
         pollParams.append('min_score', String(pollMinScoreRef.current));
@@ -3976,7 +3967,7 @@ function ClientAccordion({
                 const showApplyNow =
                   statusFilter === 'all' || statusFilter === 'pending_apply';
                 const showLevelUp =
-                  statusFilter === 'all' || statusFilter === 'pending_apply';
+                  statusFilter === 'all' || statusFilter === 'ai_rejected';
                 const showApplied =
                   statusFilter === 'all' || statusFilter === 'applied';
                 const showWithdrawn =
@@ -4648,18 +4639,16 @@ export default function ExploreTab({
                 onChange={e => handleStatusFilterChange(e.target.value)}
                 className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                <option value="all">All</option>
                 <option value="pending_apply">Pending apply</option>
+                <option value="ai_rejected">Level up</option>
                 <option value="applied">Applied</option>
-                {!selfMode && (
-                  <option value="agent_withdrawn">Agent withdrawn</option>
-                )}
                 <option value="client_withdrawn">
                   {selfMode ? 'Withdrawn' : 'Client withdrawn'}
                 </option>
                 <option value="recruiter_rejected">Recruiter rejected</option>
                 <option value="offer_received">Offer received</option>
                 <option value="accepted">Accepted</option>
+                <option value="all">All</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
