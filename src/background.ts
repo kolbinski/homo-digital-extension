@@ -71,11 +71,9 @@ chrome.tabs.onCreated.addListener((tab) => {
   chrome.storage.local.get('pending_application', (result) => {
     const pending = result.pending_application as Record<string, unknown> | undefined
     if (pending && pending.application_tab_id == null && tab.id != null) {
-      console.log('[BG onCreated] tab.id:', tab.id, 'openerTabId:', tab.openerTabId, 'pending before:', JSON.stringify(pending))
       chrome.storage.local.set({
         pending_application: { ...pending, application_tab_id: tab.id, form_url_set: false },
       })
-      console.log('[BG onCreated] set application_tab_id to:', tab.id)
     }
   })
 })
@@ -94,7 +92,6 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'FORM_DETECTED' && sender.tab?.id != null) {
     const tabId = sender.tab.id
-    console.log('[BG FORM_DETECTED] setting application_tab_id to:', tabId)
     chrome.storage.local.get('pending_application', (result) => {
       const pending = result.pending_application as Record<string, unknown> | undefined
       if (pending) {

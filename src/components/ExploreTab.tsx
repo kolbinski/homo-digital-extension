@@ -1931,7 +1931,6 @@ function ClientAccordion({
         const newVal = changes.pending_application.newValue as
           | PendingApplication
           | undefined;
-        console.log('[PANEL storage] pending_application changed, application_tab_id:', newVal?.application_tab_id, 'activeTabIdRef:', activeTabIdRef.current);
         if (!newVal || newVal.application_tab_id == null) {
           setApplicationTabId(null);
         }
@@ -1959,7 +1958,6 @@ function ClientAccordion({
         pa?.application_tab_id != null &&
         activeTabId === pa.application_tab_id &&
         Date.now() - (pa.saved_at ?? 0) < TIMEOUT_MS;
-      console.log('[PANEL activeTabId] changed to:', activeTabId, 'storage pa.application_tab_id:', pa?.application_tab_id, 'match:', isAppFormTab);
       if (isAppFormTab) {
         if (applicationTabIdRef.current !== pa!.application_tab_id) setApplicationTabId(pa!.application_tab_id);
       } else if (applicationTabIdRef.current !== null) {
@@ -3587,20 +3585,6 @@ function ClientAccordion({
         country_code:
           cachedResult?.country_code ?? String(rawLoc.country_code ?? ''),
       };
-      // Send FILL_FORM after pending_application is updated in storage
-      console.log('[fill] sending FILL_FORM to tab:', applicationTabId, {
-        first_name: profile.first_name || '(empty)',
-        last_name: profile.last_name || '(empty)',
-        email: profile.email || '(empty)',
-        phone: profile.phone || '(empty)',
-        linkedin: profile.linkedin || '(empty)',
-        github: profile.github || '(empty)',
-        city: profile.city || '(empty)',
-        country_code: profile.country_code || '(empty)',
-        cv_url: cvUrl ? '(present)' : null,
-        cl_url: clUrl ? '(present)' : null,
-        cl_txt: clTxt ? `(${clTxt.length} chars)` : null,
-      });
       chrome.tabs.sendMessage(
         applicationTabId,
         {
@@ -3610,15 +3594,8 @@ function ClientAccordion({
           cl_url: clUrl,
           cl_txt: clTxt,
         },
-        response => {
-          if (chrome.runtime.lastError) {
-            console.error(
-              '[fill] sendMessage error:',
-              chrome.runtime.lastError.message,
-            );
-          } else {
-            console.log('[fill] content script responded:', response);
-          }
+        () => {
+          if (chrome.runtime.lastError) { /* silent */ }
         },
       );
     } catch {
