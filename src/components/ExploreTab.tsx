@@ -69,6 +69,17 @@ interface UserOffer {
   published_at?: string | null;
 }
 
+interface PendingApplication {
+  user_offer_id: string;
+  offer: UserOffer;
+  cv_url: string | null;
+  cl_url: string | null;
+  cl_txt: string | null;
+  offer_tab_id: number | null;
+  application_tab_id: number | null;
+  saved_at: number;
+}
+
 function publishedLabel(publishedAt: string): string {
   const pub = new Date(publishedAt);
   const today = new Date();
@@ -264,6 +275,9 @@ interface OfferCardProps {
     currency: string;
     unit?: string;
   }[];
+  onFillForm?: () => void;
+  fillFormLoading?: boolean;
+  fillFormError?: string | null;
 }
 
 function OfferCard({
@@ -309,6 +323,9 @@ function OfferCard({
   clPackageAmount,
   clPackagePrice,
   preferenceSalaries,
+  onFillForm,
+  fillFormLoading = false,
+  fillFormError,
 }: OfferCardProps) {
   const { getToken } = useAuth();
   const { generateCV } = useCvGenerate();
@@ -1480,6 +1497,28 @@ function OfferCard({
                   </button>
                 </div>
               )}
+              {onFillForm && (
+                <>
+                  <button
+                    type="button"
+                    onClick={onFillForm}
+                    disabled={fillFormLoading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 rounded-md transition-colors"
+                  >
+                    {fillFormLoading ? (
+                      <>
+                        <Spinner size={14} className="text-white" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>Fill form fields</>
+                    )}
+                  </button>
+                  {fillFormError && (
+                    <p className="text-xs text-red-500">{fillFormError}</p>
+                  )}
+                </>
+              )}
             </>
           )}
         </div>
@@ -1545,6 +1584,7 @@ function ClientAccordion({
   onlyStarred = false,
 }: ClientAccordionProps) {
   const { getToken } = useAuth();
+  const { generateCV } = useCvGenerate();
   const { settings: generalSettings } = useGeneralSettings();
   const pageSize = generalSettings?.listing_page_size ?? 10;
 
@@ -1703,6 +1743,8 @@ function ClientAccordion({
   const manualPageOfferUrlRef = useRef<string | null>(null);
   const pageOfferIdRef = useRef<string | null>(null);
   pageOfferIdRef.current = pageOffer?.user_offer_id ?? null;
+  const pageOfferRef = useRef<UserOffer | null>(null);
+  pageOfferRef.current = pageOffer;
   const pageOfferSectionRef = useRef<HTMLButtonElement>(null);
   const pageOfferCardRef = useRef<HTMLDivElement>(null);
   const scanCheckoutTabIdRef = useRef<number | undefined>(undefined);
@@ -1714,6 +1756,16 @@ function ClientAccordion({
   const [wizardInitialTab, setWizardInitialTab] =
     useState<WizardTabId>('basic_info');
   const knownNewSkillsCountRef = useRef<number | null>(null);
+  const [applicationTabId, setApplicationTabId] = useState<number | null>(null);
+  const applicationTabIdRef = useRef<number | null>(null);
+  applicationTabIdRef.current = applicationTabId;
+  const [hasCLField, setHasCLField] = useState(true);
+  const hasCLFieldRef = useRef(true);
+  hasCLFieldRef.current = hasCLField;
+  const [fillFormLoading, setFillFormLoading] = useState(false);
+  const [fillFormError, setFillFormError] = useState<string | null>(null);
+  const activeTabIdRef = useRef<number | undefined>(undefined);
+  activeTabIdRef.current = activeTabId;
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1875,6 +1927,21 @@ function ClientAccordion({
           }
         })();
       }
+      if ('pending_application' in changes) {
+        const newVal = changes.pending_application.newValue as
+          | PendingApplication
+          | undefined;
+        if (!newVal) {
+          setApplicationTabId(null);
+        } else if (newVal.application_tab_id != null) {
+          // Only activate "Form detected" state when the current tab IS the application tab
+          if (newVal.application_tab_id === activeTabIdRef.current) {
+            setApplicationTabId(newVal.application_tab_id);
+          } else {
+            setApplicationTabId(null);
+          }
+        }
+      }
     }
 
     if (typeof chrome !== 'undefined' && chrome.storage?.local?.onChanged) {
@@ -1884,6 +1951,110 @@ function ClientAccordion({
       if (typeof chrome !== 'undefined' && chrome.storage?.local?.onChanged) {
         chrome.storage.local.onChanged.removeListener(handleStorageChange);
       }
+    };
+  }, []);
+
+  // On every tab switch, reconcile applicationTabId: only show "Form detected" state
+  // when the active tab is exactly the application form tab stored in pending_application.
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+    chrome.storage.local.get('pending_application', result => {
+      const pa = result.pending_application as PendingApplication | undefined;
+      const TIMEOUT_MS = 30 * 60 * 1000;
+      const isAppFormTab =
+        pa?.application_tab_id != null &&
+        activeTabId === pa.application_tab_id &&
+        Date.now() - (pa.saved_at ?? 0) < TIMEOUT_MS;
+      if (isAppFormTab) {
+        if (applicationTabIdRef.current !== pa!.application_tab_id) {
+          setApplicationTabId(pa!.application_tab_id);
+        }
+      } else if (applicationTabIdRef.current !== null) {
+        setApplicationTabId(null);
+      }
+    });
+  }, [activeTabId]);
+
+  // Listen for FORM_SUBMITTED from the content script → auto-change status to applied
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.onMessage) return;
+    function handleRuntimeMessage(
+      message: { type: string; offer?: UserOffer; hasCLField?: boolean },
+      sender: chrome.runtime.MessageSender,
+    ) {
+      if (message.type === 'FORM_DETECTED') {
+        if (message.offer) setPageOffer(message.offer);
+        // Only show "Form detected" state when the panel is on the application form tab
+        if (
+          sender.tab?.id != null &&
+          sender.tab.id === activeTabIdRef.current
+        ) {
+          setApplicationTabId(sender.tab.id);
+        }
+        if (message.hasCLField !== undefined) setHasCLField(message.hasCLField);
+        return;
+      }
+      if (message.type !== 'FORM_SUBMITTED') return;
+      const offer = pageOfferRef.current;
+      if (!offer) return;
+      if (offer.status !== 'pending_apply' && offer.status !== 'ai_rejected')
+        return;
+      void (async () => {
+        try {
+          const token = await getToken();
+          if (!token) return;
+          const res = await fetch(
+            `${API_BASE_URL}/v1/user-offers/${offer.user_offer_id}/status`,
+            {
+              method: 'PATCH',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ status: 'applied' }),
+            },
+          );
+          if (!res.ok) return;
+          setPageOffer(prev =>
+            prev !== null && prev.user_offer_id === offer.user_offer_id
+              ? ({ ...prev, status: 'applied' } as UserOffer)
+              : prev,
+          );
+          if (offer.status === 'pending_apply') {
+            setApplySection(prev => ({
+              ...prev,
+              offers: prev.offers.filter(
+                o => o.user_offer_id !== offer.user_offer_id,
+              ),
+              count: Math.max(0, prev.count - 1),
+              countFiltered: Math.max(0, prev.countFiltered - 1),
+            }));
+          } else {
+            setLevelUpSection(prev => ({
+              ...prev,
+              offers: prev.offers.filter(
+                o => o.user_offer_id !== offer.user_offer_id,
+              ),
+              count: Math.max(0, prev.count - 1),
+              countFiltered: Math.max(0, prev.countFiltered - 1),
+            }));
+          }
+          knownAppliedCountRef.current = Math.max(
+            0,
+            knownAppliedCountRef.current - 1,
+          );
+          if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+            chrome.storage.local.remove('pending_application');
+          }
+          setApplicationTabId(null);
+        } catch {
+          // ignore
+        }
+      })();
+    }
+    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
     };
   }, []);
 
@@ -2048,7 +2219,29 @@ function ClientAccordion({
         );
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { user_offer: UserOffer | null };
-        if (!cancelled) setPageOffer(data.user_offer ?? null);
+        if (!cancelled) {
+          if (data.user_offer) {
+            setPageOffer(data.user_offer);
+          } else {
+            chrome.storage.local.get('pending_application', paResult => {
+              if (cancelled) return;
+              const pa = paResult.pending_application as
+                | PendingApplication
+                | undefined;
+              const TIMEOUT_MS = 30 * 60 * 1000;
+              if (
+                pa?.application_tab_id != null &&
+                pa.application_tab_id === activeTabIdRef.current &&
+                Date.now() - (pa.saved_at ?? 0) < TIMEOUT_MS
+              ) {
+                setPageOffer(pa.offer);
+                setApplicationTabId(pa.application_tab_id);
+              } else {
+                setPageOffer(null);
+              }
+            });
+          }
+        }
       } catch {
         // silently ignore
       } finally {
@@ -2065,6 +2258,61 @@ function ClientAccordion({
   useEffect(() => {
     setPageOfferOpen(true);
   }, [pageOffer]);
+
+  // Manage pending_application in storage — keyed on offer identity, not full object
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+    if (!pageOffer) {
+      // User navigated away from the offer page — preserve storage so the
+      // application tab can still be tracked; only reset the local UI state.
+      setApplicationTabId(null);
+      return;
+    }
+    const offerId = pageOffer.user_offer_id;
+    const TIMEOUT_MS = 30 * 60 * 1000;
+    chrome.storage.local.get('pending_application', result => {
+      const existing = result.pending_application as
+        | PendingApplication
+        | undefined;
+      if (
+        existing?.user_offer_id === offerId &&
+        Date.now() - existing.saved_at < TIMEOUT_MS
+      ) {
+        // Same offer still valid — preserve application_tab_id, update cv/cl urls
+        chrome.storage.local.set({
+          pending_application: {
+            ...existing,
+            cv_url: pageOffer.cv_url ?? null,
+            cl_url: pageOffer.cl_url ?? null,
+          },
+        });
+        if (
+          existing.application_tab_id != null &&
+          existing.application_tab_id === activeTabIdRef.current &&
+          existing.application_tab_id !== applicationTabIdRef.current
+        ) {
+          setApplicationTabId(existing.application_tab_id);
+        }
+      } else {
+        // New offer or expired — full reset
+        setApplicationTabId(null);
+        chrome.storage.local.set({
+          pending_application: {
+            user_offer_id: offerId,
+            offer: pageOffer,
+            cv_url: pageOffer.cv_url ?? null,
+            cl_url: pageOffer.cl_url ?? null,
+            cl_txt: null,
+            offer_tab_id: activeTabIdRef.current ?? null,
+            application_tab_id: null,
+            saved_at: Date.now(),
+          } as PendingApplication,
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageOffer?.user_offer_id]);
 
   useEffect(() => {
     if (!pageOffer) return;
@@ -2445,11 +2693,21 @@ function ClientAccordion({
             const raw = (await res.json()) as Partial<AllOffersResponse>;
             if (sectionKey === 'apply_now') {
               const b = raw.apply_now ?? EMPTY_BUCKET;
-              setApplySection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+              setApplySection({
+                offers: b.offers,
+                count: b.count,
+                countFiltered: b.count_after_filters,
+                hasMore: b.has_more,
+              });
               knownApplyCountRef.current = b.count;
             } else if (sectionKey === 'level_up') {
               const b = raw.level_up ?? EMPTY_BUCKET;
-              setLevelUpSection({ offers: b.offers, count: b.count, countFiltered: b.count_after_filters, hasMore: b.has_more });
+              setLevelUpSection({
+                offers: b.offers,
+                count: b.count,
+                countFiltered: b.count_after_filters,
+                hasMore: b.has_more,
+              });
               knownLevelUpCountRef.current = b.count;
             } else if (sectionKey === 'applied') {
               const b = raw.applied ?? EMPTY_BUCKET;
@@ -2819,6 +3077,24 @@ function ClientAccordion({
       const fetched = json?.profile ?? null;
       if (json?.offer_skills) setOfferSkills(json.offer_skills);
       setWizardProfile(clientToProfile(fetched ?? client.profile));
+      // Cache profile for form filling
+      if (fetched && typeof chrome !== 'undefined' && chrome.storage?.local) {
+        const bi = (fetched.basic_info ?? {}) as Record<string, unknown>;
+        const loc = (bi.location ?? {}) as Record<string, unknown>;
+        chrome.storage.local.set({
+          cached_profile: {
+            first_name: String(bi.first_name ?? client.first_name ?? ''),
+            last_name: String(bi.last_name ?? client.last_name ?? ''),
+            email: String(bi.email ?? client.email ?? ''),
+            phone: String(bi.phone ?? ''),
+            linkedin: String(bi.linkedin ?? ''),
+            github: String(bi.github ?? ''),
+            city: String(loc.city ?? ''),
+            country_code: String(loc.country_code ?? ''),
+            cached_at: Date.now(),
+          },
+        });
+      }
       await fetch(`${API_BASE_URL}/v1/profile`, {
         method: 'PATCH',
         headers: {
@@ -2893,7 +3169,9 @@ function ClientAccordion({
         // Build request from refs so polling always uses current param values
         const pollToken = await getToken();
         if (!pollToken) return;
-        const pollParams = new URLSearchParams({ status: pollStatusRef.current });
+        const pollParams = new URLSearchParams({
+          status: pollStatusRef.current,
+        });
         if (!selfMode) pollParams.append('client_id', client.id);
         if (sourceFilter !== 'all') pollParams.append('source', sourceFilter);
         pollParams.append('min_score', String(pollMinScoreRef.current));
@@ -3098,6 +3376,21 @@ function ClientAccordion({
     setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
     setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
     setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setPageOffer(prev =>
+      prev !== null && prev.user_offer_id === offerId
+        ? ({ ...prev, cv_url: cvUrl, cv_status: cvStatus } as UserOffer)
+        : prev,
+    );
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      chrome.storage.local.get('pending_application', result => {
+        const pa = result.pending_application as PendingApplication | undefined;
+        if (pa?.user_offer_id === offerId) {
+          chrome.storage.local.set({
+            pending_application: { ...pa, cv_url: cvUrl },
+          });
+        }
+      });
+    }
   }
 
   function handleClUpdate(offerId: string, clUrl: string, clStatus: string) {
@@ -3114,6 +3407,21 @@ function ClientAccordion({
     setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
     setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
     setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+    setPageOffer(prev =>
+      prev !== null && prev.user_offer_id === offerId
+        ? ({ ...prev, cl_url: clUrl, cl_status: clStatus } as UserOffer)
+        : prev,
+    );
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      chrome.storage.local.get('pending_application', result => {
+        const pa = result.pending_application as PendingApplication | undefined;
+        if (pa?.user_offer_id === offerId) {
+          chrome.storage.local.set({
+            pending_application: { ...pa, cl_url: clUrl },
+          });
+        }
+      });
+    }
   }
 
   function handleSalaryUpdate(userOfferId: string, salary: OfferSalary) {
@@ -3128,6 +3436,204 @@ function ClientAccordion({
     setRejectedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
     setOfferReceivedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
     setAcceptedSection(prev => ({ ...prev, offers: patch(prev.offers) }));
+  }
+
+  async function handleFillForm() {
+    if (!pageOffer || applicationTabId == null) return;
+    if (typeof chrome === 'undefined') return;
+    setFillFormLoading(true);
+    setFillFormError(null);
+    try {
+      const token = await getToken();
+      if (!token) {
+        setFillFormError('Not authenticated.');
+        return;
+      }
+      let cvUrl = pageOffer.cv_url ?? null;
+      let clUrl = pageOffer.cl_url ?? null;
+      let clTxt: string | null = null;
+      const needsCvGen = !cvUrl;
+      const needsClGen = !clUrl && hasCLFieldRef.current;
+      // Fetch offer page text only if we need to generate CV or CL
+      const paResult = await new Promise<PendingApplication | null>(resolve => {
+        chrome.storage.local.get('pending_application', r =>
+          resolve(
+            (r.pending_application as PendingApplication | undefined) ?? null,
+          ),
+        );
+      });
+      const offerTabId = paResult?.offer_tab_id ?? activeTabId;
+      let offerText: string | null = null;
+      if (needsCvGen || needsClGen) {
+        offerText = offerTabId != null ? await getPageText(offerTabId) : '';
+      }
+      // Generate CV if needed
+      if (needsCvGen) {
+        const result = await generateCV(
+          client.id,
+          offerText ?? '',
+          client.first_name,
+          client.last_name,
+          pageOffer.offer_company,
+          pageOffer.offer_title,
+          pageOffer.user_offer_id,
+        );
+        if (result.success) {
+          cvUrl = result.cvUrl;
+          handleCvUpdate(
+            pageOffer.user_offer_id,
+            result.cvUrl,
+            result.cvStatus,
+          );
+        } else if ('limitReached' in result) {
+          setFillFormError(
+            'CV generation limit reached. Generate CV manually first.',
+          );
+          return;
+        } else {
+          setFillFormError(
+            result.error || 'CV generation failed. Generate CV manually first.',
+          );
+          return;
+        }
+      }
+      // Generate CL only if the form has a CL field
+      if (needsClGen) {
+        const res = await fetch(`${API_BASE_URL}/v1/cl/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            client_id: client.id,
+            offer_text: offerText ?? '',
+            job_title: pageOffer.offer_title,
+            company_name: pageOffer.offer_company,
+            user_offer_id: pageOffer.user_offer_id,
+          }),
+        });
+        if (res.status === 402) {
+          setFillFormError(
+            'CL generation limit reached. Generate CL manually first.',
+          );
+          return;
+        }
+        if (res.ok) {
+          const clData = (await res.json()) as {
+            cl_url: string;
+            cl_status: string;
+            cl_txt?: string;
+          };
+          clUrl = clData.cl_url;
+          clTxt = clData.cl_txt ?? null;
+          handleClUpdate(
+            pageOffer.user_offer_id,
+            clData.cl_url,
+            clData.cl_status,
+          );
+        }
+        // CL failure is non-fatal — proceed without CL
+      }
+      // Write cv_url/cl_url/cl_txt to pending_application BEFORE sending FILL_FORM
+      // so the content script reads fresh data from storage.
+      await new Promise<void>(resolve => {
+        chrome.storage.local.get('pending_application', r => {
+          const pa = r.pending_application as PendingApplication | undefined;
+          if (!pa) {
+            resolve();
+            return;
+          }
+          const updatedOffer = {
+            ...pa.offer,
+            ...(cvUrl ? { cv_url: cvUrl, cv_status: 'done' } : {}),
+            ...(clUrl ? { cl_url: clUrl, cl_status: 'done' } : {}),
+            ...(clTxt ? { cl_txt: clTxt } : {}),
+          } as UserOffer;
+          chrome.storage.local.set(
+            {
+              pending_application: {
+                ...pa,
+                cv_url: cvUrl,
+                cl_url: clUrl,
+                cl_txt: clTxt,
+                offer: updatedOffer,
+              },
+            },
+            resolve,
+          );
+        });
+      });
+      // Build profile from cached_profile or client object
+      const cachedResult = await new Promise<Record<string, string> | null>(
+        resolve => {
+          chrome.storage.local.get('cached_profile', r =>
+            resolve(
+              (r.cached_profile as Record<string, string> | undefined) ?? null,
+            ),
+          );
+        },
+      );
+      const rawProfile = (client.profile?.basic_info ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const rawLoc = (rawProfile.location ?? {}) as Record<string, unknown>;
+      const profile = {
+        first_name:
+          cachedResult?.first_name ??
+          String(rawProfile.first_name ?? client.first_name ?? ''),
+        last_name:
+          cachedResult?.last_name ??
+          String(rawProfile.last_name ?? client.last_name ?? ''),
+        email:
+          cachedResult?.email ?? String(rawProfile.email ?? client.email ?? ''),
+        phone: cachedResult?.phone ?? String(rawProfile.phone ?? ''),
+        linkedin: cachedResult?.linkedin ?? String(rawProfile.linkedin ?? ''),
+        github: cachedResult?.github ?? String(rawProfile.github ?? ''),
+        city: cachedResult?.city ?? String(rawLoc.city ?? ''),
+        country_code:
+          cachedResult?.country_code ?? String(rawLoc.country_code ?? ''),
+      };
+      // Send FILL_FORM after pending_application is updated in storage
+      console.log('[fill] sending FILL_FORM to tab:', applicationTabId, {
+        first_name: profile.first_name || '(empty)',
+        last_name: profile.last_name || '(empty)',
+        email: profile.email || '(empty)',
+        phone: profile.phone || '(empty)',
+        linkedin: profile.linkedin || '(empty)',
+        github: profile.github || '(empty)',
+        city: profile.city || '(empty)',
+        country_code: profile.country_code || '(empty)',
+        cv_url: cvUrl ? '(present)' : null,
+        cl_url: clUrl ? '(present)' : null,
+        cl_txt: clTxt ? `(${clTxt.length} chars)` : null,
+      });
+      chrome.tabs.sendMessage(
+        applicationTabId,
+        {
+          type: 'FILL_FORM',
+          ...profile,
+          cv_url: cvUrl,
+          cl_url: clUrl,
+          cl_txt: clTxt,
+        },
+        response => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              '[fill] sendMessage error:',
+              chrome.runtime.lastError.message,
+            );
+          } else {
+            console.log('[fill] content script responded:', response);
+          }
+        },
+      );
+    } catch {
+      setFillFormError('Failed to fill form. Please try again.');
+    } finally {
+      setFillFormLoading(false);
+    }
   }
 
   async function handleScanPage() {
@@ -3763,9 +4269,11 @@ function ClientAccordion({
                 onClick={() => setPageOfferOpen(v => !v)}
                 className="w-full flex items-center justify-between py-2 transition-colors text-left sticky top-0 z-10 bg-gray-50 border-b border-gray-200"
               >
-                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Offer on this page
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                    Offer on this page
+                  </span>
+                </div>
                 <CaretDown
                   size={14}
                   className={`text-gray-400 transition-transform ${pageOfferOpen ? 'rotate-180' : ''}`}
@@ -3937,6 +4445,13 @@ function ClientAccordion({
                         );
                       }
                     }}
+                    onFillForm={
+                      applicationTabId !== null
+                        ? () => void handleFillForm()
+                        : undefined
+                    }
+                    fillFormLoading={fillFormLoading}
+                    fillFormError={fillFormError}
                   />
                 </div>
               )}
