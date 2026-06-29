@@ -126,9 +126,16 @@ still points to the offer tab, not the new form tab. So handleStorageChange must
 activeTabIdRef check when application_tab_id is set. The activeTabId useEffect reconciles on the
 next tab switch (when the user actually navigates to the form tab).
 
+### FORM_SUBMITTED → status update
+- PATCH /v1/user-offers/:id/status with status: 'applied'
+- 402 response: triggers setStatusChangeLimitHit(true) — same upgrade modal as manual status change
+- non-ok response: silent return
+- success: updates pageOffer state, removes from apply/levelUp section, clears pending_application, nulls applicationTabId
+
 ## Next Action
 Test end-to-end in Chrome:
 1. Open a job offer → click Apply (opens new tab) → switch to new tab
 2. Confirm "Form detected" badge appears in side panel
 3. Click "Fill form fields" — verify fields populated correctly
 4. Submit form — confirm offer status updates to Applied
+5. Test 402 path — confirm upgrade modal appears on submit when limit is reached

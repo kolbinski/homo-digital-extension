@@ -2005,6 +2005,10 @@ function ClientAccordion({
               body: JSON.stringify({ status: 'applied' }),
             },
           );
+          if (res.status === 402) {
+            setStatusChangeLimitHit(true);
+            return;
+          }
           if (!res.ok) return;
           setPageOffer(prev =>
             prev !== null && prev.user_offer_id === offer.user_offer_id
