@@ -2,10 +2,10 @@
 
 ## Status: 🟡 In Progress
 
-**Task:** Implement SPEC.md V1 — homo-digital-extension
-**Objective:** Build the complete Chrome extension as specified in SPEC.md V1 — authentication, side panel UI, content script, CV generation flow, and PDF download.
+**Task:** Application form detection + form filling flow
+**Objective:** Detect application form tab, fill fields from pending_application, detect submission and update offer status.
 **Started:** 2026-06-05
-**Last Updated:** 2026-06-06
+**Last Updated:** 2026-06-29
 
 ---
 
@@ -96,7 +96,39 @@
 
 ---
 
-## Next Action
-Phase 7: Full verification in Chrome — load unpacked, walk happy path (login → select client → open job page → generate → download PDF), walk error paths, run CoV checklist.
+## Application Form Flow — Current State (2026-06-29)
 
-Test SyncTab polling end-to-end: trigger a sync, confirm polling hits GET /v1/sync/status every 5s in Network tab, confirm done/error states resolve correctly, confirm interval is cleared on unmount (navigate away during sync — no dangling poll in background).
+### Content Script (`src/content.ts`)
+- All chrome.storage.local calls removed — proxied through background SW via safeSendMessage
+- safeSendMessage probes chrome.runtime.id before every send; calls stopAll() on invalidated context
+- detectAndNotify() gates on exact tab ID match (pa.application_tab_id === currentTabId)
+- MutationObserver stops once formDetected = true or context invalidates
+- attachSubmitListener() listens for form submit + submit button click
+- Background SW also detects submission via chrome.tabs.onUpdated URL change
+
+### Background SW (`src/background.ts`)
+- onCreated: pre-assigns application_tab_id + form_url_set: false when new tab opened with an opener and pa has no tab yet
+- onUpdated (URL change): first URL change sets form_url_set: true (form loading, ignored); subsequent URL change = submission → nulls application_tab_id + sends FORM_SUBMITTED
+- onRemoved: clears pending_application when application tab closes
+- FORM_DETECTED message: records sender tab ID as application_tab_id
+
+### ExploreTab.tsx (`src/components/ExploreTab.tsx`)
+- applicationTabId state: null = not on form tab, number = current tab is the application form tab
+- handleStorageChange for pending_application:
+  - Clears applicationTabId immediately when pa is cleared or application_tab_id becomes null
+  - Does NOT set applicationTabId when application_tab_id is written — deferred to activeTabId useEffect
+- activeTabId useEffect: reads storage on every tab switch, sets applicationTabId only if tab matches
+- "Form detected" green badge shown in "Offer on this page" section header when applicationTabId !== null
+
+### Key design decision
+onCreated fires when background SW writes application_tab_id — at that moment activeTabIdRef.current
+still points to the offer tab, not the new form tab. So handleStorageChange must NOT attempt the
+activeTabIdRef check when application_tab_id is set. The activeTabId useEffect reconciles on the
+next tab switch (when the user actually navigates to the form tab).
+
+## Next Action
+Test end-to-end in Chrome:
+1. Open a job offer → click Apply (opens new tab) → switch to new tab
+2. Confirm "Form detected" badge appears in side panel
+3. Click "Fill form fields" — verify fields populated correctly
+4. Submit form — confirm offer status updates to Applied

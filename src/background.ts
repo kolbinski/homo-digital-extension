@@ -41,13 +41,22 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 })
 
 // Detect form submission via navigation — most reliable for native + SPA forms.
-// Fires when the application tab URL changes (redirect to Thank You page).
+// First URL change after tab assignment = form loading (ignored).
+// Subsequent URL change = redirect to thank-you page = form submitted.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (!changeInfo.url) return
   chrome.storage.local.get('pending_application', (result) => {
-    const pending = result.pending_application as Record<string, unknown> & { application_tab_id?: number } | undefined
+    const pending = result.pending_application as Record<string, unknown> & {
+      application_tab_id?: number;
+      form_url_set?: boolean;
+    } | undefined
     if (pending?.application_tab_id !== tabId) return
-    // Null out application_tab_id to prevent re-firing on subsequent navigations
+    if (!pending.form_url_set) {
+      // First URL change after tab assignment = form loading, not submission
+      chrome.storage.local.set({ pending_application: { ...pending, form_url_set: true } })
+      return
+    }
+    // Subsequent URL change = form submitted (redirect to thank-you page)
     chrome.storage.local.set({ pending_application: { ...pending, application_tab_id: null } })
     chrome.runtime.sendMessage({ type: 'FORM_SUBMITTED' }, () => {
       if (chrome.runtime.lastError) { /* side panel not open */ }
@@ -62,10 +71,11 @@ chrome.tabs.onCreated.addListener((tab) => {
   chrome.storage.local.get('pending_application', (result) => {
     const pending = result.pending_application as Record<string, unknown> | undefined
     if (pending && pending.application_tab_id == null && tab.id != null) {
-      console.log('[appTab] SW setting application_tab_id:', tab.id, 'openerTabId:', tab.openerTabId)
+      console.log('[BG onCreated] tab.id:', tab.id, 'openerTabId:', tab.openerTabId, 'pending before:', JSON.stringify(pending))
       chrome.storage.local.set({
-        pending_application: { ...pending, application_tab_id: tab.id },
+        pending_application: { ...pending, application_tab_id: tab.id, form_url_set: false },
       })
+      console.log('[BG onCreated] set application_tab_id to:', tab.id)
     }
   })
 })
@@ -84,6 +94,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'FORM_DETECTED' && sender.tab?.id != null) {
     const tabId = sender.tab.id
+    console.log('[BG FORM_DETECTED] setting application_tab_id to:', tabId)
     chrome.storage.local.get('pending_application', (result) => {
       const pending = result.pending_application as Record<string, unknown> | undefined
       if (pending) {
