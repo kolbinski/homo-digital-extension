@@ -114,17 +114,16 @@ function getFieldContext(el: Element): string {
 
 function attachSubmitListener() {
   document.querySelectorAll('form').forEach((form) => {
-    const hasEmail = form.querySelector(
-      'input[type="email"], input[name*="email" i], input[id*="email" i]',
-    )
-    if (!hasEmail) return
-    form.addEventListener(
-      'submit',
-      () => {
-        void safeSendMessage({ type: 'FORM_SUBMITTED' })
-      },
-      { once: true },
-    )
+    form.addEventListener('submit', () => {
+      void safeSendMessage({ type: 'FORM_SUBMITTED' })
+    }, { once: true })
+  })
+
+  // Fallback: submit button click — catches SPA forms that never fire the submit event
+  document.querySelectorAll<HTMLElement>('button[type="submit"], input[type="submit"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      void safeSendMessage({ type: 'FORM_SUBMITTED' })
+    }, { once: true })
   })
 }
 

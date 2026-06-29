@@ -40,6 +40,21 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   chrome.storage.local.set({ upgrade_success: Date.now() })
 })
 
+// Detect form submission via navigation — most reliable for native + SPA forms.
+// Fires when the application tab URL changes (redirect to Thank You page).
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (!changeInfo.url) return
+  chrome.storage.local.get('pending_application', (result) => {
+    const pending = result.pending_application as Record<string, unknown> & { application_tab_id?: number } | undefined
+    if (pending?.application_tab_id !== tabId) return
+    // Null out application_tab_id to prevent re-firing on subsequent navigations
+    chrome.storage.local.set({ pending_application: { ...pending, application_tab_id: null } })
+    chrome.runtime.sendMessage({ type: 'FORM_SUBMITTED' }, () => {
+      if (chrome.runtime.lastError) { /* side panel not open */ }
+    })
+  })
+})
+
 // When a tab is opened from the offer page, pre-assign it as the application tab
 // (covers the window before the content script loads and sends FORM_DETECTED)
 chrome.tabs.onCreated.addListener((tab) => {
@@ -47,6 +62,7 @@ chrome.tabs.onCreated.addListener((tab) => {
   chrome.storage.local.get('pending_application', (result) => {
     const pending = result.pending_application as Record<string, unknown> | undefined
     if (pending && pending.application_tab_id == null && tab.id != null) {
+      console.log('[appTab] SW setting application_tab_id:', tab.id, 'openerTabId:', tab.openerTabId)
       chrome.storage.local.set({
         pending_application: { ...pending, application_tab_id: tab.id },
       })

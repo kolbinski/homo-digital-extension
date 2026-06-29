@@ -1766,6 +1766,8 @@ function ClientAccordion({
   const [fillFormError, setFillFormError] = useState<string | null>(null);
   const activeTabIdRef = useRef<number | undefined>(undefined);
   activeTabIdRef.current = activeTabId;
+  const pendingApplicationTabIdRef = useRef<number | null>(null);
+  const [pendingApplicationTabId, setPendingApplicationTabId] = useState<number | null>(null);
 
   useEffect(() => {
     async function checkSubscription() {
@@ -1931,15 +1933,16 @@ function ClientAccordion({
         const newVal = changes.pending_application.newValue as
           | PendingApplication
           | undefined;
-        if (!newVal) {
+        console.log('[appTab] storage change - application_tab_id:', newVal?.application_tab_id);
+        if (!newVal || newVal.application_tab_id == null) {
+          pendingApplicationTabIdRef.current = null;
+          setPendingApplicationTabId(null);
           setApplicationTabId(null);
-        } else if (newVal.application_tab_id != null) {
-          // Only activate "Form detected" state when the current tab IS the application tab
-          if (newVal.application_tab_id === activeTabIdRef.current) {
-            setApplicationTabId(newVal.application_tab_id);
-          } else {
-            setApplicationTabId(null);
-          }
+        } else {
+          // Store for later — applicationTabId is set when the user is on that tab,
+          // not immediately when the background SW writes application_tab_id to storage.
+          pendingApplicationTabIdRef.current = newVal.application_tab_id;
+          setPendingApplicationTabId(newVal.application_tab_id);
         }
       }
     }
@@ -1954,26 +1957,43 @@ function ClientAccordion({
     };
   }, []);
 
-  // On every tab switch, reconcile applicationTabId: only show "Form detected" state
-  // when the active tab is exactly the application form tab stored in pending_application.
+  // On tab switch: reconcile applicationTabId against the stored pending tab ID.
+  // Falls back to a direct storage read if the ref is not yet populated
+  // (e.g. panel was closed when background SW wrote application_tab_id).
   useEffect(() => {
-    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
-    chrome.storage.local.get('pending_application', result => {
-      const pa = result.pending_application as PendingApplication | undefined;
-      const TIMEOUT_MS = 30 * 60 * 1000;
-      const isAppFormTab =
-        pa?.application_tab_id != null &&
-        activeTabId === pa.application_tab_id &&
-        Date.now() - (pa.saved_at ?? 0) < TIMEOUT_MS;
-      if (isAppFormTab) {
-        if (applicationTabIdRef.current !== pa!.application_tab_id) {
-          setApplicationTabId(pa!.application_tab_id);
-        }
-      } else if (applicationTabIdRef.current !== null) {
+    console.log('[appTab] activeTabId changed:', activeTabId, 'pendingRef:', pendingApplicationTabIdRef.current);
+    if (pendingApplicationTabIdRef.current !== null) {
+      if (activeTabId === pendingApplicationTabIdRef.current) {
+        setApplicationTabId(activeTabId);
+      } else {
         setApplicationTabId(null);
       }
-    });
+    } else {
+      if (activeTabId == null) return;
+      if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+      const TIMEOUT_MS = 30 * 60 * 1000;
+      chrome.storage.local.get('pending_application', result => {
+        const pa = result.pending_application as PendingApplication | undefined;
+        console.log('[appTab] storage fallback check - pa.application_tab_id:', pa?.application_tab_id, 'activeTabId:', activeTabId, 'match:', pa?.application_tab_id === activeTabId);
+        if (
+          pa?.application_tab_id != null &&
+          pa.application_tab_id === activeTabId &&
+          Date.now() - (pa.saved_at ?? 0) < TIMEOUT_MS
+        ) {
+          pendingApplicationTabIdRef.current = pa.application_tab_id;
+          setPendingApplicationTabId(pa.application_tab_id);
+          setApplicationTabId(activeTabId);
+        }
+      });
+    }
   }, [activeTabId]);
+
+  // When background SW sets application_tab_id and user is already on that tab, activate immediately.
+  useEffect(() => {
+    if (pendingApplicationTabId !== null && activeTabId === pendingApplicationTabId) {
+      setApplicationTabId(activeTabId);
+    }
+  }, [pendingApplicationTabId, activeTabId]);
 
   // Listen for FORM_SUBMITTED from the content script → auto-change status to applied
   useEffect(() => {
@@ -2264,9 +2284,8 @@ function ClientAccordion({
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
     if (!pageOffer) {
-      // User navigated away from the offer page — preserve storage so the
-      // application tab can still be tracked; only reset the local UI state.
-      setApplicationTabId(null);
+      // Do not clear applicationTabId here — reconciled by activeTabId useEffect
+      // (checks pendingApplicationTabIdRef) and handleStorageChange.
       return;
     }
     const offerId = pageOffer.user_offer_id;
